@@ -1,13 +1,18 @@
 "use client";
 
+import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Images, PanelLeftClose, PanelLeftOpen, Pin, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
+import { House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
 import { formatCredits, groupChats } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Label, Segments } from "@/components/fx/primitives";
 import { Hint } from "./hint";
+import { ChatRow } from "./chat-row";
+import { Inbox } from "./inbox";
+import { chatsStore } from "@/lib/app-state";
+import { useEffect, useState } from "react";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app", label: "Главная", icon: House },
@@ -32,6 +37,12 @@ type Props = {
 export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, balance, user, now }: Props) {
   const pathname = usePathname();
   const groups = groupChats(chats, now);
+  const [removed, setRemoved] = useState<ChatSummary | null>(null);
+  useEffect(() => {
+    if (!removed) return;
+    const t = setTimeout(() => setRemoved(null), 6000);
+    return () => clearTimeout(t);
+  }, [removed]);
   const itemCls = (active: boolean) =>
     cn(
       "relative flex h-9 items-center gap-2.5 px-2.5 text-[13.5px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
@@ -90,6 +101,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           )}
           <Hint k="⌘K" />
         </button>
+        <Inbox collapsed={collapsed} onNavigate={onNavigate} />
         {NAV.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} onClick={onNavigate} title={label} aria-current={pathname === href ? "page" : undefined} className={itemCls(pathname === href)}>
             <Icon size={16} strokeWidth={1.5} />
@@ -102,19 +114,40 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         {groups.map((g) => (
           <div key={g.label} className="mt-3 first:mt-0">
             <Label className="block px-2.5 pb-1">{g.label}</Label>
-            {g.chats.map((c) => {
-              const href = `/app/c/${c.id}`;
-              return (
-                <Link key={c.id} href={href} onClick={onNavigate} aria-current={pathname === href ? "page" : undefined} className={cn(itemCls(pathname === href), "h-8 text-[13px]")}>
-                  <span className="truncate">{c.title}</span>
-                  {c.pinned && <Pin size={12} strokeWidth={1.5} className="ml-auto shrink-0 text-ink3" aria-label="Закреплён" />}
-                </Link>
-              );
-            })}
+            {g.chats.map((c, i) => (
+              <Appear key={c.id} index={i} delay={0.1}>
+                <ChatRow
+                  chat={c}
+                  active={pathname === `/app/c/${c.id}`}
+                  onNavigate={onNavigate}
+                  onPin={() => chatsStore.set((xs) => xs.map((x) => (x.id === c.id ? { ...x, pinned: !x.pinned } : x)))}
+                  onRename={(title) => chatsStore.set((xs) => xs.map((x) => (x.id === c.id ? { ...x, title } : x)))}
+                  onDelete={() => {
+                    setRemoved(c);
+                    chatsStore.set((xs) => xs.filter((x) => x.id !== c.id));
+                  }}
+                />
+              </Appear>
+            ))}
           </div>
         ))}
       </nav>
 
+      {removed && !collapsed && (
+        <div role="status" className="mx-2 mb-2 flex items-center justify-between gap-2 border border-line2 bg-g2 px-2.5 py-2 text-[12.5px]">
+          <span className="truncate text-ink2">Чат удалён</span>
+          <button
+            type="button"
+            onClick={() => {
+              chatsStore.set((xs) => [removed, ...xs]);
+              setRemoved(null);
+            }}
+            className="shrink-0 cursor-pointer text-acc hover:underline"
+          >
+            Вернуть
+          </button>
+        </div>
+      )}
       <div className={cn("border-t border-line p-3", collapsed && "px-2")}>
         {!collapsed && (
           <Link href="/app/billing" onClick={onNavigate} className="mb-3 block">

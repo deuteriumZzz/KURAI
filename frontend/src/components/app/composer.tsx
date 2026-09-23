@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
+import { ArrowUp, AudioLines, Clapperboard, Globe, Image as ImageIcon, MessageSquare, Paperclip, Presentation, Square, Telescope } from "lucide-react";
+import { motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
 import { defaultModel, type ModelInfo } from "@/lib/models";
@@ -19,6 +20,8 @@ import { Hint } from "./hint";
 import { ModelPicker } from "./model-picker";
 import { VoiceInput } from "./voice-input";
 import { AttachmentChips, type Attachment } from "./attachments";
+
+const MODE_ICON = { text: MessageSquare, image: ImageIcon, video: Clapperboard, audio: AudioLines, research: Telescope, slides: Presentation } as const;
 
 export type Outgoing = { text: string; mode: Mode; model: ModelInfo; web: boolean; files: FileMeta[] };
 
@@ -190,23 +193,39 @@ export function Composer({
   }, []);
 
   const chips = (
-    <div role="radiogroup" aria-label="Режим" className={cn("flex flex-wrap gap-2", variant === "home" ? "justify-center" : "")}>
-      {MODES.map((m) => (
-        <button
-          key={m.id}
-          type="button"
-          role="radio"
-          aria-checked={m.id === mode}
-          onClick={() => switchMode(m.id)}
-          className={cn(
-            "cursor-pointer border px-3 py-1.5 text-[13px] transition-colors duration-(--dur-fast)",
-            m.id === mode ? "border-acc-line bg-acc-soft text-acc" : "border-line bg-g1 text-ink2 hover:border-line2 hover:text-ink",
-          )}
-        >
-          {m.label}
-          {variant === "dock" && <span className="ml-1.5 font-mono text-[10px] text-ink3">{m.command}</span>}
-        </button>
-      ))}
+    <div role="radiogroup" aria-label="Режим" className={cn("isolate flex flex-wrap gap-2", variant === "home" ? "justify-center" : "")}>
+      {MODES.map((m, i) => {
+        const Icon = MODE_ICON[m.id];
+        const on = m.id === mode;
+        return (
+          <motion.button
+            key={m.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => switchMode(m.id)}
+            initial={variant === "home" ? { opacity: 0, y: 8 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: variant === "home" ? 0.25 + i * 0.04 : 0, duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+            className={cn(
+              "fx-hover relative inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-[13px] transition-colors duration-(--dur-fast) pointer-coarse:py-2.5",
+              on ? "border-acc-line text-acc" : "border-line bg-g1 text-ink2 hover:border-line2 hover:text-ink",
+            )}
+          >
+            {on && (
+              <motion.span
+                layoutId={`mode-pill-${variant}`}
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 bg-acc-soft"
+                transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+              />
+            )}
+            <Icon size={14} strokeWidth={1.5} aria-hidden="true" />
+            {m.label}
+            {variant === "dock" && <span className="font-mono text-[10px] text-ink3">{m.command}</span>}
+          </motion.button>
+        );
+      })}
     </div>
   );
 

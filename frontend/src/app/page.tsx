@@ -1,3 +1,4 @@
+import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import { Decode } from "@/components/fx/decode";
 import { KeyHint, Label, SysLine } from "@/components/fx/primitives";
@@ -104,12 +105,14 @@ export default function Landing() {
         {/* features */}
         <section aria-label="Возможности" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
           <div className="grid gap-px border border-line bg-line md:grid-cols-[1.15fr_0.85fr_1fr]">
-            {FEATURES.map((f) => (
-              <article key={f.tag} className="fx-rise bg-g1 p-6">
+            {FEATURES.map((f, i) => (
+              <Appear inView index={i} key={f.tag} className="bg-g1">
+              <article className="fx-hover h-full p-6">
                 <Label className="text-acc">{f.tag}</Label>
                 <h3 className="mt-5 text-lg font-medium">{f.title}</h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-ink2">{f.text}</p>
               </article>
+              </Appear>
             ))}
           </div>
         </section>
@@ -117,11 +120,11 @@ export default function Landing() {
         {/* why */}
         <section className="border-y border-line bg-g1">
           <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-3">
-            {WHY.map((w) => (
-              <div key={w.line} className="fx-rise flex flex-col gap-3">
+            {WHY.map((w, i) => (
+              <Appear inView index={i} key={w.line} className="flex flex-col gap-3">
                 <SysLine tone="acc">{w.line}</SysLine>
                 <p className="text-[14.5px] leading-relaxed text-ink2">{w.text}</p>
-              </div>
+              </Appear>
             ))}
           </div>
         </section>
@@ -135,12 +138,14 @@ export default function Landing() {
             </Link>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
-            {PLANS.map((p) => (
-              <div key={p.name} data-selected={p.hl} className="fx-brackets fx-rise flex flex-col gap-3 border border-line bg-g1 p-5 data-[selected=true]:border-acc-line">
+            {PLANS.map((p, i) => (
+              <Appear inView index={i} key={p.name}>
+              <div data-selected={p.hl} className="fx-brackets fx-hover flex h-full flex-col gap-3 border border-line bg-g1 p-5 data-[selected=true]:border-acc-line">
                 <Label className={p.hl ? "text-acc" : undefined}>{p.name}</Label>
                 <p className="font-display text-3xl font-light">{p.price}</p>
                 <p className="text-[13.5px] text-ink2">{p.note}</p>
               </div>
+              </Appear>
             ))}
           </div>
           <p className="mt-4 text-[12.5px] text-ink3">Кредиты не сгорают · оплата картами РФ и СБП · чеки по 54-ФЗ · ваши данные не используются для обучения моделей</p>

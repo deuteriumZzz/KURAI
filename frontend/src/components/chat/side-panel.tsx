@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { motion } from "motion/react";
 import type { Artifact } from "@/lib/stream";
 import { Label } from "@/components/fx/primitives";
 
@@ -17,7 +18,13 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
   }, [onClose]);
 
   return (
-    <aside aria-label={`Слайды: ${artifact.title}`} className="fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-line bg-g1 sm:w-[min(560px,48vw)] lg:static lg:z-auto">
+    <motion.aside
+      initial={{ x: 40, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 40, opacity: 0, transition: { duration: 0.15 } }}
+      transition={{ duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
+      aria-label={`Слайды: ${artifact.title}`}
+      className="fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-line bg-g1 sm:w-[min(560px,48vw)] lg:static lg:z-auto">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4">
         <div className="min-w-0">
           <p className="truncate text-[14px]">{artifact.title}</p>
@@ -30,7 +37,12 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
       <div className="flex-1 overflow-y-auto p-4">
         <ol className="flex flex-col gap-3">
           {artifact.slides.map((s, i) => (
-            <li key={`${s.title}-${i}`} className="relative flex aspect-video flex-col justify-between border border-line bg-bg p-5">
+            <motion.li
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 + i * 0.05, duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
+              key={`${s.title}-${i}`}
+              className="relative flex aspect-video flex-col justify-between border border-line bg-bg p-5">
               <Label className="text-acc">{String(i + 1).padStart(2, "0")}</Label>
               <div>
                 <p className="font-display text-xl font-light">{s.title}</p>
@@ -43,7 +55,7 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
                 </ul>
               </div>
               <span aria-hidden="true" className="absolute right-3 bottom-3 h-px w-16 bg-acc" />
-            </li>
+            </motion.li>
           ))}
         </ol>
       </div>
@@ -53,6 +65,6 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
           Скачать .pptx
         </button>
       </footer>
-    </aside>
+    </motion.aside>
   );
 }

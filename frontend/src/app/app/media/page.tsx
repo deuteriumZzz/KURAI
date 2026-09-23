@@ -1,3 +1,4 @@
+import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import type { MediaKind } from "@/types/api";
 import { MediaCard } from "@/components/media/media-card";
@@ -70,8 +71,10 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
 
         {items.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((item) => (
-              <MediaCard key={item.id} item={item} />
+            {items.map((item, i) => (
+              <Appear key={item.id} index={i}>
+                <MediaCard item={item} />
+              </Appear>
             ))}
           </div>
         ) : (

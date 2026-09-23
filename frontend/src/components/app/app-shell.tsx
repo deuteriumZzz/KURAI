@@ -3,12 +3,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
-import { MOCK_BALANCE, MOCK_CHATS, MOCK_NOW, MOCK_USER } from "@/mocks/data";
+import { MOCK_BALANCE, MOCK_NOW, MOCK_USER } from "@/mocks/data";
+import { chatsStore } from "@/lib/app-state";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Sidebar } from "./sidebar";
 import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
+import { MotionConfig } from "motion/react";
+import { useCalm } from "@/lib/use-calm";
 
 const COLLAPSE_KEY = "kurai:sidebar-collapsed";
 
@@ -22,6 +26,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
+  const calm = useCalm();
+  const chats = useStore(chatsStore);
 
   useEffect(() => applyPrefs(readPrefs()), []);
 
@@ -87,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         setPalette(true);
       }}
       onNavigate={mobile ? () => setDrawer(false) : undefined}
-      chats={MOCK_CHATS}
+      chats={chats}
       balance={MOCK_BALANCE}
       user={MOCK_USER}
       now={MOCK_NOW}
@@ -95,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
+    <MotionConfig reducedMotion={calm ? "always" : "user"}>
     <div className="flex h-dvh overflow-hidden">
       <div className="hidden md:block">{sidebar(false)}</div>
 
@@ -109,7 +116,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div className="relative isolate flex min-w-0 flex-1 flex-col">
+        <div className="fx-backdrop -z-10" aria-hidden="true" />
+        <span aria-hidden="true" className="pointer-events-none absolute top-2 right-2 -z-10 size-3.5 border-t border-r border-line2" />
+        <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 -z-10 size-3.5 border-b border-l border-line2" />
         <button
           type="button"
           onClick={() => setDrawer(true)}
@@ -122,7 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      <CommandPalette open={palette} onClose={() => setPalette(false)} chats={MOCK_CHATS} />
+      <CommandPalette open={palette} onClose={() => setPalette(false)} chats={chats} />
     </div>
+    </MotionConfig>
   );
 }

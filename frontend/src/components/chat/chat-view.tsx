@@ -15,6 +15,9 @@ import { Label } from "@/components/fx/primitives";
 import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
 import { SidePanel } from "./side-panel";
+import { AnimatePresence } from "motion/react";
+import { notify } from "@/lib/app-state";
+import { Appear } from "@/components/fx/motion";
 import type { Artifact } from "@/lib/stream";
 
 type State = { messages: Message[]; runs: Record<string, RunState>; head: string };
@@ -34,6 +37,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const [editing, setEditing] = useState<string | null>(null);
   const [compressed, setCompressed] = useState(false);
   const lastOpts = useRef<SimOptions>({});
+  const [initialIds] = useState(() => new Set(initial.map((m) => m.id)));
   const scroller = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
@@ -61,7 +65,11 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           if (ev.type === "delta") chars += ev.text.length;
           apply(id, ev);
           if (ev.type === "artifact") setPanel(ev.artifact);
-          if (ev.type === "done" && mode === "video") setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
+          if (ev.type === "done" && mode === "video") {
+            setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
+            notify(`Видео готово · ${prompt.slice(0, 48)}`, `/app/c/${chat.id}`);
+          }
+          if (ev.type === "done" && (mode === "research" || mode === "slides")) notify(`${mode === "research" ? "Исследование" : "Слайды"} готово · ${prompt.slice(0, 40)}`, `/app/c/${chat.id}`);
         }
       } catch (e) {
         if ((e as DOMException).name === "AbortError") apply(id, { type: "aborted", costMicro: partialCost(chars) });
@@ -70,7 +78,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         controllers.current.delete(id);
       }
     },
-    [apply],
+    [apply, chat.id],
   );
 
   // демо-данные: видео из истории продолжает генерироваться
@@ -210,8 +218,8 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                 return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
               };
               return (
+                <Appear key={m.id} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
                 <UserMessage
-                  key={m.id}
                   m={m}
                   editing={editing === m.id}
                   onEdit={() => setEditing(m.id)}
@@ -219,6 +227,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                   onSubmitEdit={(t) => editUser(m, t)}
                   versions={{ index: ui, total: us.length, prev: ui > 0 ? goU(ui - 1) : undefined, next: goU(ui + 1) }}
                 />
+                </Appear>
               );
             }
             const sibs = siblingsOf(m.id, state.messages);
@@ -235,7 +244,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     дальше отвечает {divider}
                   </div>
                 )}
-                <div id={`msg-${m.id}`}>
+                <Appear id={`msg-${m.id}`} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
                   <AssistantMessage
                     m={m}
                     run={state.runs[m.id]}
@@ -244,7 +253,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     onAnswer={(c) => answer(m.id, c)}
                     onOpenArtifact={() => { const a = state.runs[m.id]?.artifact; if (a) setPanel(a); }}
                   />
-                </div>
+                </Appear>
               </Fragment>
             );
           })}
@@ -268,6 +277,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         />
       </div>
 
+      <AnimatePresence>
       {toast && (
         <IncomingToast
           title={toast.title}
@@ -278,8 +288,9 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           }}
         />
       )}
+      </AnimatePresence>
     </main>
-    {panel && <SidePanel artifact={panel} onClose={() => setPanel(null)} />}
+    <AnimatePresence>{panel && <SidePanel key="panel" artifact={panel} onClose={() => setPanel(null)} />}</AnimatePresence>
     </div>
   );
 }

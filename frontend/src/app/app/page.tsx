@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Composer } from "@/components/app/composer";
 import { StatusBar } from "@/components/app/status-bar";
 import { FirstRun } from "@/components/app/first-run";
+import { InspirationStrip } from "@/components/app/inspiration";
+import { Appear } from "@/components/fx/motion";
 import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
@@ -31,8 +33,14 @@ export default async function AppHome(props: PageProps<"/app">) {
         <h1 className="mr-[-0.5em] font-display text-4xl font-light tracking-[0.5em] sm:text-5xl">
           <Decode text="KURAI" duration={420} />
         </h1>
+        <p className="-mt-3 font-mono text-[11px] tracking-[0.16em] text-ink3 uppercase">
+          <Decode text="Один чат · 300+ моделей · цена до отправки" duration={700} />
+        </p>
         <FirstRun />
-        <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
+        <Appear delay={0.12} className="flex w-full justify-center">
+          <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
+        </Appear>
+        <InspirationStrip />
       </div>
 
       <StatusBar status={MOCK_STATUS} className="px-4 pb-4" />

@@ -6,7 +6,7 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANT: Record<Variant, string> = {
   // главная: акцент + срез угла; hover — внутреннее свечение, без сдвигов
-  primary: "fx-chamfer bg-acc text-acc-ink font-semibold border border-acc hover:shadow-[inset_0_0_0_1px_var(--color-acc-ink)]",
+  primary: "fx-chamfer fx-sheen bg-acc text-acc-ink font-semibold border border-acc hover:shadow-[inset_0_0_0_1px_var(--color-acc-ink)]",
   secondary: "bg-g2 text-ink border border-line2 hover:bg-g3",
   ghost: "bg-transparent text-ink2 border border-transparent hover:text-ink hover:bg-g2",
   danger: "bg-transparent text-err border border-err hover:bg-err-soft",

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { GROUP_LABEL, modelsForMode, searchModels, type ModelInfo } from "@/lib/models";
 import { formatCredits } from "@/lib/format";
@@ -118,8 +119,17 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
         <ChevronDown size={14} strokeWidth={1.5} className="shrink-0" />
       </button>
 
+      <AnimatePresence>
       {open && (
-        <div className="fx-flicker-border absolute right-0 bottom-full z-20 mb-2 grid w-[min(600px,calc(100vw-32px))] border border-line2 bg-g1 sm:grid-cols-[1fr_220px]">
+        <motion.div
+          key="panel"
+          initial={{ opacity: 0, y: 8, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 6, transition: { duration: 0.12 } }}
+          transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+          style={{ transformOrigin: "bottom right" }}
+          className="fx-flicker-border absolute right-0 bottom-full z-20 mb-2 grid w-[min(600px,calc(100vw-32px))] border border-line2 bg-g1 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.8)] sm:grid-cols-[1fr_220px]"
+        >
           <div className="flex min-w-0 flex-col border-line sm:border-r">
             <label className="flex items-center gap-2 border-b border-line px-3 py-2 font-mono text-[13px]">
               <span className="text-acc" aria-hidden="true">›</span>
@@ -165,9 +175,18 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
               })}
             </ul>
           </div>
-          <div className="hidden p-3 sm:block">{current && <ModelCard m={current} />}</div>
-        </div>
+          <div className="hidden p-3 sm:block">
+            <AnimatePresence mode="wait">
+              {current && (
+                <motion.div key={current.id} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.14 }}>
+                  <ModelCard m={current} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
