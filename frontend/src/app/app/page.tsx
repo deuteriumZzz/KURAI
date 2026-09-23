@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Composer } from "@/components/app/composer";
 import { StatusBar } from "@/components/app/status-bar";
+import { FirstRun } from "@/components/app/first-run";
 import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
@@ -30,6 +31,7 @@ export default async function AppHome(props: PageProps<"/app">) {
         <h1 className="mr-[-0.5em] font-display text-4xl font-light tracking-[0.5em] sm:text-5xl">
           <Decode text="KURAI" duration={420} />
         </h1>
+        <FirstRun />
         <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
       </div>
 

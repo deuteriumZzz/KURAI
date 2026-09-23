@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { MOCK_BALANCE, MOCK_CHATS, MOCK_NOW, MOCK_USER } from "@/mocks/data";
 import { cn } from "@/lib/cn";
 import { Sidebar } from "./sidebar";
+import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
 
 const COLLAPSE_KEY = "kurai:sidebar-collapsed";
@@ -20,6 +21,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
+
+  useEffect(() => applyPrefs(readPrefs()), []);
 
   useEffect(() => {
     try {

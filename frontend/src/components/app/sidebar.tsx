@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Images, PanelLeftClose, PanelLeftOpen, Pin, Plus, Search, Wallet, type LucideIcon } from "lucide-react";
+import { House, Images, PanelLeftClose, PanelLeftOpen, Pin, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
 import { formatCredits, groupChats } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app", label: "Главная", icon: House },
   { href: "/app/media", label: "Медиатека", icon: Images },
   { href: "/app/billing", label: "Баланс и тарифы", icon: Wallet },
+  { href: "/app/settings", label: "Настройки", icon: Settings },
 ];
 
 const PLAN = { free: "Free", pro: "Pro", ultra: "Ultra" } as const;
@@ -123,7 +124,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
             <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />
           </Link>
         )}
-        <div className={cn("flex items-center gap-2.5", collapsed && "justify-center")}>
+        <Link href="/app/profile" onClick={onNavigate} className={cn("flex items-center gap-2.5 hover:text-acc", collapsed && "justify-center")}>
           <span className="grid size-8 shrink-0 place-items-center border border-line2 bg-g3 font-mono text-[12px]">
             {user.name.slice(0, 2).toUpperCase()}
           </span>
@@ -136,7 +137,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
               </Label>
             </span>
           )}
-        </div>
+        </Link>
       </div>
     </aside>
   );

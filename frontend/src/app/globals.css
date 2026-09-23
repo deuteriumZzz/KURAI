@@ -231,7 +231,7 @@ body {
   color: var(--color-acc-ink);
   pointer-events: none;
 }
-:root.hints .fx-hint {
+:root.hints:not(.nohints) .fx-hint {
   display: block;
 }
 
