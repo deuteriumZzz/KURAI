@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { Sidebar } from "./sidebar";
 import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
+import { OfflineBanner } from "./offline-banner";
 
 const COLLAPSE_KEY = "kurai:sidebar-collapsed";
 
@@ -117,6 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <Menu size={18} strokeWidth={1.5} />
         </button>
+        <OfflineBanner />
         {children}
       </div>
 

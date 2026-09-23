@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
 import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
@@ -164,9 +165,14 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         <h1 className="truncate text-[14px]">
           <Decode text={chat.title} />
         </h1>
-        <Label className="shrink-0 tabular-nums">
-          #{chat.id.toUpperCase()} · {branch.length} сообщ. · {formatCredits(total)}
-        </Label>
+        <div className="flex shrink-0 items-center gap-3">
+          <Label className="hidden tabular-nums sm:inline">
+            #{chat.id.toUpperCase()} · {branch.length} сообщ. · {formatCredits(total)}
+          </Label>
+          <Link href={`/s/${chat.id}`} className="border border-line px-2.5 py-1 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc">
+            Поделиться
+          </Link>
+        </div>
       </header>
 
       <div

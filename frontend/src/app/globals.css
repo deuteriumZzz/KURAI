@@ -167,6 +167,10 @@ body {
   :root:not(.calm) .fx-glitch {
     animation: fx-glitch 120ms steps(2) 2;
   }
+  /* единственное место с крупным глитчем — страницы «Сигнал потерян» (404/500) */
+  :root:not(.calm) .fx-glitch-loud {
+    animation: fx-glitch 140ms steps(2) 6 300ms;
+  }
   :root:not(.calm) .fx-scanline[data-active="true"] {
     animation: fx-scan 1.3s linear infinite;
   }
