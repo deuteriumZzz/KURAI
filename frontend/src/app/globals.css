@@ -200,3 +200,33 @@ body {
 @keyframes fx-blink {
   50% { opacity: 0; }
 }
+
+/* ─────────────── app shell ─────────────── */
+
+/* иконки: квадратные концы линий, как у HUD */
+.lucide {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* Режим подсказок: зажатый Alt показывает клавиши на кнопках */
+.fx-hint {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  display: none;
+  padding: 0 5px;
+  font: 500 10px/16px var(--font-mono);
+  background: var(--color-acc);
+  color: var(--color-acc-ink);
+  pointer-events: none;
+}
+:root.hints .fx-hint {
+  display: block;
+}
+
+/* native <dialog> для ⌘K */
+dialog.fx-dialog::backdrop {
+  background: rgb(7 10 14 / 0.72);
+}
