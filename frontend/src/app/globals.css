@@ -239,3 +239,54 @@ body {
 dialog.fx-dialog::backdrop {
   background: rgb(7 10 14 / 0.72);
 }
+
+/* ─────────────── landing ─────────────── */
+
+/* неоновая вывеска: контур акцентом, один раз «включается» при загрузке */
+.fx-neon {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-acc);
+  text-shadow: 0 0 18px var(--color-acc-soft);
+}
+.fx-halftone {
+  background-image: radial-gradient(var(--color-line2) 1px, transparent 1.3px);
+  background-size: 7px 7px;
+}
+.fx-scanlines {
+  background: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.018) 0 1px, transparent 1px 3px);
+}
+.fx-cut {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .fx-neon-on {
+    animation: fx-neon-on 900ms steps(1) 200ms both;
+  }
+  :root:not(.calm) .fx-marquee {
+    animation: fx-marquee 40s linear infinite;
+  }
+  @supports (animation-timeline: view()) {
+    :root:not(.calm) .fx-rise {
+      animation: fx-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+@keyframes fx-neon-on {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  20% { opacity: 0.2; }
+  34% { opacity: 1; }
+  46% { opacity: 0.5; }
+  58%, 100% { opacity: 1; }
+}
+@keyframes fx-marquee {
+  to { transform: translateX(-50%); }
+}
+@keyframes fx-rise {
+  from { opacity: 0.001; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
