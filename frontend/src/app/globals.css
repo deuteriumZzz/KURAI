@@ -1,26 +1,202 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   KURAI tokens — палитра «Kiroshi + Cyan» (фон варианта 2, акцент варианта 1). Единственный источник вида.
+   Описание и правила: /DESIGN.md
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  /* surfaces */
+  --color-bg: #070a0e;
+  --color-g1: #0d1218;
+  --color-g2: #131a22;
+  --color-g3: #1a232e;
+  --color-line: #243040;
+  --color-line2: #34445a;
+
+  /* ink */
+  --color-ink: #e4eef7;
+  --color-ink2: #9daec2;
+  --color-ink3: #72859b;
+
+  /* accent — единственный неон */
+  --color-acc: #00e8f0;
+  --color-acc-ink: #031214;
+  --color-acc-soft: rgb(0 232 240 / 0.1);
+  --color-acc-line: rgb(0 232 240 / 0.38);
+
+  /* semantic — отдельно от акцента */
+  --color-ok: #3ddc97;
+  --color-warn: #f2b44b;
+  --color-err: #ff4d5e;
+  --color-warn-soft: rgb(242 180 75 / 0.13);
+  --color-err-soft: rgb(255 77 94 / 0.14);
+
+  /* type */
+  --font-display: var(--font-exo2), "Geist", system-ui, sans-serif;
+  --font-sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, Menlo, monospace;
+
+  /* geometry: радиусы 0–2px по ДНК */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --chamfer-sm: 6px;
+  --chamfer-md: 8px;
+  --chamfer-lg: 12px;
+  --dur-instant: 120ms;
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-acc);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-acc-soft);
+  color: var(--color-ink);
+}
+
+/* ─────────────── primitives (fx-*) ─────────────── */
+
+/* Chamfer — срез угла. Только главная кнопка, поле чата, выбранная карточка. */
+.fx-chamfer {
+  --ch: var(--chamfer-md);
+  clip-path: polygon(var(--ch) 0, 100% 0, 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, 0 100%, 0 var(--ch));
+}
+
+/* Brackets — lock-on при фокусе внутри или data-selected */
+.fx-brackets {
+  position: relative;
+}
+.fx-brackets::before,
+.fx-brackets::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: solid var(--color-acc);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    inset var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.fx-brackets::before {
+  inset: -10px auto auto -10px;
+  border-width: 1px 0 0 1px;
+}
+.fx-brackets::after {
+  inset: auto -10px -10px auto;
+  border-width: 0 1px 1px 0;
+}
+.fx-brackets:focus-within::before,
+.fx-brackets[data-selected="true"]::before {
+  inset: -4px auto auto -4px;
+  opacity: 1;
+}
+.fx-brackets:focus-within::after,
+.fx-brackets[data-selected="true"]::after {
+  inset: auto -4px -4px auto;
+  opacity: 1;
+}
+
+/* Hatch — заблокированное и опасное */
+.fx-hatch {
+  background: repeating-linear-gradient(135deg, var(--color-warn-soft) 0 6px, transparent 6px 12px);
+  border: 1px solid rgb(242 180 75 / 0.4);
+  color: var(--color-warn);
+}
+.fx-hatch[data-tone="err"] {
+  background: repeating-linear-gradient(135deg, var(--color-err-soft) 0 6px, transparent 6px 12px);
+  border-color: rgb(255 77 94 / 0.45);
+  color: var(--color-err);
+}
+
+/* Scanline — скан-линия поверх контейнера с position:relative */
+.fx-scanline {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: var(--color-acc);
+  box-shadow: 0 0 12px var(--color-acc);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* скрытый текст для скринридера (Decode, StreamText) */
+.fx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .fx-flicker {
+    animation: fx-flicker 260ms steps(1) 1;
+  }
+  :root:not(.calm) .fx-flicker-border {
+    animation: fx-flicker-border 340ms steps(1) 1;
+  }
+  :root:not(.calm) .fx-glitch {
+    animation: fx-glitch 120ms steps(2) 2;
+  }
+  :root:not(.calm) .fx-scanline[data-active="true"] {
+    animation: fx-scan 1.3s linear infinite;
+  }
+  :root:not(.calm) .fx-caret {
+    animation: fx-blink 1s steps(1) infinite;
+  }
+}
+
+@keyframes fx-flicker {
+  0% { opacity: 0.25; }
+  18% { opacity: 1; }
+  30% { opacity: 0.45; }
+  46% { opacity: 1; }
+  62% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+@keyframes fx-flicker-border {
+  0%, 30%, 60% { border-color: var(--color-acc); box-shadow: 0 0 0 1px var(--color-acc-line), 0 0 18px var(--color-acc-soft); }
+  15%, 45% { border-color: var(--color-line2); box-shadow: none; }
+}
+@keyframes fx-glitch {
+  0% { transform: translateX(-2px); text-shadow: 2px 0 var(--color-err), -2px 0 var(--color-acc); }
+  50% { transform: translateX(2px); text-shadow: -2px 0 var(--color-err), 2px 0 var(--color-acc); }
+  100% { transform: none; text-shadow: none; }
+}
+@keyframes fx-scan {
+  0% { top: 0; opacity: 1; }
+  95% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes fx-blink {
+  50% { opacity: 0; }
 }
