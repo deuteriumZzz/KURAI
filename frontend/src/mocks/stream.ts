@@ -1,5 +1,5 @@
 import type { Mode } from "@/types/api";
-import type { StreamEvent } from "@/lib/stream";
+import type { AgentTask, StreamEvent } from "@/lib/stream";
 import { placeholderImage } from "./media";
 
 /**
@@ -40,13 +40,81 @@ const ANSWERS: Record<"text" | "research" | "slides" | "audio", string> = {
 3. **Слабое место** у всех — прозрачность цены за запрос.
 
 Источники: 7 · проверено фактов: 12.`,
-  slides: `Собрал структуру презентации на **8 слайдов**: титул, проблема, рынок, решение, продукт, экономика, план, контакты. Файл .pptx появится в боковой панели в секции «Агенты».`,
+  slides: `Презентация готова — откройте её в боковой панели. Можно попросить поменять порядок слайдов или добавить график.`,
   audio: "Озвучка готова · голос «Нова» · 0:12.",
 };
 
 const TIPS = ["Совет: /v переключает поле ввода в режим видео", "Совет: зажмите Alt — покажем горячие клавиши", "Совет: «Оживить» превращает картинку из чата в видео"];
 
-export async function* simulate(prompt: string, mode: Mode, signal: AbortSignal, fromProgress = 0): AsyncGenerator<StreamEvent> {
+export type AskFn = (question: string, options: string[]) => Promise<number>;
+
+const SOURCES = [
+  ["https://habr.com", "habr.com"],
+  ["https://vc.ru", "vc.ru"],
+  ["https://www.rbc.ru", "rbc.ru"],
+  ["https://www.tadviser.ru", "tadviser.ru"],
+  ["https://openrouter.ai", "openrouter.ai"],
+  ["https://www.cnews.ru", "cnews.ru"],
+  ["https://www.forbes.ru", "forbes.ru"],
+] as const;
+
+const SLIDES = [
+  { title: "Итоги квартала", bullets: ["KURAI · сентябрь 2026"] },
+  { title: "Проблема", bullets: ["Пять нейросетей — пять вкладок и три подписки", "Цена запроса непрозрачна"] },
+  { title: "Решение", bullets: ["Единый чат для всех режимов", "Цена до отправки", "Резерв при сбое"] },
+  { title: "Рынок", bullets: ["Спрос на доступ без VPN растёт", "Лидеры делают ставку на медиа"] },
+  { title: "Экономика", bullets: ["Наценка ×1,8 на себестоимость", "Кредиты не сгорают — выше удержание"] },
+];
+
+async function* agent(prompt: string, mode: "research" | "slides", signal: AbortSignal, ask: AskFn | undefined): AsyncGenerator<StreamEvent> {
+  const started = performance.now();
+  await sleep(300, signal);
+  yield { type: "route", model: "Авто · агент", node: "EU-01", latencyMs: 250 };
+  const question = mode === "research" ? "Насколько глубоко исследовать?" : "Какой формат презентации нужен?";
+  const options = mode === "research" ? ["Кратко · 5 источников", "Подробно · 7 источников с проверкой фактов", "Свой вариант…"] : ["Кратко · 5 слайдов", "Подробно · 10 слайдов с данными", "Свой вариант…"];
+  yield { type: "ask", question, options };
+  const choice = ask ? await ask(question, options) : 1;
+  yield { type: "answered", choice };
+
+  const titles = mode === "research" ? ["Найти источники", "Сравнить данные", "Проверить факты по двум источникам", "Написать отчёт"] : ["Собрать структуру", "Написать тексты слайдов", "Оформить в стиле KURAI"];
+  const tasks = (active: number, extra?: string): AgentTask[] =>
+    titles.map((title, i) => ({ title, status: i < active ? "done" : i === active ? "doing" : "todo", progress: i === active ? extra : undefined }));
+
+  if (mode === "research") {
+    for (let i = 0; i < SOURCES.length; i++) {
+      yield { type: "tasks", tasks: tasks(0, `${i}/${SOURCES.length}`) };
+      await sleep(420, signal);
+      const [url, title] = SOURCES[i] as readonly [string, string];
+      yield { type: "source", url, title };
+    }
+    for (let t = 1; t < titles.length; t++) {
+      yield { type: "tasks", tasks: tasks(t) };
+      await sleep(700, signal);
+    }
+  } else {
+    for (let t = 0; t < titles.length; t++) {
+      yield { type: "tasks", tasks: tasks(t) };
+      await sleep(800, signal);
+    }
+    yield { type: "artifact", artifact: { kind: "slides", title: "Итоги квартала", slides: choice === 0 ? SLIDES : [...SLIDES, ...SLIDES.slice(1).map((s) => ({ ...s, title: `${s.title} · детали` }))] } };
+  }
+  yield { type: "tasks", tasks: tasks(titles.length) };
+  const text = ANSWERS[mode];
+  for (let i = 0; i < text.length; ) {
+    const n = 2 + Math.floor(Math.random() * 4);
+    yield { type: "delta", text: text.slice(i, i + n) };
+    i += n;
+    await sleep(22, signal);
+  }
+  yield { type: "done", costMicro: mode === "research" ? 384_000 : 246_000, durationMs: Math.round(performance.now() - started) };
+  void prompt;
+}
+
+export async function* simulate(prompt: string, mode: Mode, signal: AbortSignal, fromProgress = 0, ask?: AskFn): AsyncGenerator<StreamEvent> {
+  if (mode === "research" || mode === "slides") {
+    yield* agent(prompt, mode, signal, ask);
+    return;
+  }
   const started = performance.now();
   const primary = mode === "image" ? "Nano Banana Pro" : mode === "video" ? "Veo 3" : mode === "audio" ? "TTS · Нова" : "Claude Sonnet 5";
 
@@ -85,14 +153,14 @@ export async function* simulate(prompt: string, mode: Mode, signal: AbortSignal,
     yield { type: "route", model: "GPT-5", node: "EU-01", latencyMs: 310 };
   }
   await sleep(250, signal);
-  const text = ANSWERS[mode === "research" || mode === "slides" || mode === "audio" ? mode : "text"];
+  const text = ANSWERS[mode === "audio" ? "audio" : "text"];
   for (let i = 0; i < text.length; ) {
     const n = 1 + Math.floor(Math.random() * 4);
     yield { type: "delta", text: text.slice(i, i + n) };
     i += n;
     await sleep(28, signal);
   }
-  yield { type: "done", costMicro: mode === "research" ? 384_000 : 41_000, durationMs: Math.round(performance.now() - started) };
+  yield { type: "done", costMicro: mode === "audio" ? 30_000 : 41_000, durationMs: Math.round(performance.now() - started) };
 }
 
 /** Частичная стоимость при остановке: пропорционально уже полученному тексту. */

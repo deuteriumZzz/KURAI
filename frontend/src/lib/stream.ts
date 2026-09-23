@@ -7,11 +7,20 @@ export type StreamEvent =
   | { type: "delta"; text: string }
   | { type: "job"; status: JobStatus; progress: number; queuePosition?: number; tip?: string }
   | { type: "media"; parts: MessagePart[] }
+  | { type: "ask"; question: string; options: string[] }
+  | { type: "answered"; choice: number }
+  | { type: "tasks"; tasks: AgentTask[] }
+  | { type: "source"; url: string; title: string }
+  | { type: "artifact"; artifact: Artifact }
   | { type: "done"; costMicro: Micro; durationMs: number }
   | { type: "error"; message: string; refundedMicro: Micro }
   | { type: "aborted"; costMicro: Micro };
 
 export type LogTone = "default" | "acc" | "warn" | "err" | "ok";
+
+export type AgentTask = { title: string; status: "todo" | "doing" | "done"; progress?: string };
+export type Slide = { title: string; bullets: string[] };
+export type Artifact = { kind: "slides"; title: string; slides: Slide[] };
 
 /** Клиентское состояние выполнения ответа (не хранится в договоре сообщения). */
 export type RunState = {
@@ -20,6 +29,11 @@ export type RunState = {
   durationMs?: number;
   queuePosition?: number;
   tip?: string;
+  /** Агент ждёт уточнения — выбор реплики. */
+  ask?: { question: string; options: string[]; choice?: number };
+  tasks?: AgentTask[];
+  sources?: { url: string; title: string }[];
+  artifact?: Artifact;
 };
 
 export const newRun = (): RunState => ({ status: "streaming", log: [] });
@@ -48,6 +62,16 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     }
     case "media":
       return { msg: { ...msg, parts: [...msg.parts.filter((p) => p.type !== "job"), ...ev.parts] }, run };
+    case "ask":
+      return { msg, run: { ...run, ask: { question: ev.question, options: ev.options } } };
+    case "answered":
+      return { msg, run: { ...run, ask: run.ask ? { ...run.ask, choice: ev.choice } : undefined } };
+    case "tasks":
+      return { msg, run: { ...run, tasks: ev.tasks } };
+    case "source":
+      return { msg, run: { ...run, sources: [...(run.sources ?? []), { url: ev.url, title: ev.title }] } };
+    case "artifact":
+      return { msg, run: { ...run, artifact: ev.artifact } };
     case "done":
       return { msg: { ...msg, costMicro: ev.costMicro }, run: { ...run, status: "done", durationMs: ev.durationMs, queuePosition: undefined, tip: undefined } };
     case "error":

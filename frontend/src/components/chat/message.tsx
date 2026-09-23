@@ -10,6 +10,7 @@ import { StreamText } from "@/components/fx/decode";
 import { Label, SysLine } from "@/components/fx/primitives";
 import { Markdown } from "./markdown";
 import { ImageGrid, JobCard, VideoCard } from "./media";
+import { AgentChoice, AgentSummary, QuestLog, SourceNet } from "./agent";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
@@ -28,9 +29,11 @@ type Props = {
   run?: RunState;
   versions: { index: number; total: number; prev?: () => void; next?: () => void };
   onRegenerate: () => void;
+  onAnswer?: (choice: number) => void;
+  onOpenArtifact?: () => void;
 };
 
-export function AssistantMessage({ m, run, versions, onRegenerate }: Props) {
+export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact }: Props) {
   const [copied, setCopied] = useState(false);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
@@ -70,6 +73,9 @@ export function AssistantMessage({ m, run, versions, onRegenerate }: Props) {
         </SysLine>
       ))}
 
+      {run?.ask && <AgentChoice ask={run.ask} onAnswer={(c) => onAnswer?.(c)} />}
+      {run?.tasks && <QuestLog tasks={run.tasks} />}
+      {run?.sources && run.sources.length > 0 && <SourceNet sources={run.sources} />}
       {m.parts.map((p, i) => {
         if (p.type === "text")
           return streaming ? (
@@ -84,7 +90,8 @@ export function AssistantMessage({ m, run, versions, onRegenerate }: Props) {
         return null;
       })}
       {images.length > 0 && <ImageGrid images={images} />}
-      {streaming && text === "" && m.parts.every((p) => p.type === "text") && (
+      {run?.status === "done" && run.tasks && <AgentSummary run={run} costMicro={m.costMicro} onOpenArtifact={onOpenArtifact} />}
+      {streaming && text === "" && !run?.ask && m.parts.every((p) => p.type === "text") && (
         <span aria-hidden="true" className="fx-caret font-mono text-acc">▍</span>
       )}
 

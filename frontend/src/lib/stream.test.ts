@@ -57,4 +57,19 @@ describe("applyEvent", () => {
     expect(s.msg.parts.map((p) => p.type)).toEqual(["image"]);
     expect(s.run.queuePosition).toBe(1);
   });
+
+  it("agent: ask → answered → tasks → sources → artifact", () => {
+    const s = run([
+      { type: "ask", question: "Какой формат?", options: ["Кратко", "Подробно"] },
+      { type: "answered", choice: 1 },
+      { type: "tasks", tasks: [{ title: "Найти источники", status: "doing" }] },
+      { type: "source", url: "https://habr.com", title: "Хабр" },
+      { type: "source", url: "https://vc.ru", title: "vc.ru" },
+      { type: "artifact", artifact: { kind: "slides", title: "Итоги", slides: [{ title: "Титул", bullets: [] }] } },
+    ]);
+    expect(s.run.ask).toEqual({ question: "Какой формат?", options: ["Кратко", "Подробно"], choice: 1 });
+    expect(s.run.tasks?.[0]?.status).toBe("doing");
+    expect(s.run.sources?.map((x) => x.title)).toEqual(["Хабр", "vc.ru"]);
+    expect(s.run.artifact?.slides).toHaveLength(1);
+  });
 });

@@ -11,6 +11,8 @@ import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
 import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
+import { SidePanel } from "./side-panel";
+import type { Artifact } from "@/lib/stream";
 
 type State = { messages: Message[]; runs: Record<string, RunState>; head: string };
 
@@ -24,6 +26,8 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const [state, setState] = useState<State>({ messages: initial, runs: {}, head: chat.headId });
   const [toast, setToast] = useState<{ title: string; id: string } | null>(null);
   const controllers = useRef(new Map<string, AbortController>());
+  const askers = useRef(new Map<string, (choice: number) => void>());
+  const [panel, setPanel] = useState<Artifact | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
@@ -46,9 +50,11 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       controllers.current.set(id, ctrl);
       let chars = 0;
       try {
-        for await (const ev of simulate(prompt, mode, ctrl.signal, fromProgress)) {
+        const ask = () => new Promise<number>((resolve) => askers.current.set(id, resolve));
+        for await (const ev of simulate(prompt, mode, ctrl.signal, fromProgress, ask)) {
           if (ev.type === "delta") chars += ev.text.length;
           apply(id, ev);
+          if (ev.type === "artifact") setPanel(ev.artifact);
           if (ev.type === "done" && mode === "video") setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
         }
       } catch (e) {
@@ -64,13 +70,19 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   // демо-данные: видео из истории продолжает генерироваться
   useEffect(() => {
     const pending = initial.filter((m) => m.parts.some((p) => p.type === "job" && p.status === "running"));
-    for (const m of pending) {
-      const job = m.parts.find((p) => p.type === "job");
-      const prompt = textOf(initial.find((x) => x.id === m.parentId));
-      if (job?.type === "job") void run(m.id, prompt, m.mode, job.progress);
-    }
+    // запуск вне тела эффекта: подписка на «внешний» поток задач
+    const t = setTimeout(() => {
+      for (const m of pending) {
+        const job = m.parts.find((p) => p.type === "job");
+        const prompt = textOf(initial.find((x) => x.id === m.parentId));
+        if (job?.type === "job") void run(m.id, prompt, m.mode, job.progress);
+      }
+    }, 0);
     const ctrls = controllers.current;
-    return () => ctrls.forEach((c) => c.abort());
+    return () => {
+      clearTimeout(t);
+      ctrls.forEach((c) => c.abort());
+    };
   }, [initial, run]);
 
   const lastLen = state.messages.length + JSON.stringify(state.runs).length;
@@ -106,6 +118,26 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     startAnswer(m.parentId, textOf(state.messages.find((x) => x.id === m.parentId)), m.mode);
   }
 
+  function answer(id: string, choice: number) {
+    const resolve = askers.current.get(id);
+    if (!resolve) return;
+    askers.current.delete(id);
+    resolve(choice);
+  }
+
+  // выбор реплики агента цифрой 1–3, пока он ждёт ответа и фокус не в поле ввода
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!/^[1-3]$/.test(e.key) || askers.current.size === 0) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+      const [id] = [...askers.current.keys()];
+      if (id) answer(id, Number(e.key) - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   function stop() {
     if (textStreaming) controllers.current.get(textStreaming.id)?.abort();
   }
@@ -126,7 +158,8 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     });
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 pl-16 md:pl-6">
         <h1 className="truncate text-[14px]">
           <Decode text={chat.title} />
@@ -167,6 +200,8 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     run={state.runs[m.id]}
                     versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
                     onRegenerate={() => regenerate(m)}
+                    onAnswer={(c) => answer(m.id, c)}
+                    onOpenArtifact={() => { const a = state.runs[m.id]?.artifact; if (a) setPanel(a); }}
                   />
                 </div>
               </Fragment>
@@ -191,5 +226,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         />
       )}
     </main>
+    {panel && <SidePanel artifact={panel} onClose={() => setPanel(null)} />}
+    </div>
   );
 }
