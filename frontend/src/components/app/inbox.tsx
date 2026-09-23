@@ -44,7 +44,15 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
         <Bell size={16} strokeWidth={1.5} />
         {!collapsed && "Входящие"}
         {unread > 0 && (
-          <span className={cn("bg-acc px-1.5 font-mono text-[10px] leading-4 text-acc-ink", collapsed ? "absolute top-1 right-1" : "ml-auto")}>{unread}</span>
+          <motion.span
+            key={unread}
+            initial={{ scale: 1.6, opacity: 0.4 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
+            className={cn("bg-acc px-1.5 font-mono text-[10px] leading-4 text-acc-ink", collapsed ? "absolute top-1 right-1" : "ml-auto")}
+          >
+            {unread}
+          </motion.span>
         )}
       </button>
       <AnimatePresence>

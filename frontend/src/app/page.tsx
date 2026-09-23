@@ -5,6 +5,7 @@ import { KeyHint, Label, SysLine } from "@/components/fx/primitives";
 import { LiveDemo } from "@/components/landing/live-demo";
 import { NeuralField } from "@/components/landing/neural-field";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
+import { CountUp } from "@/components/landing/count-up";
 
 const MODELS = ["GPT-5 · OpenAI", "Claude Opus · Anthropic", "Gemini 2.5 · Google", "DeepSeek V3", "Grok 4 · xAI", "Nano Banana Pro", "Veo 3", "Kling 2", "Qwen 3", "Flux 2"];
 
@@ -35,7 +36,7 @@ export default function Landing() {
         {/* hero */}
         <section className="relative -mt-[76px] overflow-hidden border-b border-line pt-[76px]">
           <div className="fx-halftone absolute inset-0 opacity-40" aria-hidden="true" />
-          <div className="absolute inset-x-0 bottom-0 h-[60%]" aria-hidden="true">
+          <div className="fx-parallax absolute inset-x-0 bottom-0 h-[60%]" aria-hidden="true">
             <NeuralField />
           </div>
           <div className="fx-scanlines pointer-events-none absolute inset-0" aria-hidden="true" />
@@ -115,6 +116,23 @@ export default function Landing() {
               </Appear>
             ))}
           </div>
+        </section>
+
+        {/* numbers */}
+        <section aria-label="KURAI в цифрах" className="mx-auto grid max-w-6xl grid-cols-2 gap-px border-y border-line bg-line sm:grid-cols-4">
+          {[
+            { v: 300, s: "+", l: "моделей в одном чате" },
+            { v: 6, s: "", l: "режимов: текст, фото, видео, голос, Research, слайды" },
+            { v: 0, s: " ₽", l: "за ответы, которые не пришли" },
+            { v: 15, s: "%", l: "скидка при оплате за год" },
+          ].map((n) => (
+            <div key={n.l} className="flex flex-col gap-1 bg-bg p-5 sm:p-6">
+              <span className="font-display text-4xl font-extralight text-acc">
+                <CountUp to={n.v} suffix={n.s} />
+              </span>
+              <span className="text-[13px] text-ink2">{n.l}</span>
+            </div>
+          ))}
         </section>
 
         {/* why */}

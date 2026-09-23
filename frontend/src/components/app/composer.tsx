@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type For
 import { useRouter } from "next/navigation";
 import { ArrowUp, AudioLines, Brain, Clapperboard, Globe, Image as ImageIcon, MessageSquare, Paperclip, Presentation, Sparkles, Square, Telescope } from "lucide-react";
 import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } from "@/lib/prompt";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
 import { defaultModel, type ModelInfo } from "@/lib/models";
@@ -16,7 +16,7 @@ import { readPrefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import { retrigger } from "@/lib/motion";
 import { Decode } from "@/components/fx/decode";
-import { Hatch, KeyHint, Label, Segments, useFx } from "@/components/fx/primitives";
+import { Hatch, KeyHint, Label, Scanline, Segments, useFx } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 import { ModelPicker } from "./model-picker";
 import { VoiceInput } from "./voice-input";
@@ -330,7 +330,7 @@ export function Composer({
                   e.target.value = "";
                 }}
               />
-              <button type="button" onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл" className={cn(iconBtn, "border-line text-ink2 hover:text-ink")}>
+              <button type="button" onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл" data-tip="Файл · фото · PDF" className={cn(iconBtn, "border-line text-ink2 hover:text-ink")}>
                 <Paperclip size={16} strokeWidth={1.5} />
               </button>
               <VoiceInput
@@ -347,7 +347,7 @@ export function Composer({
                   type="button"
                   aria-pressed={think}
                   aria-label="Думать дольше: модель рассуждает перед ответом, дороже примерно в 1,7 раза"
-                  title="Думать дольше"
+                  data-tip="Думать дольше"
                   onClick={() => setThink((t) => !t)}
                   className={cn(iconBtn, think ? "border-acc-line text-acc" : "border-line text-ink3 hover:text-ink")}
                 >
@@ -358,7 +358,7 @@ export function Composer({
                 <button
                   type="button"
                   aria-label="Улучшить промпт"
-                  title="Улучшить промпт"
+                  data-tip="Улучшить промпт"
                   onClick={() => {
                     setValue((v) => enhancePrompt(v, mode, modeParams));
                     retrigger(boxRef.current, "fx-flicker-border");
@@ -372,6 +372,7 @@ export function Composer({
                 type="button"
                 aria-pressed={web}
                 aria-label="Поиск в интернете"
+                data-tip={web ? "Поиск в интернете: вкл" : "Поиск в интернете: выкл"}
                 onClick={() => setWeb((w) => !w)}
                 className={cn(iconBtn, web ? "border-acc-line text-acc" : "border-line text-ink3")}
               >
@@ -392,13 +393,19 @@ export function Composer({
               )}
               <Label className="tabular-nums">{formatCredits(cost, { approx: true })}</Label>
               <ModelPicker mode={mode} value={model} onChange={(m) => setPicked((p) => ({ ...p, [mode]: m }))} />
+              <AnimatePresence mode="popLayout" initial={false}>
               {busy ? (
-                <button type="button" onClick={onStop} aria-label="Остановить ответ" className={cn(iconBtn, "border-acc-line text-acc")}>
+                <motion.button key="stop" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={{ duration: 0.16 }} type="button" onClick={onStop} aria-label="Остановить ответ" className={cn(iconBtn, "border-acc-line text-acc")}>
                   <Square size={12} strokeWidth={2} fill="currentColor" />
                   <Hint k="Esc" />
-                </button>
+                </motion.button>
               ) : (
-                <button
+                <motion.button
+                  key="send"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.6, opacity: 0 }}
+                  transition={{ duration: 0.16 }}
                   type="submit"
                   aria-label="Отправить"
                   disabled={(!value.trim() && files.length === 0) || short || uploading || recording}
@@ -406,8 +413,9 @@ export function Composer({
                 >
                   <ArrowUp size={16} strokeWidth={2} />
                   <Hint k="Enter" />
-                </button>
+                </motion.button>
               )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -430,7 +438,8 @@ export function Composer({
         </p>
       )}
       {dragging && (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-50 grid place-items-center border border-dashed border-acc bg-bg/80">
+        <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-50 grid place-items-center overflow-hidden border border-dashed border-acc bg-bg/80">
+          <Scanline active />
           <div className="flex flex-col items-center gap-2 text-center">
             <Decode text="› ПРИЁМ ДАННЫХ" className="font-mono text-[12px] tracking-[0.14em] text-acc" />
             <p className="font-display text-2xl font-light">Отпустите, чтобы прикрепить</p>

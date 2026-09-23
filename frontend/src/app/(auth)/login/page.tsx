@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ email?: string | null; password?: string | null; form?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [boot, setBoot] = useState(false);
+  const [ok, setOk] = useState(false);
   const [formRef, glitch] = useFx<HTMLFormElement>("fx-glitch");
   const toApp = useCallback(() => router.push("/app"), [router]);
 
@@ -33,7 +34,8 @@ export default function LoginPage() {
       setErrors({ form: "Неверный email или пароль. Проверьте раскладку или восстановите пароль." });
       return glitch();
     }
-    setBoot(true);
+    setOk(true);
+    setTimeout(() => setBoot(true), 450);
   }
 
   return (
@@ -62,7 +64,7 @@ export default function LoginPage() {
           </p>
         )}
         <Button type="submit" variant="primary" size="lg" disabled={submitting} className="mt-1 w-full">
-          {submitting ? "Проверяем…" : "Войти"}
+          {ok ? "✓ Доступ подтверждён" : submitting ? "Проверяем…" : "Войти"}
         </Button>
       </form>
       <div className="my-5 flex items-center gap-3 text-[12px] text-ink3 before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">или</div>

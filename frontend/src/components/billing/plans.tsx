@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "motion/react";
 import type { Plan } from "@/types/api";
 import { ANNUAL_DISCOUNT, PLANS, planPrice } from "@/lib/pricing";
 import { cn } from "@/lib/cn";
@@ -37,7 +38,12 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
                 {isCurrent && " · текущий"}
               </Label>
               <p className="font-display text-3xl font-light tabular-nums">
-                {planPrice(p.priceRub, annual).toLocaleString("ru-RU")} ₽<span className="ml-1 font-sans text-[13px] text-ink3">/ мес</span>
+                <span className="inline-block overflow-hidden align-bottom">
+                  <motion.span key={`${p.id}-${annual}`} initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }} className="inline-block">
+                    {planPrice(p.priceRub, annual).toLocaleString("ru-RU")} ₽
+                  </motion.span>
+                </span>
+                <span className="ml-1 font-sans text-[13px] text-ink3">/ мес</span>
               </p>
               <ul className="flex flex-1 flex-col gap-1.5 text-[13.5px] text-ink2">
                 {p.features.map((f) => (

@@ -13,6 +13,7 @@ import { ChatRow } from "./chat-row";
 import { Inbox } from "./inbox";
 import { chatsStore } from "@/lib/app-state";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app", label: "Главная", icon: House },
@@ -74,7 +75,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </button>
       </div>
 
-      <div className="flex flex-col gap-1 px-2">
+      <div className="isolate flex flex-col gap-1 px-2">
         <Link
           href="/app"
           onClick={onNavigate}
@@ -103,7 +104,10 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </button>
         <Inbox collapsed={collapsed} onNavigate={onNavigate} />
         {NAV.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} onClick={onNavigate} title={label} aria-current={pathname === href ? "page" : undefined} className={itemCls(pathname === href)}>
+          <Link key={href} href={href} onClick={onNavigate} aria-label={collapsed ? label : undefined} data-tip={collapsed ? label : undefined} aria-current={pathname === href ? "page" : undefined} className={cn(itemCls(false), pathname === href && "text-ink hover:bg-transparent")}>
+            {pathname === href && (
+              <motion.span layoutId="nav-active" aria-hidden="true" className="absolute inset-0 -z-10 bg-g2 shadow-[inset_2px_0_0_var(--color-acc)]" transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }} />
+            )}
             <Icon size={16} strokeWidth={1.5} />
             {!collapsed && label}
           </Link>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "motion/react";
 import type { LedgerEntry, LedgerKind } from "@/types/api";
 import { formatCredits } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -53,8 +54,14 @@ export function Ledger({ entries }: { entries: LedgerEntry[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((e) => (
-              <tr key={e.id} className="border-b border-line last:border-b-0">
+            {rows.map((e, i) => (
+              <motion.tr
+                key={`${filter}-${e.id}`}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03, duration: 0.2 }}
+                className="border-b border-line last:border-b-0 hover:bg-g1"
+              >
                 <td className="px-3 py-2.5 font-mono text-[12px] text-ink3 tabular-nums">{when(e.at)}</td>
                 <td className="px-3 py-2.5">
                   {e.chatId ? (
@@ -70,7 +77,7 @@ export function Ledger({ entries }: { entries: LedgerEntry[] }) {
                   {e.amountMicro > 0 ? "+" : "−"}
                   {formatCredits(Math.abs(e.amountMicro), { unit: false })}
                 </td>
-              </tr>
+              </motion.tr>
             ))}
             {rows.length === 0 && (
               <tr>

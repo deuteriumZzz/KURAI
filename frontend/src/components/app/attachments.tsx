@@ -1,6 +1,7 @@
 "use client";
 
 import { AudioLines, FileImage, FileSpreadsheet, FileText, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { fileKind } from "@/lib/files";
 import { formatBytes } from "@/lib/format";
 import { Segments } from "@/components/fx/primitives";
@@ -11,14 +12,14 @@ const ICON = { image: FileImage, pdf: FileText, doc: FileText, sheet: FileSpread
 
 /** «Осколки данных» — вложения у поля ввода: тип, размер, загрузка шкалой, удаление. */
 export function AttachmentChips({ items, onRemove }: { items: Attachment[]; onRemove: (id: string) => void }) {
-  if (items.length === 0) return null;
   return (
-    <ul aria-label="Вложения" className="mb-2 flex flex-wrap gap-1.5">
+    <ul aria-label="Вложения" className={items.length ? "mb-2 flex flex-wrap gap-1.5" : "hidden"}>
+      <AnimatePresence initial={false}>
       {items.map((a) => {
         const Icon = ICON[fileKind(a.type)];
         const done = a.progress >= 1;
         return (
-          <li key={a.id} className="fx-chamfer flex max-w-60 items-center gap-2 border border-line2 bg-g2 py-1.5 pr-1 pl-2 [--ch:var(--chamfer-sm)]">
+          <motion.li key={a.id} layout initial={{ opacity: 0, y: 6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }} transition={{ duration: 0.2 }} className="fx-chamfer flex max-w-60 items-center gap-2 border border-line2 bg-g2 py-1.5 pr-1 pl-2 [--ch:var(--chamfer-sm)]">
             {a.previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- локальное превью blob:
               <img src={a.previewUrl} alt="" className="size-7 shrink-0 border border-line object-cover" />
@@ -36,9 +37,10 @@ export function AttachmentChips({ items, onRemove }: { items: Attachment[]; onRe
             <button type="button" onClick={() => onRemove(a.id)} aria-label={`Убрать ${a.name}`} className="grid size-6 shrink-0 cursor-pointer place-items-center text-ink3 hover:text-ink pointer-coarse:size-9">
               <X size={12} strokeWidth={1.5} />
             </button>
-          </li>
+          </motion.li>
         );
       })}
+      </AnimatePresence>
     </ul>
   );
 }

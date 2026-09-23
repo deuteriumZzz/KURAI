@@ -12,6 +12,7 @@ import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
 import { Lightbox } from "@/components/media/lightbox";
+import { NavProgress } from "./nav-progress";
 import { MotionConfig } from "motion/react";
 import { useCalm } from "@/lib/use-calm";
 
@@ -117,8 +118,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <div className="relative isolate flex min-w-0 flex-1 flex-col">
+      <NavProgress />
+      <div
+        className="relative isolate flex min-w-0 flex-1 flex-col"
+        onPointerMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+          e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+        }}
+      >
         <div className="fx-backdrop -z-10" aria-hidden="true" />
+        <div className="fx-spotlight -z-10" aria-hidden="true" />
         <span aria-hidden="true" className="pointer-events-none absolute top-2 right-2 -z-10 size-3.5 border-t border-r border-line2" />
         <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 -z-10 size-3.5 border-b border-l border-line2" />
         <button

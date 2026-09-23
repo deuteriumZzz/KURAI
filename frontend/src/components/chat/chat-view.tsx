@@ -16,7 +16,7 @@ import { Label } from "@/components/fx/primitives";
 import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
 import { SidePanel } from "./side-panel";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { notify } from "@/lib/app-state";
 import { Appear } from "@/components/fx/motion";
 import type { Artifact } from "@/lib/stream";
@@ -41,6 +41,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const [initialIds] = useState(() => new Set(initial.map((m) => m.id)));
   const scroller = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
+  const [below, setBelow] = useState(false);
 
   const branch = branchOf(state.head, state.messages);
   const textStreaming = branch.find((m) => state.runs[m.id]?.status === "streaming" && !isJobMode(m.mode));
@@ -186,7 +187,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
 
   return (
     <div className="flex min-h-0 flex-1">
-    <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 pl-16 md:pl-6">
         <h1 className="truncate text-[14px]">
           <Decode text={chat.title} />
@@ -206,10 +207,14 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         onScroll={(e) => {
           const el = e.currentTarget;
           stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+          setBelow(!stickToBottom.current);
         }}
-        className="flex-1 overflow-y-auto"
+        className="relative flex-1 overflow-y-auto"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
+          <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
+            {new Date(branch[0]?.createdAt ?? chat.updatedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
+          </div>
           {branch.map((m) => {
             if (m.role === "user") {
               const us = siblingsOf(m.id, state.messages);
@@ -274,6 +279,24 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         </div>
       </div>
 
+      <AnimatePresence>
+        {below && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => {
+              const el = scroller.current;
+              el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            }}
+            className="absolute bottom-40 left-1/2 z-10 -translate-x-1/2 cursor-pointer border border-acc-line bg-g2 px-3 py-1.5 font-mono text-[12px] text-acc shadow-[0_12px_30px_-12px_rgb(0_0_0/0.8)] hover:bg-acc hover:text-acc-ink"
+          >
+            ↓ Вниз {textStreaming ? "· идёт ответ" : ""}
+          </motion.button>
+        )}
+      </AnimatePresence>
       <div className="flex justify-center border-t border-line px-4 pt-3 pb-4">
         <Composer
           variant="dock"
