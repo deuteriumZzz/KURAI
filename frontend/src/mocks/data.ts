@@ -36,13 +36,5 @@ export const MOCK_MESSAGES: Message[] = [
     parts: [{ type: "job", jobId: "j2", kind: "video", status: "running", progress: 0.44 }] },
 ];
 
-/** Активная ветка: идём от head к корню по parentId. */
-export function branchOf(headId: string, messages: Message[] = MOCK_MESSAGES): Message[] {
-  const byId = new Map(messages.map((m) => [m.id, m]));
-  const out: Message[] = [];
-  for (let m = byId.get(headId); m; m = m.parentId ? byId.get(m.parentId) : undefined) out.unshift(m);
-  return out;
-}
-
 /** «Сейчас» для тестовых данных — одинаковое на сервере и клиенте (без рассинхрона гидрации). */
 export const MOCK_NOW = new Date("2026-09-23T15:00:00Z");

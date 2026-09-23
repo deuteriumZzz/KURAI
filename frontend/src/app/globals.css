@@ -173,6 +173,15 @@ body {
   :root:not(.calm) .fx-caret {
     animation: fx-blink 1s steps(1) infinite;
   }
+  /* проявление готового медиа: ступенями сверху вниз */
+  :root:not(.calm) .fx-reveal {
+    animation: fx-reveal 480ms steps(8) both;
+  }
+}
+
+@keyframes fx-reveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0); }
 }
 
 @keyframes fx-flicker {

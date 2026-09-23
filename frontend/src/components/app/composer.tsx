@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Globe, Paperclip } from "lucide-react";
+import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
 import { formatCredits } from "@/lib/format";
@@ -16,10 +16,15 @@ type Props = {
   /** home — центр пустого экрана (чипы под полем, как у Kimi); dock — низ чата (чипы над полем). */
   variant: "home" | "dock";
   initialMode?: Mode;
+  /** Отправка внутри чата; без неё главная ведёт в чат. */
+  onSend?: (text: string, mode: Mode) => void;
+  /** Идёт ответ — кнопка отправки становится «Стоп». */
+  busy?: boolean;
+  onStop?: () => void;
 };
 
 /** Поле ввода единого чата. Режим — состояние поля, а не отдельная страница. */
-export function Composer({ variant, initialMode = "text" }: Props) {
+export function Composer({ variant, initialMode = "text", onSend, busy = false, onStop }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [value, setValue] = useState("");
@@ -45,10 +50,11 @@ export function Composer({ variant, initialMode = "text" }: Props) {
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    if (!value.trim()) return;
-    // тестовые данные: отправка ведёт в демонстрационный чат; настоящая отправка — в секции «Единый чат»
+    if (!value.trim() || busy) return;
     setValue("");
-    router.push("/app/c/7f3a");
+    if (onSend) onSend(value.trim(), mode);
+    // тестовые данные: с главной запрос открывает демонстрационный чат
+    else router.push("/app/c/7f3a");
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -128,15 +134,27 @@ export function Composer({ variant, initialMode = "text" }: Props) {
             <div className="flex items-center gap-2">
               <Label className="tabular-nums">{formatCredits(cfg.costHintMicro, { approx: true })}</Label>
               <span className="hidden border border-line px-2.5 py-1 text-[12.5px] text-ink2 sm:inline">{cfg.model} ▾</span>
-              <button
-                type="submit"
-                aria-label="Отправить"
-                disabled={!value.trim()}
-                className="relative grid size-8 cursor-pointer place-items-center border border-acc bg-acc text-acc-ink disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:size-11"
-              >
-                <ArrowUp size={16} strokeWidth={2} />
-                <Hint k="Enter" />
-              </button>
+              {busy ? (
+                <button
+                  type="button"
+                  onClick={onStop}
+                  aria-label="Остановить ответ"
+                  className="relative grid size-8 cursor-pointer place-items-center border border-acc-line text-acc pointer-coarse:size-11"
+                >
+                  <Square size={12} strokeWidth={2} fill="currentColor" />
+                  <Hint k="Esc" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  aria-label="Отправить"
+                  disabled={!value.trim()}
+                  className="relative grid size-8 cursor-pointer place-items-center border border-acc bg-acc text-acc-ink disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:size-11"
+                >
+                  <ArrowUp size={16} strokeWidth={2} />
+                  <Hint k="Enter" />
+                </button>
+              )}
             </div>
           </div>
         </div>
