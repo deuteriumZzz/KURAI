@@ -1,4 +1,5 @@
-import type { Balance, ChatSummary, Message, SystemStatus, User } from "@/types/api";
+import type { Balance, ChatSummary, MediaItem, Message, Storage, SystemStatus, User } from "@/types/api";
+import { placeholderImage } from "./media";
 
 // Тестовые данные в форме API. Заменяются ответами бэкенда без изменения экранов.
 
@@ -38,3 +39,28 @@ export const MOCK_MESSAGES: Message[] = [
 
 /** «Сейчас» для тестовых данных — одинаковое на сервере и клиенте (без рассинхрона гидрации). */
 export const MOCK_NOW = new Date("2026-09-23T15:00:00Z");
+
+
+const GB = 1024 ** 3;
+const MB = 1024 ** 2;
+export const MOCK_STORAGE: Storage = { usedBytes: Math.round(2.1 * GB), quotaBytes: 5 * GB };
+
+const img = (i: number, chatId: string, messageId: string, prompt: string, day: number, model = "Nano Banana Pro"): MediaItem => ({
+  id: `img${i}`, chatId, messageId, kind: "image", url: placeholderImage(i), prompt, model, costMicro: 40_000,
+  sizeBytes: Math.round((1.4 + (i % 3) * 0.3) * MB), createdAt: `2026-09-${String(day).padStart(2, "0")}T12:${String(10 + i).padStart(2, "0")}:00Z`,
+});
+
+export const MOCK_MEDIA: MediaItem[] = [
+  img(0, "7f3a", "m4", "Обложка: три терминала на матовом чёрном, бирюзовая линия", 23),
+  img(1, "7f3a", "m4", "Обложка: три терминала на матовом чёрном, бирюзовая линия", 23),
+  { id: "vid0", chatId: "7f3a", messageId: "m6", kind: "video", url: "", poster: placeholderImage(7, 960, 540, "KURAI · видео 8 с"),
+    prompt: "Оживи вторую: камера медленно наезжает, линия пульсирует", model: "Veo 3", costMicro: 1_180_000, sizeBytes: 38 * MB, durationSec: 8, createdAt: "2026-09-23T14:33:00Z" },
+  img(2, "c9e4", "c-h", "Минималистичный логотип кофейни «Нейрон», неоновая линия", 22, "Flux 2"),
+  img(3, "c9e4", "c-h", "Минималистичный логотип кофейни «Нейрон», неоновая линия", 22, "Flux 2"),
+  { id: "aud0", chatId: "b21c", messageId: "b-h", kind: "audio", url: "", prompt: "Озвучь сценарий ролика: спокойный уверенный голос", model: "TTS · Нова",
+    costMicro: 30_000, sizeBytes: Math.round(0.4 * MB), durationSec: 12, createdAt: "2026-09-23T11:07:00Z" },
+  img(4, "b21c", "b-h", "Кадр для Reels: неоновый город ночью, вертикально", 23, "Seedream 4"),
+  { id: "vid1", chatId: "b21c", messageId: "b-h", kind: "video", url: "", poster: placeholderImage(9, 960, 540, "KURAI · видео 5 с"),
+    prompt: "Пролёт камеры над ночным городом, дождь, неон", model: "Kling 2", costMicro: 720_000, sizeBytes: 24 * MB, durationSec: 5, createdAt: "2026-09-23T11:20:00Z" },
+  img(5, "e5f1", "e-h", "Иллюстрация для поста: план контента, изометрия", 2, "GPT-image"),
+];

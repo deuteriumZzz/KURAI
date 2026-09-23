@@ -60,3 +60,23 @@ export type SystemStatus = {
 };
 
 export type User = { id: Id; name: string; email: string };
+
+export type MediaKind = "image" | "video" | "audio";
+
+/** Результат генерации в медиатеке — ссылается на чат и сообщение, где родился. */
+export type MediaItem = {
+  id: Id;
+  chatId: Id;
+  messageId: Id;
+  kind: MediaKind;
+  url: string;
+  poster?: string;
+  prompt: string;
+  model: string;
+  costMicro: Micro;
+  sizeBytes: number;
+  durationSec?: number;
+  createdAt: IsoDate;
+};
+
+export type Storage = { usedBytes: number; quotaBytes: number };

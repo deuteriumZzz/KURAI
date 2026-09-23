@@ -16,6 +16,7 @@ type Props = {
   /** home — центр пустого экрана (чипы под полем, как у Kimi); dock — низ чата (чипы над полем). */
   variant: "home" | "dock";
   initialMode?: Mode;
+  initialValue?: string;
   /** Отправка внутри чата; без неё главная ведёт в чат. */
   onSend?: (text: string, mode: Mode) => void;
   /** Идёт ответ — кнопка отправки становится «Стоп». */
@@ -24,10 +25,10 @@ type Props = {
 };
 
 /** Поле ввода единого чата. Режим — состояние поля, а не отдельная страница. */
-export function Composer({ variant, initialMode = "text", onSend, busy = false, onStop }: Props) {
+export function Composer({ variant, initialMode = "text", initialValue = "", onSend, busy = false, onStop }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
   const [web, setWeb] = useState(true);
   const boxRef = useRef<HTMLDivElement>(null);
   const cfg = modeById(mode);

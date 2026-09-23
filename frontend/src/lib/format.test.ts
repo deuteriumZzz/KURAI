@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChatSummary } from "@/types/api";
-import { formatCredits, groupChats } from "./format";
+import { formatBytes, formatCredits, groupChats } from "./format";
 
 // ru-RU группирует разряды неразрывным пробелом
 const nb = (s: string) => s.replace(/ /g, " ");
@@ -48,5 +48,14 @@ describe("groupChats", () => {
 
   it("drops empty groups", () => {
     expect(groupChats([], now)).toEqual([]);
+  });
+});
+
+describe("formatBytes", () => {
+  it("picks unit and keeps one decimal below 10", () => {
+    expect(formatBytes(2.1 * 1024 ** 3)).toBe("2,1 ГБ");
+    expect(formatBytes(180 * 1024 ** 2)).toBe("180 МБ");
+    expect(formatBytes(5 * 1024 ** 3)).toBe("5 ГБ");
+    expect(formatBytes(512)).toBe("512 Б");
   });
 });

@@ -31,3 +31,16 @@ export function groupChats(chats: ChatSummary[], now: Date): ChatGroup[] {
   }
   return buckets.filter((b) => b.chats.length > 0);
 }
+
+/** 2 254 857 830 → «2,1 ГБ»; 180 000 000 → «180 МБ»; 5 368 709 120 → «5 ГБ». */
+export function formatBytes(bytes: number): string {
+  const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  const num = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: v < 10 && i > 0 ? 1 : 0 }).format(v);
+  return `${num} ${units[i]}`;
+}

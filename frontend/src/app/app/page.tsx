@@ -5,9 +5,14 @@ import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
 import { MOCK_BALANCE, MOCK_STATUS } from "@/mocks/data";
+import { MODES } from "@/lib/modes";
+import type { Mode } from "@/types/api";
 
 /** Главная кабинета — как у Kimi: пустой экран, одно поле ввода, чипы режимов под ним. */
-export default function AppHome() {
+export default async function AppHome(props: PageProps<"/app">) {
+  const sp = await props.searchParams;
+  const mode = MODES.find((m) => m.id === sp.mode)?.id as Mode | undefined;
+  const prompt = typeof sp.prompt === "string" ? sp.prompt.slice(0, 2000) : "";
   return (
     <main className="relative flex flex-1 flex-col overflow-y-auto">
       <div className="flex items-center justify-end gap-3 px-4 pt-3 pl-16 md:pl-4">
@@ -25,7 +30,7 @@ export default function AppHome() {
         <h1 className="mr-[-0.5em] font-display text-4xl font-light tracking-[0.5em] sm:text-5xl">
           <Decode text="KURAI" duration={420} />
         </h1>
-        <Composer variant="home" />
+        <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} />
       </div>
 
       <StatusBar status={MOCK_STATUS} className="px-4 pb-4" />
