@@ -81,7 +81,7 @@ export function LiveDemo() {
             setPhase("idle");
             setRun((r) => r + 1);
           }}
-          className="inline-flex cursor-pointer items-center gap-1.5 text-[12px] text-ink3 hover:text-ink"
+          className="-my-1 inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2 text-[12px] text-ink3 hover:text-ink pointer-coarse:min-h-11"
         >
           <RotateCcw size={12} strokeWidth={1.5} /> Повторить
         </button>

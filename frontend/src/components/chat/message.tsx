@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
@@ -8,12 +8,22 @@ import { formatCredits } from "@/lib/format";
 import { modeById } from "@/lib/modes";
 import { StreamText } from "@/components/fx/decode";
 import { Label, SysLine } from "@/components/fx/primitives";
-import { Markdown } from "./markdown";
+// Markdown (≈ 40 KB) грузится отдельным чанком; до загрузки ответ виден обычным текстом.
+const LazyMarkdown = lazy(() => import("./markdown").then((m) => ({ default: m.Markdown })));
 import { ImageGrid, JobCard, VideoCard } from "./media";
 import { AgentChoice, AgentSummary, QuestLog, SourceNet } from "./agent";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+
+/** Пока чанк Markdown не загружен — показываем текст как есть. */
+function MarkdownOrText({ text }: { text: string }) {
+  return (
+    <Suspense fallback={<p className="text-[14.5px] leading-relaxed whitespace-pre-wrap">{text}</p>}>
+      <LazyMarkdown text={text} />
+    </Suspense>
+  );
+}
 
 export function UserMessage({ m }: { m: Message }) {
   return (
@@ -83,7 +93,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
               <StreamText text={p.text} done={false} />
             </div>
           ) : (
-            <Markdown key={i} text={p.text} />
+            <MarkdownOrText key={i} text={p.text} />
           );
         if (p.type === "job") return <JobCard key={i} job={p} queuePosition={run?.queuePosition} tip={run?.tip} />;
         if (p.type === "video") return <VideoCard key={i} video={p} />;

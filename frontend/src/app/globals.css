@@ -290,7 +290,8 @@ dialog.fx-dialog::backdrop {
 @keyframes fx-marquee {
   to { transform: translateX(-50%); }
 }
+/* только сдвиг: контент читается и до прокрутки (превью ссылок, быстрый скролл) */
 @keyframes fx-rise {
-  from { opacity: 0.001; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
+  from { transform: translateY(18px); }
+  to { transform: none; }
 }

@@ -79,6 +79,7 @@ export function CommandPalette({ open, onClose, chats }: { open: boolean; onClos
             setActive(0);
           }}
           onKeyDown={onKeyDown}
+          aria-label="Найти чат или команду"
           role="combobox"
           aria-expanded="true"
           aria-controls="palette-list"

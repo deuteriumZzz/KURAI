@@ -30,7 +30,7 @@ export const MOCK_MESSAGES: Message[] = [
   { id: "m3", chatId: "7f3a", parentId: "m2", role: "user", mode: "image", model: null, costMicro: 0, createdAt: "2026-09-23T14:25:00Z",
     parts: [{ type: "text", text: "Нарисуй обложку для этой сводки: три терминала на матовом чёрном, бирюзовая линия." }] },
   { id: "m4", chatId: "7f3a", parentId: "m3", role: "assistant", mode: "image", model: "Nano Banana Pro", costMicro: 160_000, createdAt: "2026-09-23T14:25:11Z",
-    parts: [{ type: "job", jobId: "j1", kind: "image", status: "done", progress: 1 }] },
+    parts: [0, 1, 2, 3].map((i) => ({ type: "image" as const, url: placeholderImage(i), alt: `Обложка, вариант ${i + 1}`, width: 512, height: 512 })) },
   { id: "m5", chatId: "7f3a", parentId: "m4", role: "user", mode: "video", model: null, costMicro: 0, createdAt: "2026-09-23T14:31:00Z",
     parts: [{ type: "text", text: "Оживи вторую: камера медленно наезжает, линия пульсирует." }] },
   { id: "m6", chatId: "7f3a", parentId: "m5", role: "assistant", mode: "video", model: "Veo 3", costMicro: 0, createdAt: "2026-09-23T14:32:00Z",
