@@ -20,7 +20,7 @@ let seq = 0;
 const newId = (p: string) => `${p}_${Date.now().toString(36)}${(seq++).toString(36)}`;
 
 /** Единый чат: одна лента для текста, изображений и видео; ветки ответов; стриминг с расшифровкой. */
-export function ChatView({ chat, initial }: { chat: ChatSummary; initial: Message[] }) {
+export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; initial: Message[]; balanceMicro: number }) {
   const [state, setState] = useState<State>({ messages: initial, runs: {}, head: chat.headId });
   const [toast, setToast] = useState<{ title: string; id: string } | null>(null);
   const controllers = useRef(new Map<string, AbortController>());
@@ -177,7 +177,7 @@ export function ChatView({ chat, initial }: { chat: ChatSummary; initial: Messag
       </div>
 
       <div className="flex justify-center border-t border-line px-4 pt-3 pb-4">
-        <Composer variant="dock" onSend={send} busy={!!textStreaming} onStop={stop} />
+        <Composer variant="dock" onSend={send} busy={!!textStreaming} onStop={stop} balanceMicro={balanceMicro} />
       </div>
 
       {toast && (

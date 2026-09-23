@@ -80,3 +80,16 @@ export type MediaItem = {
 };
 
 export type Storage = { usedBytes: number; quotaBytes: number };
+
+export type LedgerKind = "topup" | "charge" | "refund" | "grant" | "bonus";
+
+/** Строка журнала: только дописывается; сумма со знаком, целые micro. */
+export type LedgerEntry = {
+  id: Id;
+  at: IsoDate;
+  kind: LedgerKind;
+  title: string;
+  model?: string;
+  chatId?: Id;
+  amountMicro: Micro;
+};

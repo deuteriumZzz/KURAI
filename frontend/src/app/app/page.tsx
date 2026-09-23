@@ -30,7 +30,7 @@ export default async function AppHome(props: PageProps<"/app">) {
         <h1 className="mr-[-0.5em] font-display text-4xl font-light tracking-[0.5em] sm:text-5xl">
           <Decode text="KURAI" duration={420} />
         </h1>
-        <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} />
+        <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
       </div>
 
       <StatusBar status={MOCK_STATUS} className="px-4 pb-4" />

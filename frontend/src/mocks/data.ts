@@ -64,3 +64,15 @@ export const MOCK_MEDIA: MediaItem[] = [
     prompt: "Пролёт камеры над ночным городом, дождь, неон", model: "Kling 2", costMicro: 720_000, sizeBytes: 24 * MB, durationSec: 5, createdAt: "2026-09-23T11:20:00Z" },
   img(5, "e5f1", "e-h", "Иллюстрация для поста: план контента, изометрия", 2, "GPT-image"),
 ];
+
+export const MOCK_LEDGER: import("@/types/api").LedgerEntry[] = [
+  { id: "l9", at: "2026-09-23T14:32:00Z", kind: "charge", title: "Видео 8 с", model: "Veo 3", chatId: "7f3a", amountMicro: -1_180_000 },
+  { id: "l8", at: "2026-09-23T14:25:00Z", kind: "charge", title: "Изображение × 4", model: "Nano Banana Pro", chatId: "7f3a", amountMicro: -160_000 },
+  { id: "l7", at: "2026-09-23T14:20:00Z", kind: "charge", title: "Чат · 1 820 токенов", model: "Claude Sonnet 5", chatId: "7f3a", amountMicro: -78_000 },
+  { id: "l6", at: "2026-09-23T13:51:00Z", kind: "refund", title: "Возврат · ошибка провайдера", model: "Veo 3", chatId: "b21c", amountMicro: 1_200_000 },
+  { id: "l5", at: "2026-09-23T13:50:00Z", kind: "charge", title: "Видео 8 с", model: "Veo 3", chatId: "b21c", amountMicro: -1_200_000 },
+  { id: "l4", at: "2026-09-23T09:00:00Z", kind: "topup", title: "Пополнение · СБП", amountMicro: 10_000_000 },
+  { id: "l3", at: "2026-09-22T18:41:00Z", kind: "charge", title: "Изображение × 4", model: "Flux 2", chatId: "c9e4", amountMicro: -160_000 },
+  { id: "l2", at: "2026-09-02T10:00:00Z", kind: "bonus", title: "Промокод KURAI20", amountMicro: 2_000_000 },
+  { id: "l1", at: "2026-09-01T00:00:00Z", kind: "grant", title: "Начисление тарифа Pro", amountMicro: 10_000_000 },
+];

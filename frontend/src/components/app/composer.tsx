@@ -9,7 +9,8 @@ import { formatCredits } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { retrigger } from "@/lib/motion";
 import { Decode } from "@/components/fx/decode";
-import { KeyHint, Label } from "@/components/fx/primitives";
+import Link from "next/link";
+import { Hatch, KeyHint, Label } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 
 type Props = {
@@ -22,16 +23,19 @@ type Props = {
   /** Идёт ответ — кнопка отправки становится «Стоп». */
   busy?: boolean;
   onStop?: () => void;
+  /** Баланс пользователя: если меньше оценки запроса — показываем штриховку и не даём отправить. */
+  balanceMicro?: number;
 };
 
 /** Поле ввода единого чата. Режим — состояние поля, а не отдельная страница. */
-export function Composer({ variant, initialMode = "text", initialValue = "", onSend, busy = false, onStop }: Props) {
+export function Composer({ variant, initialMode = "text", initialValue = "", onSend, busy = false, onStop, balanceMicro = Infinity }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [value, setValue] = useState(initialValue);
   const [web, setWeb] = useState(true);
   const boxRef = useRef<HTMLDivElement>(null);
   const cfg = modeById(mode);
+  const short = cfg.costHintMicro > balanceMicro;
 
   function switchMode(next: Mode) {
     if (next === mode) return;
@@ -51,7 +55,7 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    if (!value.trim() || busy) return;
+    if (!value.trim() || busy || short) return;
     setValue("");
     if (onSend) onSend(value.trim(), mode);
     // тестовые данные: с главной запрос открывает демонстрационный чат
@@ -86,6 +90,14 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
   return (
     <form onSubmit={submit} className="flex w-full max-w-3xl flex-col gap-3">
       {variant === "dock" && chips}
+      {short && (
+        <Hatch>
+          Недостаточно кредитов для режима «{cfg.label}»: нужно {formatCredits(cfg.costHintMicro)}, на балансе {formatCredits(balanceMicro)}.{" "}
+          <Link href="/app/billing#top-up" className="underline underline-offset-2">
+            Пополнить
+          </Link>
+        </Hatch>
+      )}
       <div className="fx-brackets">
         <div
           ref={boxRef}
@@ -149,7 +161,7 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
                 <button
                   type="submit"
                   aria-label="Отправить"
-                  disabled={!value.trim()}
+                  disabled={!value.trim() || short}
                   className="relative grid size-8 cursor-pointer place-items-center border border-acc bg-acc text-acc-ink disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:size-11"
                 >
                   <ArrowUp size={16} strokeWidth={2} />
