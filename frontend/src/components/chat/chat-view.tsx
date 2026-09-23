@@ -6,7 +6,9 @@ import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
 import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
 import { formatCredits } from "@/lib/format";
-import { partialCost, simulate } from "@/mocks/stream";
+import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
+import type { Outgoing } from "@/components/app/composer";
+import type { FileMeta } from "@/lib/files";
 import { Composer } from "@/components/app/composer";
 import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
@@ -29,6 +31,9 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const controllers = useRef(new Map<string, AbortController>());
   const askers = useRef(new Map<string, (choice: number) => void>());
   const [panel, setPanel] = useState<Artifact | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [compressed, setCompressed] = useState(false);
+  const lastOpts = useRef<SimOptions>({});
   const scroller = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
@@ -46,13 +51,13 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   }, []);
 
   const run = useCallback(
-    async (id: string, prompt: string, mode: Mode, fromProgress = 0) => {
+    async (id: string, prompt: string, mode: Mode, fromProgress = 0, opts: SimOptions = {}) => {
       const ctrl = new AbortController();
       controllers.current.set(id, ctrl);
       let chars = 0;
       try {
         const ask = () => new Promise<number>((resolve) => askers.current.set(id, resolve));
-        for await (const ev of simulate(prompt, mode, ctrl.signal, fromProgress, ask)) {
+        for await (const ev of simulate(prompt, mode, ctrl.signal, fromProgress, ask, opts)) {
           if (ev.type === "delta") chars += ev.text.length;
           apply(id, ev);
           if (ev.type === "artifact") setPanel(ev.artifact);
@@ -92,7 +97,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [lastLen]);
 
-  function startAnswer(parentId: string, prompt: string, mode: Mode) {
+  function startAnswer(parentId: string, prompt: string, mode: Mode, opts: SimOptions = {}) {
     const id = newId("a");
     const now = new Date().toISOString();
     const answer: Message = {
@@ -101,22 +106,34 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     };
     setState((s) => ({ ...s, messages: [...s.messages, answer], runs: { ...s.runs, [id]: newRun() }, head: id }));
     stickToBottom.current = true;
-    void run(id, prompt, mode);
+    lastOpts.current = opts;
+    void run(id, prompt, mode, 0, opts);
   }
 
-  function send(text: string, mode: Mode) {
+  function postUser(parentId: string | null, text: string, mode: Mode, files: FileMeta[], opts: SimOptions) {
     const uid = newId("u");
-    const user: Message = {
-      id: uid, chatId: chat.id, parentId: state.head, role: "user", mode, model: null, costMicro: 0,
-      createdAt: new Date().toISOString(), parts: [{ type: "text", text }],
-    };
+    const parts: Message["parts"] = [
+      ...(text ? [{ type: "text" as const, text }] : []),
+      ...files.map((f) => ({ type: "file" as const, name: f.name, sizeBytes: f.size, mime: f.type })),
+    ];
+    const user: Message = { id: uid, chatId: chat.id, parentId, role: "user", mode, model: null, costMicro: 0, createdAt: new Date().toISOString(), parts };
     setState((s) => ({ ...s, messages: [...s.messages, user], head: uid }));
-    startAnswer(uid, text, mode);
+    startAnswer(uid, text || files.map((f) => f.name).join(", "), mode, { ...opts, files });
+  }
+
+  function send(msg: Outgoing) {
+    postUser(state.head, msg.text, msg.mode, msg.files, { model: msg.model.name });
+  }
+
+  /** Изменить своё сообщение = новая ветка от того же родителя; старая сохраняется. */
+  function editUser(m: Message, text: string) {
+    setEditing(null);
+    postUser(m.parentId, text, m.mode, [], lastOpts.current.model ? { model: lastOpts.current.model } : {});
   }
 
   function regenerate(m: Message) {
     if (!m.parentId) return;
-    startAnswer(m.parentId, textOf(state.messages.find((x) => x.id === m.parentId)), m.mode);
+    startAnswer(m.parentId, textOf(state.messages.find((x) => x.id === m.parentId)), m.mode, { model: lastOpts.current.model });
   }
 
   function answer(id: string, choice: number) {
@@ -185,7 +202,25 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
           {branch.map((m) => {
-            if (m.role === "user") return <UserMessage key={m.id} m={m} />;
+            if (m.role === "user") {
+              const us = siblingsOf(m.id, state.messages);
+              const ui = us.findIndex((x) => x.id === m.id);
+              const goU = (i: number) => {
+                const target = us[i];
+                return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
+              };
+              return (
+                <UserMessage
+                  key={m.id}
+                  m={m}
+                  editing={editing === m.id}
+                  onEdit={() => setEditing(m.id)}
+                  onCancel={() => setEditing(null)}
+                  onSubmitEdit={(t) => editUser(m, t)}
+                  versions={{ index: ui, total: us.length, prev: ui > 0 ? goU(ui - 1) : undefined, next: goU(ui + 1) }}
+                />
+              );
+            }
             const sibs = siblingsOf(m.id, state.messages);
             const idx = sibs.findIndex((x) => x.id === m.id);
             const go = (i: number) => {
@@ -218,7 +253,19 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       </div>
 
       <div className="flex justify-center border-t border-line px-4 pt-3 pb-4">
-        <Composer variant="dock" onSend={send} busy={!!textStreaming} onStop={stop} balanceMicro={balanceMicro} />
+        <Composer
+          variant="dock"
+          onSend={send}
+          busy={!!textStreaming}
+          onStop={stop}
+          balanceMicro={balanceMicro}
+          contextChars={Math.round(branch.reduce((n, m) => n + textOf(m).length, 0) * (compressed ? 0.3 : 1))}
+          onCompress={() => setCompressed(true)}
+          onEditLast={() => {
+            const last = [...branch].reverse().find((m) => m.role === "user");
+            if (last) setEditing(last.id);
+          }}
+        />
       </div>
 
       {toast && (

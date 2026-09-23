@@ -4,7 +4,7 @@ import type { AgentTask, RunState } from "@/lib/stream";
 import { cn } from "@/lib/cn";
 import { formatCredits } from "@/lib/format";
 import { Decode } from "@/components/fx/decode";
-import { Label, Segments, SysLine } from "@/components/fx/primitives";
+import { Label, Scanline, Segments, SysLine } from "@/components/fx/primitives";
 
 /** Уточнение агента — как выбор реплики в диалоге: клик или клавиша 1–3. */
 export function AgentChoice({ ask, onAnswer }: { ask: NonNullable<RunState["ask"]>; onAnswer: (choice: number) => void }) {
@@ -107,6 +107,28 @@ export function AgentSummary({ run, costMicro, onOpenArtifact }: { run: RunState
           Открыть «{run.artifact.title}» · {run.artifact.slides.length} слайдов
         </button>
       )}
+    </div>
+  );
+}
+
+/** Сканер вложения: скан-линия по «документу» и подписи того, что увидела модель. */
+export function FileScan({ name, labels }: { name: string; labels: string[] }) {
+  return (
+    <div className="flex max-w-md flex-col gap-2">
+      <SysLine>{`сканирую ${name}`}</SysLine>
+      <div className="relative flex flex-col gap-1.5 overflow-hidden border border-line bg-g1 p-3">
+        <Scanline active />
+        {[62, 100, 86, 40].map((w, i) => (
+          <i key={i} className="h-1.5 bg-g3" style={{ width: `${w}%` }} />
+        ))}
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {labels.map((l) => (
+            <span key={l} className="border border-acc-line bg-bg/80 px-1.5 font-mono text-[10px] tracking-[0.1em] text-acc">
+              <Decode text={l} duration={300} />
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

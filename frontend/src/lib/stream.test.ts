@@ -72,4 +72,9 @@ describe("applyEvent", () => {
     expect(s.run.sources?.map((x) => x.title)).toEqual(["Хабр", "vc.ru"]);
     expect(s.run.artifact?.slides).toHaveLength(1);
   });
+
+  it("scan collects what the model saw in attachments", () => {
+    const s = run([{ type: "scan", name: "a.pdf", labels: ["ТЕКСТ · 18 СТР.", "ТАБЛИЦА"] }]);
+    expect(s.run.scans).toEqual([{ name: "a.pdf", labels: ["ТЕКСТ · 18 СТР.", "ТАБЛИЦА"] }]);
+  });
 });

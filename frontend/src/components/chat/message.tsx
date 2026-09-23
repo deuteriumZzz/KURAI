@@ -1,17 +1,17 @@
 "use client";
 
 import { lazy, Suspense, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Copy, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Pencil, RotateCcw } from "lucide-react";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
-import { formatCredits } from "@/lib/format";
+import { formatBytes, formatCredits } from "@/lib/format";
 import { modeById } from "@/lib/modes";
 import { StreamText } from "@/components/fx/decode";
 import { Label, SysLine } from "@/components/fx/primitives";
 // Markdown (≈ 40 KB) грузится отдельным чанком; до загрузки ответ виден обычным текстом.
 const LazyMarkdown = lazy(() => import("./markdown").then((m) => ({ default: m.Markdown })));
 import { ImageGrid, JobCard, VideoCard } from "./media";
-import { AgentChoice, AgentSummary, QuestLog, SourceNet } from "./agent";
+import { AgentChoice, AgentSummary, FileScan, QuestLog, SourceNet } from "./agent";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
@@ -25,11 +25,103 @@ function MarkdownOrText({ text }: { text: string }) {
   );
 }
 
-export function UserMessage({ m }: { m: Message }) {
+type Versions = { index: number; total: number; prev?: () => void; next?: () => void };
+
+function VersionSwitch({ v }: { v: Versions }) {
+  if (v.total < 2) return null;
   return (
-    <div className="ml-auto max-w-[85%] border border-line bg-g2 px-3.5 py-2.5 text-[14.5px] sm:max-w-[75%]">
-      {m.mode !== "text" && <Label className="mb-1 block text-acc">{modeById(m.mode).label}</Label>}
-      <p className="whitespace-pre-wrap">{textOf(m)}</p>
+    <span className="inline-flex items-center font-mono text-[11px] text-ink2">
+      <button type="button" onClick={v.prev} disabled={!v.prev} aria-label="Предыдущая версия" className="grid size-6 cursor-pointer place-items-center disabled:opacity-30">
+        <ChevronLeft size={14} strokeWidth={1.5} />
+      </button>
+      {v.index + 1} / {v.total}
+      <button type="button" onClick={v.next} disabled={!v.next} aria-label="Следующая версия" className="grid size-6 cursor-pointer place-items-center disabled:opacity-30">
+        <ChevronRight size={14} strokeWidth={1.5} />
+      </button>
+    </span>
+  );
+}
+
+type UserProps = {
+  m: Message;
+  editing: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSubmitEdit: (text: string) => void;
+  versions: Versions;
+};
+
+export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versions }: UserProps) {
+  const text = textOf(m);
+  const [draft, setDraft] = useState(text);
+  const files = m.parts.filter((p): p is Extract<MessagePart, { type: "file" }> => p.type === "file");
+
+  if (editing) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (draft.trim()) onSubmitEdit(draft.trim());
+        }}
+        className="fx-brackets ml-auto flex w-full max-w-[85%] flex-col gap-2 sm:max-w-[75%]"
+        data-selected="true"
+      >
+        <label htmlFor={`edit-${m.id}`} className="fx-sr">
+          Изменить сообщение
+        </label>
+        <textarea
+          id={`edit-${m.id}`}
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onCancel();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (draft.trim()) onSubmitEdit(draft.trim());
+            }
+          }}
+          className="min-h-20 w-full resize-none border border-acc-line bg-g1 px-3 py-2 text-[14.5px] field-sizing-content outline-none"
+        />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onCancel} className="cursor-pointer px-3 py-1.5 text-[13px] text-ink2 hover:text-ink">
+            Отмена
+          </button>
+          <button type="submit" className="fx-chamfer cursor-pointer bg-acc px-3 py-1.5 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+            Отправить новой веткой
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="group ml-auto flex max-w-[85%] flex-col items-end gap-1 sm:max-w-[75%]">
+      <div className="border border-line bg-g2 px-3.5 py-2.5 text-[14.5px]">
+        {m.mode !== "text" && <Label className="mb-1 block text-acc">{modeById(m.mode).label}</Label>}
+        {files.length > 0 && (
+          <ul className="mb-2 flex flex-wrap gap-1.5">
+            {files.map((f) => (
+              <li key={f.name} className="border border-line2 bg-g1 px-2 py-1 font-mono text-[11.5px] text-ink2">
+                {f.name} · {formatBytes(f.sizeBytes)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {text && <p className="whitespace-pre-wrap">{text}</p>}
+      </div>
+      <div className="flex items-center gap-1 text-[12px] text-ink3">
+        <VersionSwitch v={versions} />
+        {text && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 focus-visible:opacity-100 hover:text-ink pointer-coarse:h-11 pointer-coarse:opacity-100"
+          >
+            <Pencil size={13} strokeWidth={1.5} /> Изменить
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -37,7 +129,7 @@ export function UserMessage({ m }: { m: Message }) {
 type Props = {
   m: Message;
   run?: RunState;
-  versions: { index: number; total: number; prev?: () => void; next?: () => void };
+  versions: Versions;
   onRegenerate: () => void;
   onAnswer?: (choice: number) => void;
   onOpenArtifact?: () => void;
@@ -61,17 +153,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
     <article className="group flex flex-col gap-2" aria-busy={streaming}>
       <div className="flex flex-wrap items-center gap-2.5">
         {m.model && <span className="border border-acc-line bg-acc-soft px-1.5 py-0.5 font-mono text-[11px] text-acc">{m.model}</span>}
-        {versions.total > 1 && (
-          <span className="inline-flex items-center font-mono text-[11px] text-ink2">
-            <button type="button" onClick={versions.prev} disabled={!versions.prev} aria-label="Предыдущая версия" className="grid size-6 cursor-pointer place-items-center disabled:opacity-30">
-              <ChevronLeft size={14} strokeWidth={1.5} />
-            </button>
-            {versions.index + 1} / {versions.total}
-            <button type="button" onClick={versions.next} disabled={!versions.next} aria-label="Следующая версия" className="grid size-6 cursor-pointer place-items-center disabled:opacity-30">
-              <ChevronRight size={14} strokeWidth={1.5} />
-            </button>
-          </span>
-        )}
+        <VersionSwitch v={versions} />
         {run?.status === "aborted" && (
           <span className="border border-warn/40 px-1.5 py-0.5 font-mono text-[11px] text-warn">ПРЕРВАНО · списано {formatCredits(m.costMicro)}</span>
         )}
@@ -83,6 +165,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
         </SysLine>
       ))}
 
+      {run?.scans?.map((sc) => <FileScan key={sc.name} name={sc.name} labels={sc.labels} />)}
       {run?.ask && <AgentChoice ask={run.ask} onAnswer={(c) => onAnswer?.(c)} />}
       {run?.tasks && <QuestLog tasks={run.tasks} />}
       {run?.sources && run.sources.length > 0 && <SourceNet sources={run.sources} />}

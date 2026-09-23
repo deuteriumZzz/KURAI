@@ -1,5 +1,6 @@
 import type { Mode } from "@/types/api";
 import type { AgentTask, StreamEvent } from "@/lib/stream";
+import { fileKind, type FileMeta } from "@/lib/files";
 import { placeholderImage } from "./media";
 
 /**
@@ -110,13 +111,37 @@ async function* agent(prompt: string, mode: "research" | "slides", signal: Abort
   void prompt;
 }
 
-export async function* simulate(prompt: string, mode: Mode, signal: AbortSignal, fromProgress = 0, ask?: AskFn): AsyncGenerator<StreamEvent> {
+export type SimOptions = { model?: string; files?: FileMeta[] };
+
+const SCAN_LABELS = {
+  image: ["ИЗОБРАЖЕНИЕ", "ТЕКСТ НА ФОТО", "ЛОГОТИП"],
+  pdf: ["ТЕКСТ · 18 СТР.", "ТАБЛИЦА · 4×6", "ПОДПИСЬ"],
+  doc: ["ТЕКСТ · 6 СТР.", "ЗАГОЛОВКИ · 12"],
+  sheet: ["ТАБЛИЦА · 240 СТРОК", "ФОРМУЛЫ"],
+  audio: ["РЕЧЬ · 0:12", "РУССКИЙ ЯЗЫК"],
+  text: ["ТЕКСТ", "КОД"],
+} as const;
+
+export async function* simulate(
+  prompt: string,
+  mode: Mode,
+  signal: AbortSignal,
+  fromProgress = 0,
+  ask?: AskFn,
+  opts: SimOptions = {},
+): AsyncGenerator<StreamEvent> {
+  for (const f of opts.files ?? []) {
+    await sleep(500, signal);
+    yield { type: "scan", name: f.name, labels: [...SCAN_LABELS[fileKind(f.type)]] };
+  }
   if (mode === "research" || mode === "slides") {
     yield* agent(prompt, mode, signal, ask);
     return;
   }
   const started = performance.now();
-  const primary = mode === "image" ? "Nano Banana Pro" : mode === "video" ? "Veo 3" : mode === "audio" ? "TTS · Нова" : "Claude Sonnet 5";
+  const fallbackName = mode === "image" ? "Nano Banana Pro" : mode === "video" ? "Veo 3" : mode === "audio" ? "TTS · Нова" : "Claude Sonnet 5";
+  // «Авто» выбирает конкретную модель на сервере; в демо — Claude Sonnet 5
+  const primary = opts.model && opts.model !== "Авто" ? opts.model : fallbackName;
 
   if (mode === "image" || mode === "video") {
     let progress = fromProgress;

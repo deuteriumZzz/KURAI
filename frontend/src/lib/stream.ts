@@ -7,6 +7,7 @@ export type StreamEvent =
   | { type: "delta"; text: string }
   | { type: "job"; status: JobStatus; progress: number; queuePosition?: number; tip?: string }
   | { type: "media"; parts: MessagePart[] }
+  | { type: "scan"; name: string; labels: string[] }
   | { type: "ask"; question: string; options: string[] }
   | { type: "answered"; choice: number }
   | { type: "tasks"; tasks: AgentTask[] }
@@ -34,6 +35,8 @@ export type RunState = {
   tasks?: AgentTask[];
   sources?: { url: string; title: string }[];
   artifact?: Artifact;
+  /** Что модель «увидела» во вложениях — для сканера. */
+  scans?: { name: string; labels: string[] }[];
 };
 
 export const newRun = (): RunState => ({ status: "streaming", log: [] });
@@ -62,6 +65,8 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     }
     case "media":
       return { msg: { ...msg, parts: [...msg.parts.filter((p) => p.type !== "job"), ...ev.parts] }, run };
+    case "scan":
+      return { msg, run: { ...run, scans: [...(run.scans ?? []), { name: ev.name, labels: ev.labels }] } };
     case "ask":
       return { msg, run: { ...run, ask: { question: ev.question, options: ev.options } } };
     case "answered":

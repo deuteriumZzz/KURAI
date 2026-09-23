@@ -1,17 +1,26 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
+import { defaultModel, type ModelInfo } from "@/lib/models";
+import { contextUsage } from "@/lib/context";
+import { fileError, type FileMeta } from "@/lib/files";
 import { formatCredits } from "@/lib/format";
+import { readPrefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import { retrigger } from "@/lib/motion";
 import { Decode } from "@/components/fx/decode";
-import Link from "next/link";
-import { Hatch, KeyHint, Label } from "@/components/fx/primitives";
+import { Hatch, KeyHint, Label, Segments, useFx } from "@/components/fx/primitives";
 import { Hint } from "./hint";
+import { ModelPicker } from "./model-picker";
+import { VoiceInput } from "./voice-input";
+import { AttachmentChips, type Attachment } from "./attachments";
+
+export type Outgoing = { text: string; mode: Mode; model: ModelInfo; web: boolean; files: FileMeta[] };
 
 type Props = {
   /** home — центр пустого экрана (чипы под полем, как у Kimi); dock — низ чата (чипы над полем). */
@@ -19,23 +28,63 @@ type Props = {
   initialMode?: Mode;
   initialValue?: string;
   /** Отправка внутри чата; без неё главная ведёт в чат. */
-  onSend?: (text: string, mode: Mode) => void;
+  onSend?: (msg: Outgoing) => void;
   /** Идёт ответ — кнопка отправки становится «Стоп». */
   busy?: boolean;
   onStop?: () => void;
-  /** Баланс пользователя: если меньше оценки запроса — показываем штриховку и не даём отправить. */
+  /** Баланс пользователя: если меньше оценки запроса — штриховка и отправка недоступна. */
   balanceMicro?: number;
+  /** Сколько символов уже в активной ветке — для шкалы контекста. */
+  contextChars?: number;
+  onCompress?: () => void;
+  /** ↑ в пустом поле — изменить последнее своё сообщение. */
+  onEditLast?: () => void;
 };
 
-/** Поле ввода единого чата. Режим — состояние поля, а не отдельная страница. */
-export function Composer({ variant, initialMode = "text", initialValue = "", onSend, busy = false, onStop, balanceMicro = Infinity }: Props) {
+let seq = 0;
+
+/** Поле ввода единого чата: режим, модель, голос, файлы, цена и контекст — всё в одном месте. */
+export function Composer({
+  variant,
+  initialMode = "text",
+  initialValue = "",
+  onSend,
+  busy = false,
+  onStop,
+  balanceMicro = Infinity,
+  contextChars = 0,
+  onCompress,
+  onEditLast,
+}: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [value, setValue] = useState(initialValue);
   const [web, setWeb] = useState(true);
+  const [picked, setPicked] = useState<Partial<Record<Mode, ModelInfo>>>({});
+  const [preferred, setPreferred] = useState<string | undefined>();
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [recording, setRecording] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const voiceBase = useRef("");
+  const [errRef, glitch] = useFx<HTMLDivElement>("fx-glitch");
+
+  // настройки из localStorage доступны только в браузере
+  useEffect(() => {
+    const p = readPrefs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreferred(p.model);
+    setWeb(p.web);
+  }, []);
+
   const cfg = modeById(mode);
-  const short = cfg.costHintMicro > balanceMicro;
+  const model = picked[mode] ?? defaultModel(mode, preferred);
+  const cost = mode === "research" || mode === "slides" ? cfg.costHintMicro : model.priceHintMicro;
+  const short = cost > balanceMicro;
+  const usage = contextUsage(contextChars, model.contextK);
+  const uploading = files.some((f) => f.progress < 1);
 
   function switchMode(next: Mode) {
     if (next === mode) return;
@@ -53,18 +102,92 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
     setValue(text);
   }
 
+  const addFiles = useCallback(
+    (list: FileList | File[]) => {
+      for (const f of Array.from(list)) {
+        const err = fileError({ name: f.name, size: f.size, type: f.type });
+        if (err) {
+          setError(err);
+          glitch();
+          continue;
+        }
+        const id = `f${seq++}`;
+        const previewUrl = f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined;
+        setFiles((fs) => [...fs, { id, name: f.name, size: f.size, type: f.type, progress: 0, previewUrl }]);
+        // тестовые данные: загрузка в S3 по подписанной ссылке появится с бэкендом
+        const t = setInterval(() => {
+          setFiles((fs) => fs.map((x) => (x.id === id ? { ...x, progress: Math.min(1, x.progress + 0.25) } : x)));
+        }, 150);
+        setTimeout(() => clearInterval(t), 700);
+      }
+    },
+    [glitch],
+  );
+
+  // перетаскивание файлов на всё окно
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes("Files");
+    const enter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      depth++;
+      setDragging(true);
+    };
+    const over = (e: DragEvent) => hasFiles(e) && e.preventDefault();
+    const leave = () => {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDragging(false);
+    };
+    const drop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      if (e.dataTransfer?.files.length) addFiles(e.dataTransfer.files);
+    };
+    window.addEventListener("dragenter", enter);
+    window.addEventListener("dragover", over);
+    window.addEventListener("dragleave", leave);
+    window.addEventListener("drop", drop);
+    return () => {
+      window.removeEventListener("dragenter", enter);
+      window.removeEventListener("dragover", over);
+      window.removeEventListener("dragleave", leave);
+      window.removeEventListener("drop", drop);
+    };
+  }, [addFiles]);
+
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    if (!value.trim() || busy || short) return;
+    if ((!value.trim() && files.length === 0) || busy || short || uploading || recording) return;
+    const msg: Outgoing = { text: value.trim(), mode, model, web, files: files.map(({ name, size, type }) => ({ name, size, type })) };
     setValue("");
-    if (onSend) onSend(value.trim(), mode);
+    setFiles([]);
+    setError(null);
+    if (onSend) onSend(msg);
     // тестовые данные: с главной запрос открывает демонстрационный чат
     else router.push("/app/c/7f3a");
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e);
+    if (e.key === "ArrowUp" && value === "" && onEditLast) {
+      e.preventDefault();
+      onEditLast();
+    }
   }
+
+  function onPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    if (e.clipboardData.files.length > 0) {
+      e.preventDefault();
+      addFiles(e.clipboardData.files);
+    }
+  }
+
+  const onVoiceActive = useCallback((a: boolean) => {
+    setRecording(a);
+    if (a) voiceBase.current = "";
+  }, []);
 
   const chips = (
     <div role="radiogroup" aria-label="Режим" className={cn("flex flex-wrap gap-2", variant === "home" ? "justify-center" : "")}>
@@ -87,22 +210,42 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
     </div>
   );
 
+  const iconBtn = "relative grid size-8 cursor-pointer place-items-center border pointer-coarse:size-11";
+
   return (
     <form onSubmit={submit} className="flex w-full max-w-3xl flex-col gap-3">
       {variant === "dock" && chips}
       {short && (
         <Hatch>
-          Недостаточно кредитов для режима «{cfg.label}»: нужно {formatCredits(cfg.costHintMicro)}, на балансе {formatCredits(balanceMicro)}.{" "}
+          Недостаточно кредитов для «{model.name}»: нужно {formatCredits(cost)}, на балансе {formatCredits(balanceMicro)}.{" "}
           <Link href="/app/billing#top-up" className="underline underline-offset-2">
             Пополнить
           </Link>
         </Hatch>
+      )}
+      {error && (
+        <div ref={errRef} role="alert" className="flex items-start justify-between gap-3 border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err">
+          {error}
+          <button type="button" onClick={() => setError(null)} className="cursor-pointer text-[12px] underline">
+            Понятно
+          </button>
+        </div>
       )}
       <div className="fx-brackets">
         <div
           ref={boxRef}
           className="fx-chamfer border border-line2 bg-g1 px-3.5 pt-3 pb-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)]"
         >
+          <AttachmentChips
+            items={files}
+            onRemove={(id) =>
+              setFiles((fs) => {
+                const f = fs.find((x) => x.id === id);
+                if (f?.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                return fs.filter((x) => x.id !== id);
+              })
+            }
+          />
           {cfg.params.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {cfg.params.map((p) => (
@@ -113,7 +256,7 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
             </div>
           )}
           <label htmlFor="composer-input" className="fx-sr">
-            Запрос · режим «{cfg.label}»
+            Запрос · режим «{cfg.label}» · модель {model.name}
           </label>
           <textarea
             id="composer-input"
@@ -121,39 +264,61 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={cfg.placeholder}
+            onPaste={onPaste}
+            placeholder={recording ? "Говорите — текст появится здесь…" : cfg.placeholder}
             className="block max-h-60 min-h-7 w-full resize-none bg-transparent text-[15px] text-ink field-sizing-content outline-none placeholder:text-ink3"
           />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <button type="button" aria-label="Прикрепить файл" className="relative grid size-8 cursor-pointer place-items-center border border-line text-ink2 hover:text-ink pointer-coarse:size-11">
+              <input
+                ref={fileInput}
+                type="file"
+                multiple
+                hidden
+                accept="image/*,application/pdf,text/*,audio/*,.docx,.xlsx,.doc,.xls,.csv"
+                onChange={(e) => {
+                  if (e.target.files) addFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <button type="button" onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл" className={cn(iconBtn, "border-line text-ink2 hover:text-ink")}>
                 <Paperclip size={16} strokeWidth={1.5} />
               </button>
+              <VoiceInput
+                onActiveChange={onVoiceActive}
+                onText={(t) => setValue(t)}
+                onAudio={(f) => addFiles([f])}
+                onError={(m) => {
+                  setError(m);
+                  glitch();
+                }}
+              />
               <button
                 type="button"
                 aria-pressed={web}
                 aria-label="Поиск в интернете"
                 onClick={() => setWeb((w) => !w)}
-                className={cn("relative grid size-8 cursor-pointer place-items-center border pointer-coarse:size-11", web ? "border-acc-line text-acc" : "border-line text-ink3")}
+                className={cn(iconBtn, web ? "border-acc-line text-acc" : "border-line text-ink3")}
               >
                 <Globe size={16} strokeWidth={1.5} />
               </button>
               {mode !== "text" && (
-                <Label className="ml-1 text-acc">
+                <Label className="ml-1 hidden text-acc sm:inline">
                   <Decode key={mode} text={`● ${cfg.label}`} />
                 </Label>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Label className="tabular-nums">{formatCredits(cfg.costHintMicro, { approx: true })}</Label>
-              <span className="hidden border border-line px-2.5 py-1 text-[12.5px] text-ink2 sm:inline">{cfg.model} ▾</span>
+              {contextChars > 0 && model.contextK > 0 && (
+                <span className="hidden items-center gap-1.5 sm:flex" title="Заполненность контекста модели">
+                  <Segments value={usage} count={8} tone={usage >= 0.8 ? "warn" : "acc"} label="Заполненность контекста" className="w-14" />
+                  <span className={cn("font-mono text-[11px] tabular-nums", usage >= 0.8 ? "text-warn" : "text-ink3")}>{Math.round(usage * 100)}%</span>
+                </span>
+              )}
+              <Label className="tabular-nums">{formatCredits(cost, { approx: true })}</Label>
+              <ModelPicker mode={mode} value={model} onChange={(m) => setPicked((p) => ({ ...p, [mode]: m }))} />
               {busy ? (
-                <button
-                  type="button"
-                  onClick={onStop}
-                  aria-label="Остановить ответ"
-                  className="relative grid size-8 cursor-pointer place-items-center border border-acc-line text-acc pointer-coarse:size-11"
-                >
+                <button type="button" onClick={onStop} aria-label="Остановить ответ" className={cn(iconBtn, "border-acc-line text-acc")}>
                   <Square size={12} strokeWidth={2} fill="currentColor" />
                   <Hint k="Esc" />
                 </button>
@@ -161,8 +326,8 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
                 <button
                   type="submit"
                   aria-label="Отправить"
-                  disabled={!value.trim() || short}
-                  className="relative grid size-8 cursor-pointer place-items-center border border-acc bg-acc text-acc-ink disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:size-11"
+                  disabled={(!value.trim() && files.length === 0) || short || uploading || recording}
+                  className={cn(iconBtn, "border-acc bg-acc text-acc-ink disabled:cursor-not-allowed disabled:opacity-40")}
                 >
                   <ArrowUp size={16} strokeWidth={2} />
                   <Hint k="Enter" />
@@ -172,6 +337,14 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
           </div>
         </div>
       </div>
+      {usage >= 0.8 && onCompress && (
+        <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-warn">
+          Чат длинный — ответы дорожают.
+          <button type="button" onClick={onCompress} className="cursor-pointer underline underline-offset-2">
+            Сжать историю
+          </button>
+        </p>
+      )}
       {variant === "home" && chips}
       {variant === "home" && (
         <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-ink3">
@@ -180,6 +353,15 @@ export function Composer({ variant, initialMode = "text", initialValue = "", onS
           <span><KeyHint>⌘K</KeyHint> поиск</span>
           <span><KeyHint>Alt</KeyHint> подсказки клавиш</span>
         </p>
+      )}
+      {dragging && (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-50 grid place-items-center border border-dashed border-acc bg-bg/80">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <Decode text="› ПРИЁМ ДАННЫХ" className="font-mono text-[12px] tracking-[0.14em] text-acc" />
+            <p className="font-display text-2xl font-light">Отпустите, чтобы прикрепить</p>
+            <Label>фото · PDF · DOCX · XLSX · аудио · до 50 МБ</Label>
+          </div>
+        </div>
       )}
     </form>
   );
