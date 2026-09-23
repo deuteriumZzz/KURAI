@@ -1,5 +1,7 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Citation } from "./citation";
+import { CodeBlock } from "./code-block";
 
 // Безопасность: сырой HTML не рендерится (skipHtml), ссылки проходят встроенный urlTransform
 // (javascript: и прочие опасные схемы вырезаются).
@@ -23,7 +25,11 @@ const components: Components = {
     ) : (
       <code className="border border-line bg-g2 px-1 font-mono text-[13px]">{children}</code>
     ),
-  pre: ({ children }) => <pre className="my-3 overflow-x-auto border border-line bg-g1 p-3 font-mono text-[13px] leading-relaxed">{children}</pre>,
+  pre: ({ children }) => {
+    const child = Array.isArray(children) ? children[0] : children;
+    const cls = (child as { props?: { className?: string } } | undefined)?.props?.className ?? "";
+    return <CodeBlock lang={/language-(\w+)/.exec(cls)?.[1]}>{children}</CodeBlock>;
+  },
   table: ({ children }) => (
     <div className="my-3 overflow-x-auto">
       <table className="w-full border-collapse text-[13.5px]">{children}</table>
@@ -34,11 +40,23 @@ const components: Components = {
   blockquote: ({ children }) => <blockquote className="my-2 border-l border-acc-line pl-3 text-ink2">{children}</blockquote>,
 };
 
-export function Markdown({ text }: { text: string }) {
+type Source = { url: string; title: string };
+
+/** Ответ модели. Сноски [n] превращаются в карточки источников, если источники переданы. */
+export function Markdown({ text, sources = [] }: { text: string; sources?: Source[] }) {
+  const withCites = sources.length ? text.replace(/\[(\d{1,2})\]/g, "[$1](#cite-$1)") : text;
+  const comps: Components = {
+    ...components,
+    a: ({ children, href }) => {
+      const m = /^#cite-(\d+)$/.exec(href ?? "");
+      if (m) return <Citation n={Number(m[1])} source={sources[Number(m[1]) - 1]} />;
+      return components.a ? (components.a as (p: { children?: React.ReactNode; href?: string }) => React.ReactNode)({ children, href }) : null;
+    },
+  };
   return (
     <div className="text-[14.5px] leading-relaxed text-ink">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml>
-        {text}
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={comps} skipHtml>
+        {withCites}
       </ReactMarkdown>
     </div>
   );

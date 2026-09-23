@@ -1,6 +1,8 @@
 "use client";
 
 import { lazy, Suspense, useState } from "react";
+import { motion } from "motion/react";
+import { Brain } from "lucide-react";
 import { Check, ChevronLeft, ChevronRight, Copy, Pencil, RotateCcw } from "lucide-react";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
@@ -10,17 +12,18 @@ import { StreamText } from "@/components/fx/decode";
 import { Label, SysLine } from "@/components/fx/primitives";
 // Markdown (≈ 40 KB) грузится отдельным чанком; до загрузки ответ виден обычным текстом.
 const LazyMarkdown = lazy(() => import("./markdown").then((m) => ({ default: m.Markdown })));
-import { ImageGrid, JobCard, VideoCard } from "./media";
+type Src = { url: string; title: string };
+import { ImageGrid, JobCard, VideoCard, type ImageAction } from "./media";
 import { AgentChoice, AgentSummary, FileScan, QuestLog, SourceNet } from "./agent";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
 
 /** Пока чанк Markdown не загружен — показываем текст как есть. */
-function MarkdownOrText({ text }: { text: string }) {
+function MarkdownOrText({ text, sources }: { text: string; sources?: Src[] }) {
   return (
     <Suspense fallback={<p className="text-[14.5px] leading-relaxed whitespace-pre-wrap">{text}</p>}>
-      <LazyMarkdown text={text} />
+      <LazyMarkdown text={text} sources={sources} />
     </Suspense>
   );
 }
@@ -50,6 +53,21 @@ type UserProps = {
   onSubmitEdit: (text: string) => void;
   versions: Versions;
 };
+
+/** Рассуждения модели («Думать дольше»): открыты, пока идёт размышление, потом сворачиваются. */
+function Thinking({ text, live }: { text: string; live: boolean }) {
+  const [open, setOpen] = useState<boolean | null>(null);
+  const isOpen = open ?? live;
+  return (
+    <div className="max-w-2xl border-l border-acc-line pl-3">
+      <button type="button" onClick={() => setOpen(!isOpen)} aria-expanded={isOpen} className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11.5px] text-ink3 hover:text-ink">
+        <Brain size={13} strokeWidth={1.5} className={live ? "fx-caret text-acc" : undefined} />
+        {live ? "Модель думает…" : "Рассуждение"} {isOpen ? "▾" : "▸"}
+      </button>
+      {isOpen && <p className="mt-1.5 text-[13px] leading-relaxed whitespace-pre-wrap text-ink3">{text}</p>}
+    </div>
+  );
+}
 
 export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versions }: UserProps) {
   const text = textOf(m);
@@ -133,9 +151,11 @@ type Props = {
   onRegenerate: () => void;
   onAnswer?: (choice: number) => void;
   onOpenArtifact?: () => void;
+  onFollowup?: (text: string) => void;
+  onImageAction?: (a: ImageAction, index: number) => void;
 };
 
-export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact }: Props) {
+export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction }: Props) {
   const [copied, setCopied] = useState(false);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
@@ -168,7 +188,8 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
       {run?.scans?.map((sc) => <FileScan key={sc.name} name={sc.name} labels={sc.labels} />)}
       {run?.ask && <AgentChoice ask={run.ask} onAnswer={(c) => onAnswer?.(c)} />}
       {run?.tasks && <QuestLog tasks={run.tasks} />}
-      {run?.sources && run.sources.length > 0 && <SourceNet sources={run.sources} />}
+      {run?.thinking && <Thinking text={run.thinking} live={streaming && !text} />}
+      {run?.tasks && run.sources && run.sources.length > 0 && <SourceNet sources={run.sources} />}
       {m.parts.map((p, i) => {
         if (p.type === "text")
           return streaming ? (
@@ -176,14 +197,43 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
               <StreamText text={p.text} done={false} />
             </div>
           ) : (
-            <MarkdownOrText key={i} text={p.text} />
+            <MarkdownOrText key={i} text={p.text} sources={run?.sources} />
           );
         if (p.type === "job") return <JobCard key={i} job={p} queuePosition={run?.queuePosition} tip={run?.tip} />;
-        if (p.type === "video") return <VideoCard key={i} video={p} />;
+        if (p.type === "video") return <VideoCard key={i} video={p} id={`${m.id}-v${i}`} />;
         return null;
       })}
-      {images.length > 0 && <ImageGrid images={images} />}
+      {images.length > 0 && <ImageGrid images={images} id={m.id} caption={`${m.model ?? ""}`} onAction={onImageAction} />}
       {run?.status === "done" && run.tasks && <AgentSummary run={run} costMicro={m.costMicro} onOpenArtifact={onOpenArtifact} />}
+      {!run?.tasks && run?.sources && run.sources.length > 0 && !streaming && (
+        <ul aria-label="Источники" className="flex flex-wrap gap-1.5">
+          {run.sources.map((s, i) => (
+            <li key={s.url}>
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="fx-hover flex items-center gap-1.5 border border-line bg-g1 px-2 py-1 text-[12px] text-ink2 hover:border-line2 hover:text-ink">
+                <span className="font-mono text-[10px] text-acc">{i + 1}</span>
+                {new URL(s.url).hostname.replace(/^www\./, "")}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {run?.status === "done" && run.followups && run.followups.length > 0 && onFollowup && (
+        <div className="flex flex-wrap gap-1.5">
+          {run.followups.map((f, i) => (
+            <motion.button
+              key={f}
+              type="button"
+              onClick={() => onFollowup(f)}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.05, duration: 0.2 }}
+              className="fx-hover cursor-pointer border border-line bg-g1 px-2.5 py-1.5 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc pointer-coarse:py-2.5"
+            >
+              ↳ {f}
+            </motion.button>
+          ))}
+        </div>
+      )}
       {streaming && text === "" && !run?.ask && m.parts.every((p) => p.type === "text") && (
         <span aria-hidden="true" className="fx-caret font-mono text-acc">▍</span>
       )}

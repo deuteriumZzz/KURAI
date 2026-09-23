@@ -19,3 +19,7 @@ export function notify(title: string, href?: string) {
   const at = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   inboxStore.set((items) => [{ id: `n${Date.now()}${n++}`, title, href, at, unread: true }, ...items].slice(0, 20));
 }
+
+export type LightboxItem = { id: string; src: string; alt: string; caption?: string; kind: "image" | "video"; durationSec?: number };
+export const lightboxStore = createStore<{ items: LightboxItem[]; index: number } | null>(null);
+export const openLightbox = (items: LightboxItem[], index: number) => lightboxStore.set({ items, index });

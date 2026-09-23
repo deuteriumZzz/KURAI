@@ -11,6 +11,7 @@ import { Sidebar } from "./sidebar";
 import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
+import { Lightbox } from "@/components/media/lightbox";
 import { MotionConfig } from "motion/react";
 import { useCalm } from "@/lib/use-calm";
 
@@ -133,6 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} chats={chats} />
+      <Lightbox />
     </div>
     </MotionConfig>
   );

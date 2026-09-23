@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { AudioLines, Play } from "lucide-react";
 import type { MediaItem } from "@/types/api";
 import { formatBytes, formatCredits } from "@/lib/format";
 import { Label } from "@/components/fx/primitives";
+import { motion } from "motion/react";
+import { openLightbox, type LightboxItem } from "@/lib/app-state";
 
 const KIND = { image: "Изображение", video: "Видео", audio: "Аудио" } as const;
 const MODE = { image: "image", video: "video", audio: "audio" } as const;
@@ -13,7 +17,7 @@ function wave(seed: number): number[] {
 }
 
 /** Карточка медиатеки как «файл записи»: превью, а при наведении — модель, промпт, цена и действия. */
-export function MediaCard({ item }: { item: MediaItem }) {
+export function MediaCard({ item, all = [], index = 0 }: { item: MediaItem; all?: LightboxItem[]; index?: number }) {
   const repeat = `/app?mode=${MODE[item.kind]}&prompt=${encodeURIComponent(item.prompt)}`;
   const date = new Date(item.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 
@@ -30,8 +34,15 @@ export function MediaCard({ item }: { item: MediaItem }) {
             </div>
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element -- data: URI заглушек; настоящие файлы пойдут через next/image
-          <img src={item.kind === "video" ? item.poster : item.url} alt={item.prompt} className="h-full w-full object-cover" loading="lazy" />
+          <button type="button" onClick={() => openLightbox(all, index)} aria-label={`Открыть: ${item.prompt}`} className="block h-full w-full cursor-zoom-in">
+            <motion.img
+              layoutId={`media-${item.id}`}
+              src={item.kind === "video" ? item.poster : item.url}
+              alt={item.prompt}
+              className="h-full w-full object-cover transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.04]"
+              loading="lazy"
+            />
+          </button>
         )}
         {item.kind === "video" && (
           <span aria-hidden="true" className="absolute inset-0 grid place-items-center">
@@ -45,13 +56,13 @@ export function MediaCard({ item }: { item: MediaItem }) {
         )}
 
         {/* метаданные записи: наведение или фокус с клавиатуры */}
-        <div className="absolute inset-0 flex flex-col justify-end gap-2 bg-bg/88 p-3 opacity-0 transition-opacity duration-(--dur-fast) group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col justify-end gap-2 bg-gradient-to-t from-bg via-bg/90 to-transparent p-3 pt-10 opacity-0 transition-opacity duration-(--dur-fast) group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:hidden">
           <Label className="text-acc">{item.model}</Label>
           <p className="line-clamp-4 text-[13px] leading-snug">{item.prompt}</p>
           <Label className="tracking-[0.04em] normal-case">
             {formatCredits(item.costMicro)} · {formatBytes(item.sizeBytes)} · {date}
           </Label>
-          <Link href={repeat} className="border border-acc-line bg-acc-soft px-2 py-1.5 text-center text-[12.5px] text-acc hover:bg-acc hover:text-acc-ink">
+          <Link href={repeat} className="pointer-events-auto border border-acc-line bg-acc-soft px-2 py-1.5 text-center text-[12.5px] text-acc hover:bg-acc hover:text-acc-ink">
             Повторить с этими настройками
           </Link>
         </div>

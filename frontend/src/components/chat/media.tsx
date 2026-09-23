@@ -1,4 +1,8 @@
-import { Play } from "lucide-react";
+"use client";
+
+import { Clapperboard, Layers, Maximize2, Play } from "lucide-react";
+import { motion } from "motion/react";
+import { openLightbox } from "@/lib/app-state";
 import type { MessagePart } from "@/types/api";
 import { cn } from "@/lib/cn";
 import { Label, Scanline, Segments, SysLine } from "@/components/fx/primitives";
@@ -53,28 +57,65 @@ export function JobCard({ job, queuePosition, tip }: { job: Job; queuePosition?:
   );
 }
 
-export function ImageGrid({ images }: { images: Extract<MessagePart, { type: "image" }>[] }) {
+export type ImageAction = "upscale" | "variants" | "animate";
+
+export function ImageGrid({ images, id, caption, onAction }: { images: Extract<MessagePart, { type: "image" }>[]; id: string; caption?: string; onAction?: (a: ImageAction, index: number) => void }) {
+  const items = images.map((img, i) => ({ id: `${id}-${i}`, src: img.url, alt: img.alt, caption, kind: "image" as const }));
   return (
-    <div className="fx-reveal fx-flicker-border grid max-w-lg grid-cols-2 gap-1.5 border border-line p-1.5">
+    <div className={cn("fx-reveal fx-flicker-border grid max-w-lg gap-1.5 border border-line p-1.5", images.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
       {images.map((img, i) => (
-        // eslint-disable-next-line @next/next/no-img-element -- data: URI заглушек; настоящие результаты пойдут через next/image
-        <img key={i} src={img.url} alt={img.alt} width={img.width} height={img.height} className="aspect-square w-full border border-line object-cover" />
+        <div key={i} className="group relative overflow-hidden border border-line">
+          <button type="button" onClick={() => openLightbox(items, i)} aria-label={`Открыть: ${img.alt}`} className="block w-full cursor-zoom-in">
+            <motion.img
+              layoutId={`media-${id}-${i}`}
+              src={img.url}
+              alt={img.alt}
+              width={img.width}
+              height={img.height}
+              className="aspect-square w-full object-cover transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.03]"
+            />
+          </button>
+          {onAction && (
+            <div className="absolute inset-x-1 bottom-1 flex gap-1 opacity-0 transition-opacity duration-(--dur-fast) group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+              {([
+                ["upscale", "Увеличить", Maximize2],
+                ["variants", "Варианты", Layers],
+                ["animate", "Оживить", Clapperboard],
+              ] as const).map(([a, label, Icon]) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => onAction(a, i)}
+                  title={label}
+                  className="flex h-7 flex-1 cursor-pointer items-center justify-center gap-1 border border-line2 bg-bg/85 text-[11px] text-ink2 hover:border-acc-line hover:text-acc pointer-coarse:h-9"
+                >
+                  <Icon size={12} strokeWidth={1.5} aria-hidden="true" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );
 }
 
-export function VideoCard({ video }: { video: Extract<MessagePart, { type: "video" }> }) {
+export function VideoCard({ video, id, caption }: { video: Extract<MessagePart, { type: "video" }>; id: string; caption?: string }) {
   return (
-    <div className="fx-reveal fx-flicker-border relative max-w-lg border border-line p-1.5">
-      {/* eslint-disable-next-line @next/next/no-img-element -- постер-заглушка */}
-      <img src={video.poster} alt="Кадр видео" className="aspect-video w-full object-cover" />
+    <button
+      type="button"
+      onClick={() => openLightbox([{ id, src: video.poster ?? "", alt: caption ?? "Видео", caption, kind: "video", durationSec: video.durationSec }], 0)}
+      aria-label="Открыть видео"
+      className="fx-reveal fx-flicker-border relative block w-full max-w-lg cursor-zoom-in border border-line p-1.5 text-left"
+    >
+      <motion.img layoutId={`media-${id}`} src={video.poster} alt="Кадр видео" className="aspect-video w-full object-cover" />
       <span className="absolute inset-0 grid place-items-center">
         <span className="grid size-12 place-items-center border border-acc bg-bg/60 text-acc">
           <Play size={20} strokeWidth={1.5} />
         </span>
       </span>
       <Label className="absolute bottom-3 left-3 bg-bg/80 px-1.5">{`0:0${video.durationSec} · превью`}</Label>
-    </div>
+    </button>
   );
 }

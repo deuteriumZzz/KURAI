@@ -31,3 +31,13 @@ export function parseCommand(input: string): { mode: Mode; rest: string } | null
   const cfg = MODES.find((m) => m.command === match[1]);
   return cfg ? { mode: cfg.id, rest: input.slice(match[0].length) } : null;
 }
+
+/** Режим для кнопки-продолжения по её тексту («Нарисуй…» → изображение и т.д.). */
+export function modeForFollowup(text: string, current: Mode): Mode {
+  const t = text.toLowerCase();
+  if (/нарису|картинк|вариант|стиле аниме/.test(t)) return "image";
+  if (/оживи|видео|вертикальн|секунд/.test(t)) return "video";
+  if (/слайд/.test(t)) return "slides";
+  if (/озвуч|голос|помедленнее/.test(t)) return "audio";
+  return current === "image" || current === "video" || current === "audio" ? "text" : current;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modeById, parseCommand } from "./modes";
+import { modeById, modeForFollowup, parseCommand } from "./modes";
 
 describe("parseCommand", () => {
   it("switches mode by leading command and keeps the rest", () => {
@@ -16,5 +16,16 @@ describe("parseCommand", () => {
 describe("modeById", () => {
   it("returns config for a mode", () => {
     expect(modeById("image").model).toBe("Nano Banana Pro");
+  });
+});
+
+describe("modeForFollowup", () => {
+  it("maps follow-up text to the right mode", () => {
+    expect(modeForFollowup("Нарисуй картинку к этому", "text")).toBe("image");
+    expect(modeForFollowup("Оживи первую в видео", "image")).toBe("video");
+    expect(modeForFollowup("Сделай из этого слайды", "research")).toBe("slides");
+    expect(modeForFollowup("Добавь озвучку", "video")).toBe("audio");
+    expect(modeForFollowup("Сделай короче", "text")).toBe("text");
+    expect(modeForFollowup("Другой голос", "audio")).toBe("audio");
   });
 });

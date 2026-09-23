@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, AudioLines, Clapperboard, Globe, Image as ImageIcon, MessageSquare, Paperclip, Presentation, Square, Telescope } from "lucide-react";
+import { ArrowUp, AudioLines, Brain, Clapperboard, Globe, Image as ImageIcon, MessageSquare, Paperclip, Presentation, Sparkles, Square, Telescope } from "lucide-react";
+import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } from "@/lib/prompt";
 import { motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
@@ -23,7 +24,7 @@ import { AttachmentChips, type Attachment } from "./attachments";
 
 const MODE_ICON = { text: MessageSquare, image: ImageIcon, video: Clapperboard, audio: AudioLines, research: Telescope, slides: Presentation } as const;
 
-export type Outgoing = { text: string; mode: Mode; model: ModelInfo; web: boolean; files: FileMeta[] };
+export type Outgoing = { text: string; mode: Mode; model: ModelInfo; web: boolean; think: boolean; params: ModeParams; files: FileMeta[] };
 
 type Props = {
   /** home — центр пустого экрана (чипы под полем, как у Kimi); dock — низ чата (чипы над полем). */
@@ -69,6 +70,8 @@ export function Composer({
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [think, setThink] = useState(false);
+  const [params, setParams] = useState<Partial<Record<Mode, ModeParams>>>({});
   const boxRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const voiceBase = useRef("");
@@ -84,7 +87,9 @@ export function Composer({
 
   const cfg = modeById(mode);
   const model = picked[mode] ?? defaultModel(mode, preferred);
-  const cost = mode === "research" || mode === "slides" ? cfg.costHintMicro : model.priceHintMicro;
+  const modeParams = params[mode] ?? defaultParams(mode);
+  const canThink = mode === "text" || mode === "research";
+  const cost = Math.round((mode === "research" || mode === "slides" ? cfg.costHintMicro : model.priceHintMicro) * costFactor(mode, modeParams) * (think && canThink ? 1.7 : 1));
   const short = cost > balanceMicro;
   const usage = contextUsage(contextChars, model.contextK);
   const uploading = files.some((f) => f.progress < 1);
@@ -163,7 +168,7 @@ export function Composer({
   function submit(e?: FormEvent) {
     e?.preventDefault();
     if ((!value.trim() && files.length === 0) || busy || short || uploading || recording) return;
-    const msg: Outgoing = { text: value.trim(), mode, model, web, files: files.map(({ name, size, type }) => ({ name, size, type })) };
+    const msg: Outgoing = { text: value.trim(), mode, model, web, think: think && canThink, params: modeParams, files: files.map(({ name, size, type }) => ({ name, size, type })) };
     setValue("");
     setFiles([]);
     setError(null);
@@ -265,12 +270,37 @@ export function Composer({
               })
             }
           />
-          {cfg.params.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {cfg.params.map((p) => (
-                <span key={p} className="border border-line px-2 py-0.5 font-mono text-[11px] text-ink2">
-                  {p}
-                </span>
+          {(PARAMS[mode] ?? []).length > 0 && (
+            <div className="-mx-1 mb-2 flex gap-3 overflow-x-auto px-1 pb-1">
+              {(PARAMS[mode] ?? []).map((p) => (
+                <div key={p.key} role="radiogroup" aria-label={p.label} className="flex shrink-0 items-center gap-1">
+                  <span className="mr-1 font-mono text-[10.5px] tracking-[0.08em] text-ink3 uppercase">{p.label}</span>
+                  {p.options.map((o) => {
+                    const on = modeParams[p.key] === o;
+                    return (
+                      <button
+                        key={o}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setParams((ps) => ({ ...ps, [mode]: { ...modeParams, [p.key]: o } }))}
+                        className={cn(
+                          "inline-flex h-7 cursor-pointer items-center gap-1.5 border px-2 font-mono text-[11.5px] whitespace-nowrap transition-colors duration-(--dur-fast) pointer-coarse:h-9",
+                          on ? "border-acc-line bg-acc-soft text-acc" : "border-line text-ink2 hover:border-line2 hover:text-ink",
+                        )}
+                      >
+                        {p.key === "aspect" && (
+                          <span
+                            aria-hidden="true"
+                            className="inline-block border border-current"
+                            style={{ width: 12 * Math.min(1, Number(o.split(":")[0]) / Number(o.split(":")[1])), height: 12 * Math.min(1, Number(o.split(":")[1]) / Number(o.split(":")[0])) }}
+                          />
+                        )}
+                        {o}
+                      </button>
+                    );
+                  })}
+                </div>
               ))}
             </div>
           )}
@@ -312,6 +342,32 @@ export function Composer({
                   glitch();
                 }}
               />
+              {canThink && (
+                <button
+                  type="button"
+                  aria-pressed={think}
+                  aria-label="Думать дольше: модель рассуждает перед ответом, дороже примерно в 1,7 раза"
+                  title="Думать дольше"
+                  onClick={() => setThink((t) => !t)}
+                  className={cn(iconBtn, think ? "border-acc-line text-acc" : "border-line text-ink3 hover:text-ink")}
+                >
+                  <Brain size={16} strokeWidth={1.5} />
+                </button>
+              )}
+              {value.trim().length > 3 && (
+                <button
+                  type="button"
+                  aria-label="Улучшить промпт"
+                  title="Улучшить промпт"
+                  onClick={() => {
+                    setValue((v) => enhancePrompt(v, mode, modeParams));
+                    retrigger(boxRef.current, "fx-flicker-border");
+                  }}
+                  className={cn(iconBtn, "border-line text-ink2 hover:border-acc-line hover:text-acc")}
+                >
+                  <Sparkles size={16} strokeWidth={1.5} />
+                </button>
+              )}
               <button
                 type="button"
                 aria-pressed={web}

@@ -77,4 +77,14 @@ describe("applyEvent", () => {
     const s = run([{ type: "scan", name: "a.pdf", labels: ["ТЕКСТ · 18 СТР.", "ТАБЛИЦА"] }]);
     expect(s.run.scans).toEqual([{ name: "a.pdf", labels: ["ТЕКСТ · 18 СТР.", "ТАБЛИЦА"] }]);
   });
+
+  it("thinking accumulates, followups replace", () => {
+    const s = run([
+      { type: "thinking", text: "Шаг 1. " },
+      { type: "thinking", text: "Шаг 2." },
+      { type: "followups", items: ["Короче", "Таблицей"] },
+    ]);
+    expect(s.run.thinking).toBe("Шаг 1. Шаг 2.");
+    expect(s.run.followups).toEqual(["Короче", "Таблицей"]);
+  });
 });

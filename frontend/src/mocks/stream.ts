@@ -20,9 +20,9 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 }
 
 const ANSWERS: Record<"text" | "research" | "slides" | "audio", string> = {
-  text: `Коротко — **да, это выгоднее**, если вы пользуетесь больше чем одной нейросетью.
+  text: `Коротко — **да, это выгоднее**, если вы пользуетесь больше чем одной нейросетью [2].
 
-- Платите только за запросы, а не за три подписки сразу.
+- Платите только за запросы, а не за три подписки сразу [1].
 - Картинки, видео и текст живут в одном чате и опираются на общий контекст.
 - Если модель не ответила, запрос уходит на резервную, а кредиты за сбой возвращаются.
 
@@ -34,10 +34,10 @@ const ANSWERS: Record<"text" | "research" | "slides" | "audio", string> = {
 Хотите, посчитаю под ваш реальный объём запросов?`,
   research: `## Итог исследования
 
-Рынок AI-агрегаторов в РФ растёт за счёт доступа к зарубежным моделям без VPN.
+Рынок AI-агрегаторов в РФ растёт за счёт доступа к зарубежным моделям без VPN [3].
 
 1. **Лидеры** делают ставку на медиа: видео, музыку, аватары.
-2. **Главный крючок** — шаблоны и тренды для новичков.
+2. **Главный крючок** — шаблоны и тренды для новичков [1].
 3. **Слабое место** у всех — прозрачность цены за запрос.
 
 Источники: 7 · проверено фактов: 12.`,
@@ -107,11 +107,27 @@ async function* agent(prompt: string, mode: "research" | "slides", signal: Abort
     i += n;
     await sleep(22, signal);
   }
+  yield { type: "followups", items: FOLLOWUPS[mode] ?? [] };
   yield { type: "done", costMicro: mode === "research" ? 384_000 : 246_000, durationMs: Math.round(performance.now() - started) };
   void prompt;
 }
 
-export type SimOptions = { model?: string; files?: FileMeta[] };
+export type SimOptions = { model?: string; files?: FileMeta[]; think?: boolean; web?: boolean; params?: Record<string, string> };
+
+const WEB = [
+  ["https://habr.com", "habr.com", "Как выбирать нейросети под задачу"],
+  ["https://vc.ru", "vc.ru", "Сколько стоят AI-подписки в 2026"],
+  ["https://www.rbc.ru", "rbc.ru", "Рынок генеративного ИИ в России"],
+] as const;
+
+const FOLLOWUPS: Record<string, string[]> = {
+  text: ["Сделай короче", "Оформи таблицей", "Нарисуй картинку к этому"],
+  research: ["Сделай из этого слайды", "Покажи только цифры", "Какие риски?"],
+  slides: ["Добавь слайд с графиком", "Сделай строже", "Напиши текст для выступления"],
+  image: ["Оживи первую в видео", "Ещё 4 варианта", "Сделай в стиле аниме"],
+  video: ["Сделай вертикальную версию", "Добавь озвучку", "Короче, 5 секунд"],
+  audio: ["Другой голос", "Помедленнее", "Сделай видео с этой озвучкой"],
+};
 
 const SCAN_LABELS = {
   image: ["ИЗОБРАЖЕНИЕ", "ТЕКСТ НА ФОТО", "ЛОГОТИП"],
@@ -160,10 +176,13 @@ export async function* simulate(
       yield { type: "job", status: "running", progress, tip: mode === "video" ? TIPS[Math.floor(i / 8) % TIPS.length] : undefined };
     }
     if (mode === "image") {
-      yield { type: "media", parts: [0, 1, 2, 3].map((i) => ({ type: "image" as const, url: placeholderImage(i + prompt.length), alt: `Вариант ${i + 1}: ${prompt.slice(0, 60)}`, width: 512, height: 512 })) };
-      yield { type: "done", costMicro: 160_000, durationMs: Math.round(performance.now() - started) };
+      const count = Number(opts.params?.count ?? "4") || 4;
+      yield { type: "media", parts: Array.from({ length: count }, (_, i) => i).map((i) => ({ type: "image" as const, url: placeholderImage(i + prompt.length), alt: `Вариант ${i + 1}: ${prompt.slice(0, 60)}`, width: 512, height: 512 })) };
+      yield { type: "followups", items: FOLLOWUPS.image ?? [] };
+      yield { type: "done", costMicro: 40_000 * count, durationMs: Math.round(performance.now() - started) };
     } else {
       yield { type: "media", parts: [{ type: "video", url: "", poster: placeholderImage(7, 960, 540, "KURAI · видео 8 с"), durationSec: 8 }] };
+      yield { type: "followups", items: FOLLOWUPS.video ?? [] };
       yield { type: "done", costMicro: 1_180_000, durationMs: Math.round(performance.now() - started) };
     }
     return;
@@ -171,6 +190,20 @@ export async function* simulate(
 
   await sleep(350, signal);
   yield { type: "route", model: primary, node: "EU-01", latencyMs: 240 };
+  if (opts.think) {
+    for (const step of ["Уточняю задачу: сравнить стоимость и удобство. ", "Считаю: три подписки против оплаты за запросы. ", "Проверяю крайние случаи: редкое использование, много видео. "]) {
+      for (let i = 0; i < step.length; i += 4) {
+        yield { type: "thinking", text: step.slice(i, i + 4) };
+        await sleep(18, signal);
+      }
+    }
+  }
+  if (opts.web !== false) {
+    for (const [url, , headline] of WEB) {
+      await sleep(180, signal);
+      yield { type: "source", url, title: headline };
+    }
+  }
   if (/сбой|резерв/i.test(prompt)) {
     await sleep(1400, signal);
     yield { type: "fallback", from: primary, to: "GPT-5", reason: "нет ответа за 8 с" };
@@ -185,7 +218,8 @@ export async function* simulate(
     i += n;
     await sleep(28, signal);
   }
-  yield { type: "done", costMicro: mode === "audio" ? 30_000 : 41_000, durationMs: Math.round(performance.now() - started) };
+  yield { type: "followups", items: FOLLOWUPS[mode === "audio" ? "audio" : "text"] ?? [] };
+  yield { type: "done", costMicro: mode === "audio" ? 30_000 : opts.think ? 68_000 : 41_000, durationMs: Math.round(performance.now() - started) };
 }
 
 /** Частичная стоимость при остановке: пропорционально уже полученному тексту. */

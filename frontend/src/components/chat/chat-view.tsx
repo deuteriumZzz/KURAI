@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
 import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
+import { modeForFollowup } from "@/lib/modes";
 import { formatCredits } from "@/lib/format";
 import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
 import type { Outgoing } from "@/components/app/composer";
@@ -130,7 +131,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   }
 
   function send(msg: Outgoing) {
-    postUser(state.head, msg.text, msg.mode, msg.files, { model: msg.model.name });
+    postUser(state.head, msg.text, msg.mode, msg.files, { model: msg.model.name, think: msg.think, web: msg.web, params: msg.params });
   }
 
   /** Изменить своё сообщение = новая ветка от того же родителя; старая сохраняется. */
@@ -250,6 +251,18 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     run={state.runs[m.id]}
                     versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
                     onRegenerate={() => regenerate(m)}
+                    onImageAction={(a, i) => {
+                      const alt = m.parts.filter((p) => p.type === "image")[i];
+                      const what = alt?.type === "image" ? alt.alt : "картинку";
+                      const opts = { ...lastOpts.current, files: [] };
+                      if (a === "animate") postUser(state.head, `Оживи: ${what}`, "video", [], opts);
+                      if (a === "variants") postUser(state.head, `Ещё варианты: ${what}`, "image", [], opts);
+                      if (a === "upscale") postUser(state.head, `Увеличь до 4K: ${what}`, "image", [], { ...opts, params: { count: "1" } });
+                    }}
+                    onFollowup={(f) => {
+                      const mode = modeForFollowup(f, m.mode);
+                      postUser(state.head, f, mode, [], { ...lastOpts.current, files: [] });
+                    }}
                     onAnswer={(c) => answer(m.id, c)}
                     onOpenArtifact={() => { const a = state.runs[m.id]?.artifact; if (a) setPanel(a); }}
                   />

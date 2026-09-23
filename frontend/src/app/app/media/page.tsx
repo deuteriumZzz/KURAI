@@ -29,6 +29,8 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
     .filter((m) => kind === "all" || m.kind === kind)
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   const used = MOCK_STORAGE.usedBytes / MOCK_STORAGE.quotaBytes;
+  const visual = items.filter((m) => m.kind !== "audio");
+  const lightbox = visual.map((m) => ({ id: m.id, src: (m.kind === "video" ? m.poster : m.url) ?? "", alt: m.prompt, caption: `${m.model} · ${m.prompt}`, kind: m.kind === "video" ? ("video" as const) : ("image" as const), durationSec: m.durationSec }));
   const count = (k: MediaKind | "all") => (k === "all" ? MOCK_MEDIA.length : MOCK_MEDIA.filter((m) => m.kind === k).length);
 
   return (
@@ -73,7 +75,7 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {items.map((item, i) => (
               <Appear key={item.id} index={i}>
-                <MediaCard item={item} />
+                <MediaCard item={item} all={lightbox} index={visual.indexOf(item)} />
               </Appear>
             ))}
           </div>
