@@ -87,4 +87,9 @@ describe("applyEvent", () => {
     expect(s.run.thinking).toBe("Шаг 1. Шаг 2.");
     expect(s.run.followups).toEqual(["Короче", "Таблицей"]);
   });
+
+  it("agent actions append in order", () => {
+    const s = run([{ type: "action", text: "открываю habr.com" }, { type: "action", text: "читаю статью" }]);
+    expect(s.run.actions).toEqual(["открываю habr.com", "читаю статью"]);
+  });
 });

@@ -6,7 +6,7 @@ import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
 import { Avatar } from "@/components/brand/avatar";
 import { FlapNumber } from "@/components/fx/flap-number";
 import { usePathname } from "next/navigation";
-import { House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
+import { Flame, House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
 import { formatCredits, groupChats } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -22,6 +22,7 @@ import { motion } from "motion/react";
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app", label: "Главная", icon: House },
   { href: "/app/media", label: "Медиатека", icon: Images },
+  { href: "/app/explore", label: "Тренды и шаблоны", icon: Flame },
   { href: "/app/billing", label: "Баланс и тарифы", icon: Wallet },
   { href: "/app/settings", label: "Настройки", icon: Settings },
 ];

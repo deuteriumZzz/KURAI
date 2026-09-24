@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AudioLines, Play } from "lucide-react";
+import { AudioLines, Play, Star } from "lucide-react";
 import type { MediaItem } from "@/types/api";
 import { formatBytes, formatCredits } from "@/lib/format";
 import { Label } from "@/components/fx/primitives";
@@ -17,7 +17,7 @@ function wave(seed: number): number[] {
 }
 
 /** Карточка медиатеки как «файл записи»: превью, а при наведении — модель, промпт, цена и действия. */
-export function MediaCard({ item, all = [], index = 0 }: { item: MediaItem; all?: LightboxItem[]; index?: number }) {
+export function MediaCard({ item, all = [], index = 0, fav = false, onFav }: { item: MediaItem; all?: LightboxItem[]; index?: number; fav?: boolean; onFav?: () => void }) {
   const repeat = `/app?mode=${MODE[item.kind]}&prompt=${encodeURIComponent(item.prompt)}`;
   const date = new Date(item.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 
@@ -50,6 +50,17 @@ export function MediaCard({ item, all = [], index = 0 }: { item: MediaItem; all?
               <Play size={16} strokeWidth={1.5} />
             </span>
           </span>
+        )}
+        {onFav && (
+          <button
+            type="button"
+            onClick={onFav}
+            aria-pressed={fav}
+            aria-label={fav ? "Убрать из избранного" : "В избранное"}
+            className={`absolute top-2 right-2 z-10 grid size-8 cursor-pointer place-items-center border bg-bg/80 pointer-coarse:size-11 ${fav ? "border-acc-line text-acc" : "border-line text-ink3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"}`}
+          >
+            <Star size={14} strokeWidth={1.5} fill={fav ? "currentColor" : "none"} />
+          </button>
         )}
         {item.durationSec && (
           <Label className="absolute right-2 bottom-2 bg-bg/80 px-1.5 text-ink">{`0:${String(item.durationSec).padStart(2, "0")}`}</Label>

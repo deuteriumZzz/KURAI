@@ -9,6 +9,7 @@ export type StreamEvent =
   | { type: "media"; parts: MessagePart[] }
   | { type: "scan"; name: string; labels: string[] }
   | { type: "thinking"; text: string }
+  | { type: "action"; text: string }
   | { type: "followups"; items: string[] }
   | { type: "ask"; question: string; options: string[] }
   | { type: "answered"; choice: number }
@@ -43,6 +44,8 @@ export type RunState = {
   thinking?: string;
   /** Продолжения под готовым ответом. */
   followups?: string[];
+  /** Лента действий агента («живое рабочее место»). */
+  actions?: string[];
 };
 
 export const newRun = (): RunState => ({ status: "streaming", log: [] });
@@ -71,6 +74,8 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     }
     case "media":
       return { msg: { ...msg, parts: [...msg.parts.filter((p) => p.type !== "job"), ...ev.parts] }, run };
+    case "action":
+      return { msg, run: { ...run, actions: [...(run.actions ?? []), ev.text] } };
     case "thinking":
       return { msg, run: { ...run, thinking: (run.thinking ?? "") + ev.text } };
     case "followups":

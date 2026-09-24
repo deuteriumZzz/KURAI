@@ -86,10 +86,13 @@ async function* agent(prompt: string, mode: "research" | "slides", signal: Abort
       yield { type: "tasks", tasks: tasks(0, `${i}/${SOURCES.length}`) };
       await sleep(420, signal);
       const [url, title] = SOURCES[i] as readonly [string, string];
+      yield { type: "action", text: `GET ${url} · 200 · ${(0.3 + (i % 3) * 0.2).toFixed(1)} с` };
+      yield { type: "action", text: `извлекаю текст · ${4 + i * 3} абзацев · ${i % 2 ? "таблица найдена" : "цитаты сохранены"}` };
       yield { type: "source", url, title };
     }
     for (let t = 1; t < titles.length; t++) {
       yield { type: "tasks", tasks: tasks(t) };
+      yield { type: "action", text: ["сравниваю цены и тарифы · 7 источников", "сверяю факты: 12 утверждений, 2 спорных", "собираю отчёт · таблица + выводы"][t - 1] ?? "работаю" };
       await sleep(700, signal);
     }
   } else {

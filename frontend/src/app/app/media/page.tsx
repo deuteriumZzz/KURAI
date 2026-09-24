@@ -1,8 +1,7 @@
 import { PageTitle } from "@/components/fx/page-title";
-import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import type { MediaKind } from "@/types/api";
-import { MediaCard } from "@/components/media/media-card";
+import { MediaLibrary } from "@/components/media/media-library";
 import { Hatch, Label, Segments } from "@/components/fx/primitives";
 import { EmptyState } from "@/components/fx/empty-state";
 import { formatBytes } from "@/lib/format";
@@ -74,32 +73,7 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
         {used > 0.9 && <Hatch>Хранилище почти заполнено — удалите старые работы или перейдите на тариф Ultra.</Hatch>}
 
         {items.length > 0 ? (
-          <div className="flex flex-col gap-6">
-            {Object.entries(
-              items.reduce<Record<string, typeof items>>((acc, it) => {
-                const day = it.createdAt.slice(0, 10);
-                (acc[day] ??= []).push(it);
-                return acc;
-              }, {}),
-            ).map(([day, list]) => (
-              <section key={day} aria-label={day} className="flex flex-col gap-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="font-mono text-[11px] tracking-[0.12em] text-ink2 uppercase">
-                    {new Date(day).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
-                  </h2>
-                  <Label>{list.length} работ</Label>
-                </div>
-                <div className="fx-ruler" aria-hidden="true" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {list.map((item) => (
-                    <Appear key={item.id} index={items.indexOf(item)}>
-                      <MediaCard item={item} all={lightbox} index={visual.indexOf(item)} />
-                    </Appear>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          <MediaLibrary items={items} lightbox={lightbox} visual={visual} />
         ) : (
           <div className="border border-dashed border-line2">
             <EmptyState

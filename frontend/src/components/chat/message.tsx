@@ -20,6 +20,8 @@ type Src = { url: string; title: string };
 import { ImageGrid, JobCard, VideoCard, type ImageAction } from "./media";
 import { AgentChoice, AgentSummary, FileScan, QuestLog, SourceNet } from "./agent";
 import { BeforeAfter } from "./before-after";
+import { Workspace } from "./workspace";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
@@ -169,6 +171,8 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
   const swipeX = useRef<number | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [reading, setReading] = useState(false);
+  const [rating, setRating] = useState<"up" | "down" | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
   // без рассинхрона гидрации: на сервере озвучки нет, в браузере — есть
   const canSpeak = useSyncExternalStore(noop, () => "speechSynthesis" in window, () => false);
   const streaming = run?.status === "streaming";
@@ -218,6 +222,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
       {run?.scans?.map((sc) => <FileScan key={sc.name} name={sc.name} labels={sc.labels} />)}
       {run?.ask && <AgentChoice ask={run.ask} onAnswer={(c) => onAnswer?.(c)} />}
       {run?.tasks && <QuestLog tasks={run.tasks} />}
+      {run?.actions && run.actions.length > 0 && <Workspace actions={run.actions} live={streaming} />}
       {run?.thinking && <Thinking text={run.thinking} live={streaming && !text} />}
       {run?.tasks && run.sources && run.sources.length > 0 && <SourceNet sources={run.sources} />}
       {m.parts.map((p, i) => {
@@ -326,12 +331,30 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
               <Pin size={13} strokeWidth={1.5} /> {pinned ? "Закреплено" : "Закрепить"}
             </button>
           )}
+          <span className="mx-1 h-4 w-px bg-line" aria-hidden="true" />
+          <button type="button" aria-pressed={rating === "up"} onClick={() => setRating(rating === "up" ? null : "up")} aria-label="Полезно" data-tip="Полезно" className={`grid size-7 cursor-pointer place-items-center hover:text-ink pointer-coarse:size-11 ${rating === "up" ? "text-acc" : ""}`}>
+            <ThumbsUp size={13} strokeWidth={1.5} />
+          </button>
+          <button type="button" aria-pressed={rating === "down"} onClick={() => setRating(rating === "down" ? null : "down")} aria-label="Не то" data-tip="Не то" className={`grid size-7 cursor-pointer place-items-center hover:text-ink pointer-coarse:size-11 ${rating === "down" ? "text-warn" : ""}`}>
+            <ThumbsDown size={13} strokeWidth={1.5} />
+          </button>
           <span className="ml-1 font-mono text-[11px] opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 group-focus-within:opacity-100">
             {time(m.createdAt)} · {formatCredits(m.costMicro)}
             {run?.durationMs ? ` · ${(run.durationMs / 1000).toFixed(1).replace(".", ",")} с` : ""}
           </span>
         </div>
       )}
+      {rating === "down" && !reason && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
+          <span className="text-ink3">Что не так?</span>
+          {["Неточно", "Слишком длинно", "Не по теме", "Устарело"].map((r) => (
+            <button key={r} type="button" onClick={() => setReason(r)} className="cursor-pointer border border-line px-2 py-1 text-ink2 hover:border-warn hover:text-warn">
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+      {(rating === "up" || reason) && <SysLine tone="acc" decode>{rating === "up" ? "спасибо — учтём в подборе модели «Авто»" : `принято: «${reason}» · попробуйте «Перегенерировать» другой моделью`}</SysLine>}
       <AnimatePresence>{reading && <Reader text={text} model={m.model} onClose={() => setReading(false)} />}</AnimatePresence>
     </article>
   );
