@@ -40,6 +40,9 @@ export type ChatSummary = {
   pinned: boolean;
   /** Последнее сообщение активной ветки. */
   headId: Id;
+  /** Короткий предпросмотр для сайдбара. */
+  preview?: string;
+  media?: number;
 };
 
 export type Plan = "free" | "pro" | "ultra";

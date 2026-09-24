@@ -21,6 +21,7 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
   const [menu, setMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(chat.title);
+  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,7 +60,15 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
   const item = "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-g2 pointer-coarse:py-3";
 
   return (
-    <div ref={root} className="group relative">
+    <div
+      ref={root}
+      className="group relative"
+      onMouseEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setHover({ x: r.right + 12, y: r.top });
+      }}
+      onMouseLeave={() => setHover(null)}
+    >
       <Link
         href={`/app/c/${chat.id}`}
         onClick={onNavigate}
@@ -81,6 +90,23 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
       >
         <Ellipsis size={14} strokeWidth={1.5} />
       </button>
+      {chat.preview && !menu && hover && (
+        <motion.div
+          role="tooltip"
+          initial={{ opacity: 0, x: -4 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.15, delay: 0.35 }}
+          className="pointer-events-none fixed z-50 w-64 border border-line2 bg-g2 p-3 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.8)] max-md:hidden"
+          style={{ left: hover.x, top: hover.y }}
+        >
+          <p className="truncate text-[13px]">{chat.title}</p>
+          <p className="mt-1 text-[12.5px] leading-snug text-ink2">{chat.preview}</p>
+          <p className="mt-2 font-mono text-[10.5px] text-ink3">
+            #{chat.id.toUpperCase()}
+            {chat.media ? ` · медиа ${chat.media}` : ""}
+          </p>
+        </motion.div>
+      )}
       <AnimatePresence>
         {menu && (
           <motion.div

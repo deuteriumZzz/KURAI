@@ -2,7 +2,8 @@ import { PageTitle } from "@/components/fx/page-title";
 import { ShareCard } from "@/components/settings/share-card";
 import { Label, Segments } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
-import { MOCK_BALANCE, MOCK_LEDGER, MOCK_MEDIA, MOCK_USER } from "@/mocks/data";
+import { MOCK_ACTIVITY, MOCK_BALANCE, MOCK_LEDGER, MOCK_MEDIA, MOCK_USER } from "@/mocks/data";
+import { Activity } from "@/components/settings/activity";
 
 /** Статистика профиля как лист характеристик — только реальные данные аккаунта. */
 export default function ProfilePage() {
@@ -49,6 +50,7 @@ export default function ProfilePage() {
               <dd className="font-mono text-acc">{favorite}</dd>
             </div>
           </dl>
+          <Activity days={MOCK_ACTIVITY} />
           <p className="text-[12px] text-ink3">Экономия — ориентир относительно трёх отдельных подписок на текст, изображения и видео.</p>
         </section>
         <section aria-labelledby="share" className="flex flex-col gap-4">

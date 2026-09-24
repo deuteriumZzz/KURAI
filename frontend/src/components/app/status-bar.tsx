@@ -1,5 +1,6 @@
 import type { SystemStatus } from "@/types/api";
 import { cn } from "@/lib/cn";
+import { Tip } from "./tip";
 
 const STATE = {
   ok: { text: "все системы в норме", cls: "text-ok" },
@@ -30,6 +31,9 @@ export function StatusBar({ status, className }: { status: SystemStatus; classNa
       </span>
       <span>Моделей онлайн {status.modelsOnline}</span>
       <span className={state.cls}>● {state.text}</span>
+      <span className="hidden md:inline">
+        <Tip />
+      </span>
     </div>
   );
 }

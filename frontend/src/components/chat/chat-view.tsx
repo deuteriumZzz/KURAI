@@ -8,7 +8,7 @@ import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
 import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
-import { readPrefs } from "@/lib/prefs";
+import { markStep, readPrefs } from "@/lib/prefs";
 import { retrigger } from "@/lib/motion";
 import { ChevronDown, ChevronUp, Pin, Search, X } from "lucide-react";
 import { formatCredits } from "@/lib/format";
@@ -148,6 +148,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   }
 
   function send(msg: Outgoing) {
+    markStep(msg.mode === "image" ? "image" : msg.mode === "video" ? "video" : "text");
     postUser(state.head, msg.text, msg.mode, msg.files, { model: msg.model.name, think: msg.think, web: msg.web, params: msg.params });
   }
 
@@ -251,7 +252,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           >
             <Search size={14} strokeWidth={1.5} />
           </button>
-          <Link href={`/s/${chat.id}`} className="border border-line px-2.5 py-1 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc">
+          <Link href={`/s/${chat.id}`} onClick={() => markStep("share")} className="border border-line px-2.5 py-1 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc">
             Поделиться
           </Link>
         </div>

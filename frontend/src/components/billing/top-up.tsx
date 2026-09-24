@@ -9,6 +9,7 @@ import { formatCredits, MICRO_PER_CREDIT } from "@/lib/format";
 import { isCalm, retrigger } from "@/lib/motion";
 import type { Micro } from "@/types/api";
 import { redeem } from "@/lib/promo";
+import { markStep } from "@/lib/prefs";
 import { Switch } from "@/components/ui/switch";
 
 const PRESETS = [500, 1000, 3000, 5000];
@@ -51,6 +52,7 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
       await new Promise((r) => setTimeout(r, i === 1 ? 1400 : 700));
     }
     setStep(STEPS.length);
+    markStep("topup");
     setBalance((b) => b + amount * MICRO_PER_CREDIT);
   }
 

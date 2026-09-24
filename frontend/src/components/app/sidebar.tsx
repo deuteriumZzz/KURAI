@@ -13,6 +13,7 @@ import { cn } from "@/lib/cn";
 import { Label, Segments } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 import { ChatRow } from "./chat-row";
+import { Checklist } from "./checklist";
 import { Inbox } from "./inbox";
 import { chatsStore } from "@/lib/app-state";
 import { useEffect, useState } from "react";
@@ -142,6 +143,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         ))}
       </nav>
 
+      {!collapsed && <Checklist />}
       {removed && !collapsed && (
         <div role="status" className="mx-2 mb-2 flex items-center justify-between gap-2 border border-line2 bg-g2 px-2.5 py-2 text-[12.5px]">
           <span className="truncate text-ink2">Чат удалён</span>

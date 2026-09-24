@@ -15,11 +15,11 @@ export const MOCK_BALANCE: Balance = {
 export const MOCK_STATUS: SystemStatus = { node: "EU-01", latencyMs: 240, modelsOnline: 312, state: "ok" };
 
 export const MOCK_CHATS: ChatSummary[] = [
-  { id: "7f3a", title: "Сравнение тарифов конкурентов", updatedAt: "2026-09-23T14:32:00Z", pinned: true, headId: "m6" },
-  { id: "b21c", title: "Сценарий ролика для Reels", updatedAt: "2026-09-23T11:05:00Z", pinned: false, headId: "b-h" },
-  { id: "c9e4", title: "Логотип кофейни «Нейрон», 4 варианта", updatedAt: "2026-09-22T18:40:00Z", pinned: false, headId: "c-h" },
-  { id: "d0a7", title: "Разбор договора аренды", updatedAt: "2026-09-19T09:12:00Z", pinned: false, headId: "d-h" },
-  { id: "e5f1", title: "План контента на октябрь", updatedAt: "2026-09-02T16:20:00Z", pinned: false, headId: "e-h" },
+  { id: "7f3a", preview: "Видео «Оживи вторую» · генерация 44%", media: 3, title: "Сравнение тарифов конкурентов", updatedAt: "2026-09-23T14:32:00Z", pinned: true, headId: "m6" },
+  { id: "b21c", preview: "Сценарий на 30 секунд: хук, проблема, решение", media: 2, title: "Сценарий ролика для Reels", updatedAt: "2026-09-23T11:05:00Z", pinned: false, headId: "b-h" },
+  { id: "c9e4", preview: "4 варианта логотипа, лучший — №2", media: 4, title: "Логотип кофейни «Нейрон», 4 варианта", updatedAt: "2026-09-22T18:40:00Z", pinned: false, headId: "c-h" },
+  { id: "d0a7", preview: "Риски в пунктах 4.2 и 7.1 договора", media: 0, title: "Разбор договора аренды", updatedAt: "2026-09-19T09:12:00Z", pinned: false, headId: "d-h" },
+  { id: "e5f1", preview: "План на 4 недели, 12 постов и 3 Reels", media: 1, title: "План контента на октябрь", updatedAt: "2026-09-02T16:20:00Z", pinned: false, headId: "e-h" },
 ];
 
 export const MOCK_MESSAGES: Message[] = [
@@ -90,4 +90,12 @@ export const MOCK_SPEND: { date: string; micro: number; models: { name: string; 
     { name: "Nano Banana Pro", micro: Math.round(rest * 0.4) * 10_000 },
   ].filter((m) => m.micro > 0);
   return { date: d.toISOString().slice(0, 10), micro: models.reduce((s, m) => s + m.micro, 0), models };
+});
+
+/** Активность по дням за 12 недель (тестовые данные). */
+export const MOCK_ACTIVITY = Array.from({ length: 84 }, (_, i) => {
+  const d = new Date(Date.UTC(2026, 6, 3 + i));
+  const weekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+  const count = Math.max(0, Math.round(Math.abs(Math.sin(i * 1.3)) * 14 + (i > 60 ? 6 : 0) - (weekend ? 8 : 0)));
+  return { date: d.toISOString().slice(0, 10), count };
 });
