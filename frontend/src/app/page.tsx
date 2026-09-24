@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Decode } from "@/components/fx/decode";
 import { KeyHint, Label, SysLine } from "@/components/fx/primitives";
 import { LiveDemo } from "@/components/landing/live-demo";
-import { NeuralField } from "@/components/landing/neural-field";
 import { NeuralCore } from "@/components/landing/neural-core";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { CountUp } from "@/components/landing/count-up";
@@ -39,19 +38,7 @@ export default function Landing() {
 
       <main>
         {/* hero */}
-        <section className="relative -mt-[76px] overflow-hidden border-b border-line pt-[76px]">
-          <div className="fx-halftone absolute inset-0 opacity-40" aria-hidden="true" />
-          <div className="fx-parallax absolute inset-x-0 bottom-0 h-[60%]" aria-hidden="true">
-            <NeuralField />
-          </div>
-          <div className="fx-scanlines pointer-events-none absolute inset-0" aria-hidden="true" />
-          <span aria-hidden="true" className="absolute top-24 left-4 font-mono text-[9.5px] tracking-[0.14em] text-ink3 sm:left-6">
-            KURAI // v0.9 // NODE-EU-01
-          </span>
-          <span aria-hidden="true" className="absolute top-24 right-4 hidden font-mono text-[9.5px] tracking-[0.14em] text-ink3 sm:right-6 sm:block">
-            300+ MODELS · ONLINE
-          </span>
-
+        <section className="relative -mt-[76px] overflow-hidden pt-[76px]">
           <div aria-hidden="true" className="absolute top-20 right-[max(0px,calc((100vw-72rem)/2))] hidden h-[480px] w-[480px] lg:block">
             <NeuralCore />
           </div>
@@ -59,9 +46,9 @@ export default function Landing() {
             <Label className="text-acc">
               <Decode text="Один интерфейс · 300+ моделей" duration={600} />
             </Label>
-            <h1 className="fx-weight-in fx-chroma max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-normal tracking-[-0.01em] text-balance">
+            <h1 className="fx-weight-in max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-normal tracking-[-0.01em] text-balance">
               Ведущие нейросети —<br />
-              <span className="fx-neon fx-neon-on font-light">в одном терминале.</span>
+              <span className="text-ink3">в одном окне.</span>
             </h1>
             <p className="max-w-[58ch] text-[17px] leading-relaxed text-ink2">
               Текст, изображения, видео, голос и документы. KURAI подберёт модель сам или даст выбрать вручную — с ценой каждого запроса до
@@ -188,7 +175,6 @@ export default function Landing() {
 
         {/* final cta */}
         <section className="fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl">
-          <div className="fx-halftone absolute inset-0 opacity-30" aria-hidden="true" />
           <div className="relative flex flex-col items-start gap-5 p-8 sm:p-12">
             <h2 className="max-w-2xl font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-normal text-balance">
               Подключитесь. Первые 5 запросов — бесплатно.
