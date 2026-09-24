@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { KuraiLogo } from "@/components/brand/mark";
+import { MobileMenu } from "./mobile-menu";
 
 /** Шапка и подвал публичных страниц (лендинг, тарифы, документы). */
 export function SiteHeader() {
@@ -10,11 +11,13 @@ export function SiteHeader() {
       </Link>
       <nav aria-label="Основное" className="flex items-center gap-5 text-[13.5px] text-ink2">
         <Link href="/#models" className="hidden hover:text-ink sm:inline">Модели</Link>
+        <Link href="/#faq" className="hidden hover:text-ink md:inline">Вопросы</Link>
         <Link href="/pricing" className="hidden hover:text-ink sm:inline">Тарифы</Link>
-        <Link href="/login" className="hover:text-ink">Войти</Link>
-        <Link href="/register" className="fx-chamfer bg-acc px-3.5 py-2 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+        <Link href="/login" className="hidden hover:text-ink sm:inline">Войти</Link>
+        <Link href="/register" className="fx-chamfer fx-sheen bg-acc px-3.5 py-2 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
           Начать
         </Link>
+        <MobileMenu />
       </nav>
     </header>
   );

@@ -92,7 +92,8 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     case "error":
       return {
         msg: { ...msg, costMicro: 0 },
-        run: { ...run, status: "error", log: [...run.log, { tone: "err", text: `${ev.message} · кредиты за запрос возвращены` }] },
+        // текст ошибки показывает карточка «Повторить» в сообщении
+        run: { ...run, status: "error" },
       };
     case "aborted":
       return { msg: { ...msg, costMicro: ev.costMicro }, run: { ...run, status: "aborted" } };

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { MediaKind } from "@/types/api";
 import { MediaCard } from "@/components/media/media-card";
 import { Hatch, Label, Segments } from "@/components/fx/primitives";
+import { EmptyState } from "@/components/fx/empty-state";
 import { formatBytes } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { MOCK_MEDIA, MOCK_STORAGE } from "@/mocks/data";
@@ -80,13 +81,16 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 border border-dashed border-line2 px-6 py-16 text-center">
-            <Label className="text-acc">Пусто</Label>
-            <p className="font-display text-xl font-light">{EMPTY[kind].title}</p>
-            <p className="max-w-md text-[14px] text-ink2">{EMPTY[kind].hint}</p>
-            <Link href={`/app?mode=${EMPTY[kind].mode}`} className="fx-chamfer mt-2 bg-acc px-4 py-2 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
-              Создать в чате
-            </Link>
+          <div className="border border-dashed border-line2">
+            <EmptyState
+              title={EMPTY[kind].title}
+              hint={EMPTY[kind].hint}
+              action={
+                <Link href={`/app?mode=${EMPTY[kind].mode}`} className="fx-chamfer fx-sheen mt-2 bg-acc px-4 py-2 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+                  Создать в чате
+                </Link>
+              }
+            />
           </div>
         )}
       </div>

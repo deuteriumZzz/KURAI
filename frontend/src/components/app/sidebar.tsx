@@ -117,6 +117,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
       </div>
 
       <nav aria-label="История чатов" className={cn("mt-3 flex-1 overflow-y-auto px-2 pb-3", collapsed && "invisible")}>
+        {groups.length === 0 && <p className="px-2.5 py-4 text-[12.5px] text-ink3">Чатов пока нет — начните с поля ввода на главной.</p>}
         {groups.map((g) => (
           <div key={g.label} className="mt-3 first:mt-0">
             <Label className="block px-2.5 pb-1">{g.label}</Label>

@@ -6,6 +6,7 @@ import { LiveDemo } from "@/components/landing/live-demo";
 import { NeuralField } from "@/components/landing/neural-field";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { CountUp } from "@/components/landing/count-up";
+import { Compare, Faq, Scenarios } from "@/components/landing/sections";
 
 const MODELS = ["GPT-5 · OpenAI", "Claude Opus · Anthropic", "Gemini 2.5 · Google", "DeepSeek V3", "Grok 4 · xAI", "Nano Banana Pro", "Veo 3", "Kling 2", "Qwen 3", "Flux 2"];
 
@@ -147,6 +148,9 @@ export default function Landing() {
           </div>
         </section>
 
+        <Scenarios />
+        <Compare />
+
         {/* plans teaser */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -168,6 +172,8 @@ export default function Landing() {
           </div>
           <p className="mt-4 text-[12.5px] text-ink3">Кредиты не сгорают · оплата картами РФ и СБП · чеки по 54-ФЗ · ваши данные не используются для обучения моделей</p>
         </section>
+
+        <Faq />
 
         {/* final cta */}
         <section className="fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl">

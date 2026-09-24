@@ -155,6 +155,11 @@ export async function* simulate(
     return;
   }
   const started = performance.now();
+  // демо: слово «ошибка» в запросе показывает упавшую генерацию с возвратом кредитов
+  if (/ошибка/i.test(prompt)) {
+    await sleep(900, signal);
+    throw new Error("provider_unavailable");
+  }
   const fallbackName = mode === "image" ? "Nano Banana Pro" : mode === "video" ? "Veo 3" : mode === "audio" ? "TTS · Нова" : "Claude Sonnet 5";
   // «Авто» выбирает конкретную модель на сервере; в демо — Claude Sonnet 5
   const primary = opts.model && opts.model !== "Авто" ? opts.model : fallbackName;

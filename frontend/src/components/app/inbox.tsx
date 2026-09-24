@@ -8,6 +8,7 @@ import { inboxStore } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Label } from "@/components/fx/primitives";
+import { EmptyState } from "@/components/fx/empty-state";
 
 /** «Входящие» — центр уведомлений о долгих задачах, чтобы ничего не терялось, пока вы в другом чате. */
 export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
@@ -73,7 +74,11 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
               )}
             </div>
             <ul className="max-h-80 overflow-y-auto">
-              {items.length === 0 && <li className="px-3 py-6 text-center text-[13px] text-ink3">Пока тихо. Здесь появятся готовые видео, отчёты и важные события.</li>}
+              {items.length === 0 && (
+                <li>
+                  <EmptyState compact title="Пока тихо" hint="Здесь появятся готовые видео, отчёты и важные события." />
+                </li>
+              )}
               {items.map((it) => (
                 <li key={it.id} className={cn("border-b border-line last:border-b-0", it.unread && "shadow-[inset_2px_0_0_var(--color-acc)]")}>
                   <Link

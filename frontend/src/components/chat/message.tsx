@@ -238,6 +238,15 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
         <span aria-hidden="true" className="fx-caret font-mono text-acc">▍</span>
       )}
 
+      {run?.status === "error" && (
+        <div role="alert" className="fx-glitch flex max-w-lg flex-col gap-2 border border-err/45 bg-err-soft p-3">
+          <SysLine tone="err" prefix="✕">генерация не удалась · кредиты возвращены</SysLine>
+          <p className="text-[13px] text-ink2">Провайдер не ответил, и резервная модель тоже. Попробуйте ещё раз или выберите другую модель.</p>
+          <button type="button" onClick={onRegenerate} className="fx-chamfer w-max cursor-pointer bg-acc px-3 py-1.5 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+            Повторить
+          </button>
+        </div>
+      )}
       {!streaming && (
         <div className="flex flex-wrap items-center gap-1 text-[12px] text-ink3">
           {text && (
