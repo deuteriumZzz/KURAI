@@ -51,7 +51,7 @@ export function Markdown({ text, sources = [] }: { text: string; sources?: Sourc
     },
   };
   return (
-    <div className="text-[length:var(--read-size,15px)] leading-relaxed text-ink">
+    <div className="text-[length:var(--read-size,15.5px)] leading-[1.75] text-ink">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={comps} skipHtml>
         {withCites}
       </ReactMarkdown>

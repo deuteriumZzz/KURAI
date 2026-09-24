@@ -53,7 +53,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
   }, [removed]);
   const itemCls = (active: boolean) =>
     cn(
-      "relative flex h-9 items-center gap-2.5 rounded-(--radius-field) px-2.5 text-[13.5px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
+      "relative flex h-[38px] items-center gap-3 rounded-(--radius-field) px-2.5 text-[14px] transition-colors duration-(--dur-fast) pointer-coarse:h-11 [&>svg]:text-ink3 hover:[&>svg]:text-ink2",
       active ? "bg-s2 text-ink" : "text-ink2 hover:bg-s1 hover:text-ink",
       collapsed && "justify-center px-0",
     );
@@ -63,7 +63,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
       aria-label="Навигация"
       className={cn(
         "flex h-full flex-col bg-g1 transition-[width] duration-(--dur-base) ease-(--ease-out)",
-        collapsed ? "w-14" : "w-64",
+        collapsed ? "w-14" : "w-[260px]",
       )}
     >
       <div className={cn("flex h-14 items-center px-3", collapsed ? "justify-center" : "justify-between")}>
@@ -89,7 +89,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           onClick={onNavigate}
           title="Новый чат"
           className={cn(
-            "relative mb-1.5 flex h-9 items-center gap-2.5 rounded-(--radius-field) bg-s2 px-2.5 text-[13.5px] text-ink hover:bg-s3 pointer-coarse:h-11",
+            "relative mb-3 flex h-[38px] items-center gap-3 rounded-(--radius-field) bg-s2 px-2.5 text-[14px] text-ink hover:bg-s3 pointer-coarse:h-11",
             collapsed && "justify-center px-0",
           )}
         >
@@ -112,7 +112,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </button>
         <Inbox collapsed={collapsed} onNavigate={onNavigate} />
 
-        {!collapsed && <Label className="mt-3 block px-2.5 pb-1">Инструменты</Label>}
+        {!collapsed && <Label className="block px-2.5 pt-4 pb-1.5">Инструменты</Label>}
         {TOOLS.map((m) => (
           <Link key={m} href={`/app?mode=${m}`} onClick={onNavigate} aria-label={collapsed ? modeById(m).label : undefined} data-tip={collapsed ? modeById(m).label : undefined} className={itemCls(false)}>
             <ModeIcon mode={m} />
@@ -169,7 +169,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </div>
       )}
       {!collapsed && <Invite />}
-      <div className={cn("p-2", collapsed && "px-1.5")}>
+      <div className={cn("p-3 pt-2", collapsed && "px-1.5")}>
         <button
           type="button"
           popoverTarget="account-menu"
@@ -179,11 +179,10 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           {!collapsed && (
             <span className="min-w-0 flex-1 text-[13px] leading-tight">
               <span className="block truncate">{user.name}</span>
-              <Label className="text-[11.5px]">
-                {PLAN[balance.plan]} · <FlapNumber value={formatCredits(balance.micro)} className="font-mono tabular-nums" />
-              </Label>
+              <Label className="text-[11.5px]">{PLAN[balance.plan]}</Label>
             </span>
           )}
+          {!collapsed && <FlapNumber value={formatCredits(balance.micro)} className="font-mono text-[12.5px] text-ink2 tabular-nums" />}
           {!collapsed && <ChevronsUpDown size={14} strokeWidth={1.5} className="text-ink3" />}
         </button>
         <div
@@ -225,10 +224,13 @@ function Invite() {
         navigator.clipboard?.writeText(`${location.origin}/r/u_1`).catch(() => {});
         setCopied(true);
       }}
-      className="mx-2 flex cursor-pointer items-center gap-2.5 rounded-(--radius-field) px-2.5 py-2 text-left text-[12.5px] text-ink2 hover:bg-s1 hover:text-ink"
+      className="mx-3 flex cursor-pointer items-center gap-3 rounded-(--radius-field) bg-s1 p-3 text-left text-[13.5px] text-ink hover:bg-s2"
     >
-      {copied ? <Check size={16} strokeWidth={1.5} className="text-acc" /> : <Gift size={16} strokeWidth={1.5} />}
-      {copied ? "Ссылка скопирована" : <span>Пригласить друга · <span className="text-acc">+200 кр</span></span>}
+      {copied ? <Check size={18} strokeWidth={1.5} className="shrink-0 text-acc" /> : <Gift size={18} strokeWidth={1.5} className="shrink-0 text-acc" />}
+      <span>
+        {copied ? "Ссылка скопирована" : "Пригласите друга"}
+        <span className="block text-[12.5px] text-ink3">+200 кредитов вам и другу</span>
+      </span>
     </button>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, ViewTransition, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Bookmark, Brain, Globe, Paperclip, Sparkles, Square } from "lucide-react";
+import { ArrowUp, Bookmark, Brain, Check, Globe, Paperclip, Plus, Sparkles, Square, X } from "lucide-react";
 import { usePrefs } from "@/lib/use-prefs";
 import { writePrefs } from "@/lib/prefs";
 import { ModeIcon } from "@/components/brand/mode-icons";
@@ -11,7 +11,7 @@ import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } fro
 import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
-import { defaultModel, modelById, type ModelInfo } from "@/lib/models";
+import { defaultModel, modelById, modelsForMode, type ModelInfo } from "@/lib/models";
 import { contextUsage } from "@/lib/context";
 import { fileError, type FileMeta } from "@/lib/files";
 import { formatCredits } from "@/lib/format";
@@ -51,6 +51,14 @@ type Props = {
 };
 
 let seq = 0;
+
+// превью карточек модели до настоящих картинок: приглушённый свет акцента в разных точках
+const THUMB = [
+  "bg-s2 bg-[radial-gradient(120%_90%_at_30%_20%,var(--color-acc-soft),transparent_60%)]",
+  "bg-s2 bg-[radial-gradient(100%_80%_at_70%_30%,var(--color-acc-soft),transparent_60%)]",
+  "bg-s2 bg-[linear-gradient(180deg,transparent,var(--color-acc-soft))]",
+  "bg-s2 bg-[radial-gradient(90%_70%_at_50%_100%,var(--color-acc-soft),transparent_65%)]",
+];
 
 /** Поле ввода единого чата: режим, модель, голос, файлы, цена и контекст — всё в одном месте. */
 export function Composer({
@@ -266,9 +274,10 @@ export function Composer({
     if (a) voiceBase.current = "";
   }, []);
 
+  // чипы инструментов под полем (главная): повторный клик возвращает обычный чат
   const chips = (
-    <div role="radiogroup" aria-label="Режим" className={cn("isolate flex flex-wrap gap-2", variant === "home" ? "justify-center" : "")}>
-      {MODES.map((m, i) => {
+    <div role="radiogroup" aria-label="Инструмент" className="flex flex-wrap justify-center gap-2 md:flex-nowrap">
+      {MODES.filter((m) => m.id !== "text").map((m, i) => {
         const on = m.id === mode;
         return (
           <motion.button
@@ -276,37 +285,121 @@ export function Composer({
             type="button"
             role="radio"
             aria-checked={on}
-            onClick={() => switchMode(m.id)}
-            initial={variant === "home" ? { y: 8 } : false}
+            onClick={() => switchMode(on ? "text" : m.id)}
+            initial={{ y: 8 }}
             animate={{ y: 0 }}
-            transition={{ delay: variant === "home" ? 0.25 + i * 0.04 : 0, duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+            transition={{ delay: 0.2 + i * 0.04, duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
             className={cn(
-              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-(--radius-field) px-3 py-1.5 text-[13px] transition-colors duration-(--dur-fast) pointer-coarse:py-2.5",
-              on ? "text-ink" : "bg-s1 text-ink2 hover:bg-s2 hover:text-ink",
+              "inline-flex h-[38px] shrink-0 cursor-pointer items-center gap-2 rounded-(--radius-field) px-3.5 text-[14px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
+              on ? "bg-acc-soft text-acc" : "bg-s1 text-ink2 hover:bg-s2 hover:text-ink",
             )}
           >
-            {on && (
-              <motion.span
-                layoutId={`mode-pill-${variant}`}
-                aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-(--radius-field) bg-s3 shadow-[inset_0_-2px_0_var(--color-acc)]"
-                transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
-              />
-            )}
-            <ModeIcon mode={m.id} size={14} />
+            <ModeIcon mode={m.id} size={16} className={on ? "" : "text-ink3"} />
             {m.label}
-            {variant === "dock" && <span className="font-mono text-[10px] text-ink3">{m.command}</span>}
           </motion.button>
         );
       })}
     </div>
   );
 
+  const paramsRow = (PARAMS[mode] ?? []).length > 0 && (
+    <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-1">
+      {(PARAMS[mode] ?? []).map((p) => (
+        <div key={p.key} role="radiogroup" aria-label={p.label} className="flex shrink-0 items-center gap-2">
+          <span className="text-[13px] text-ink3">{p.label}</span>
+          <span className="inline-flex rounded-(--radius-field) bg-s1">
+            {p.options.map((o) => {
+              const on = modeParams[p.key] === o;
+              return (
+                <button
+                  key={o}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setParams((ps) => ({ ...ps, [mode]: { ...modeParams, [p.key]: o } }))}
+                  className={cn(
+                    "inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-(--radius-field) px-2.5 text-[12.5px] whitespace-nowrap transition-colors duration-(--dur-fast) pointer-coarse:h-9",
+                    on ? "bg-s3 text-ink" : "text-ink2 hover:text-ink",
+                  )}
+                >
+                  {p.key === "aspect" && (
+                    <span
+                      aria-hidden="true"
+                      className="inline-block border border-current"
+                      style={{ width: 12 * Math.min(1, Number(o.split(":")[0]) / Number(o.split(":")[1])), height: 12 * Math.min(1, Number(o.split(":")[1]) / Number(o.split(":")[0])) }}
+                    />
+                  )}
+                  {o}
+                </button>
+              );
+            })}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
+  // «ящик инструмента» над полем: Syntx внутри Kimi — выбор модели карточками и параметры
+  const drawer = (
+    <AnimatePresence initial={false}>
+      {variant === "home" && mode !== "text" && (
+        <motion.div
+          key="drawer"
+          initial={{ height: 0, y: 8 }}
+          animate={{ height: "auto", y: 0 }}
+          exit={{ height: 0, y: 8 }}
+          transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
+          className="overflow-hidden"
+        >
+          <div className="flex flex-col gap-3.5 rounded-(--radius-field) bg-g1 p-3.5 shadow-[inset_0_0_0_1px_var(--color-hair)]">
+            <div className="flex items-center justify-between text-[13.5px] text-ink2">
+              <span>
+                <span className="text-ink">{cfg.label}</span> · выберите модель
+              </span>
+              <Link href={`/app/models?type=${mode === "research" || mode === "slides" ? "text" : mode}`} className="text-ink3 hover:text-ink">
+                Все модели ›
+              </Link>
+            </div>
+            <div role="radiogroup" aria-label="Модель" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+              {modelsForMode(mode).slice(0, 4).map((m, i) => {
+                const on = m.id === model.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setPicked((p) => ({ ...p, [mode]: m }))}
+                    className={cn(
+                      "cursor-pointer overflow-hidden rounded-(--radius-field) text-left transition-colors duration-(--dur-fast)",
+                      on ? "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]" : "bg-s1 hover:bg-s2",
+                    )}
+                  >
+                    <span aria-hidden="true" className={cn("block aspect-[16/10]", THUMB[i % THUMB.length])} />
+                    <span className="block p-2.5">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-[13.5px] text-ink">{m.name}</span>
+                        <span className="shrink-0 font-mono text-[11.5px] text-ink3">{formatCredits(m.priceHintMicro, { approx: true })}</span>
+                      </span>
+                      <span className="mt-0.5 line-clamp-1 block text-[12px] text-ink3">{m.note}</span>
+                      <Segments value={m.stats.quality / 10} label={`Качество: ${m.stats.quality} из 10`} className="mt-2 [&>i]:h-[3px]" />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {paramsRow}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  const menuId = `plus-${variant}`;
   const iconBtn = "relative grid size-8 cursor-pointer place-items-center rounded-(--radius-field) hover:bg-s2 pointer-coarse:size-11";
 
   return (
     <form onSubmit={submit} className="flex w-full max-w-3xl flex-col gap-3">
-      {variant === "dock" && chips}
       {short && (
         <Hatch>
           Недостаточно кредитов для «{model.name}»: нужно {formatCredits(cost)}, на балансе {formatCredits(balanceMicro)}.{" "}
@@ -354,12 +447,13 @@ export function Composer({
           </button>
         </div>
       )}
+      {drawer}
       <ViewTransition name="composer">
       <div className="fx-brackets">
         <div
           ref={boxRef}
           data-mode={mode}
-          className="fx-chamfer fx-texture fx-rim bg-g2 px-3.5 pt-3 pb-2.5 shadow-(--shadow-float) [--ch:var(--chamfer-lg)] focus-within:shadow-[inset_0_0_0_1px_var(--color-acc-line),var(--shadow-float)]"
+          className={cn("fx-chamfer fx-texture fx-rim bg-g2 shadow-(--shadow-float) [--ch:var(--chamfer-lg)] focus-within:shadow-[inset_0_0_0_1px_var(--color-acc-line),var(--shadow-float)]", variant === "home" ? "px-[18px] pt-[18px] pb-3.5" : "px-3.5 pt-3 pb-2.5")}
         >
           <AttachmentChips
             items={files}
@@ -371,40 +465,7 @@ export function Composer({
               })
             }
           />
-          {(PARAMS[mode] ?? []).length > 0 && (
-            <div className="-mx-1 mb-2 flex gap-3 overflow-x-auto px-1 pb-1">
-              {(PARAMS[mode] ?? []).map((p) => (
-                <div key={p.key} role="radiogroup" aria-label={p.label} className="flex shrink-0 items-center gap-1">
-                  <span className="mr-1 font-mono text-[10.5px] tracking-[0.08em] text-ink3 uppercase">{p.label}</span>
-                  {p.options.map((o) => {
-                    const on = modeParams[p.key] === o;
-                    return (
-                      <button
-                        key={o}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        onClick={() => setParams((ps) => ({ ...ps, [mode]: { ...modeParams, [p.key]: o } }))}
-                        className={cn(
-                          "inline-flex h-7 cursor-pointer items-center gap-1.5 border px-2 font-mono text-[11.5px] whitespace-nowrap transition-colors duration-(--dur-fast) pointer-coarse:h-9",
-                          on ? "border-acc-line bg-acc-soft text-acc" : "border-line text-ink2 hover:border-line2 hover:text-ink",
-                        )}
-                      >
-                        {p.key === "aspect" && (
-                          <span
-                            aria-hidden="true"
-                            className="inline-block border border-current"
-                            style={{ width: 12 * Math.min(1, Number(o.split(":")[0]) / Number(o.split(":")[1])), height: 12 * Math.min(1, Number(o.split(":")[1]) / Number(o.split(":")[0])) }}
-                          />
-                        )}
-                        {o}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+          {variant === "dock" && paramsRow && <div className="mb-2">{paramsRow}</div>}
           <label htmlFor="composer-input" className="fx-sr">
             Запрос · режим «{cfg.label}» · модель {model.name}
           </label>
@@ -416,7 +477,7 @@ export function Composer({
             onKeyDown={onKeyDown}
             onPaste={onPaste}
             placeholder={recording ? "Говорите — текст появится здесь…" : cfg.placeholder}
-            className="block max-h-60 min-h-7 w-full resize-none bg-transparent text-[15px] text-ink field-sizing-content outline-none placeholder:text-ink3"
+            className={cn("block max-h-60 w-full resize-none bg-transparent text-ink field-sizing-content outline-none placeholder:text-ink3", variant === "home" ? "min-h-14 text-[16px]" : "min-h-7 text-[15px]")}
           />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
@@ -431,9 +492,57 @@ export function Composer({
                   e.target.value = "";
                 }}
               />
-              <button type="button" onClick={() => fileInput.current?.click()} aria-label="Прикрепить файл" data-tip="Файл · фото · PDF" className={cn(iconBtn, "border-line text-ink2 hover:text-ink")}>
-                <Paperclip size={16} strokeWidth={1.5} />
+              <button
+                type="button"
+                popoverTarget={menuId}
+                aria-label="Файл, режимы и настройки запроса"
+                data-tip="Файл · режим · веб · думать дольше"
+                style={{ anchorName: `--${menuId}` } as React.CSSProperties}
+                className={cn(iconBtn, "text-ink2 hover:text-ink")}
+              >
+                <Plus size={18} strokeWidth={1.5} />
               </button>
+              <div
+                id={menuId}
+                popover="auto"
+                onClick={(e) => (e.target as Element).closest("button") && e.currentTarget.hidePopover()}
+                style={{ positionAnchor: `--${menuId}`, positionArea: "block-end span-inline-end", positionTryFallbacks: "flip-block" } as React.CSSProperties}
+                className="inset-auto m-0 my-2 w-64 rounded-(--radius-field) border-0 bg-g2 p-1.5 text-ink shadow-(--shadow-float)"
+              >
+                <MenuItem icon={<Paperclip size={16} strokeWidth={1.5} />} onClick={() => fileInput.current?.click()}>
+                  Файл или фото
+                </MenuItem>
+                <MenuItem icon={<Globe size={16} strokeWidth={1.5} />} on={web} onClick={() => setWeb((w) => !w)}>
+                  Поиск в интернете
+                </MenuItem>
+                {canThink && (
+                  <MenuItem icon={<Brain size={16} strokeWidth={1.5} />} on={think} onClick={() => setThink((t) => !t)}>
+                    Думать дольше <span className="text-ink3">· ×1,7</span>
+                  </MenuItem>
+                )}
+                {value.trim().length > 3 && (
+                  <MenuItem
+                    icon={<Sparkles size={16} strokeWidth={1.5} />}
+                    onClick={() => {
+                      setValue((v) => enhancePrompt(v, mode, modeParams));
+                      retrigger(boxRef.current, "fx-flicker-border");
+                    }}
+                  >
+                    Улучшить промпт
+                  </MenuItem>
+                )}
+                {value.trim().length > 10 && !prefs.templates.includes(value.trim()) && (
+                  <MenuItem icon={<Bookmark size={16} strokeWidth={1.5} />} onClick={() => writePrefs({ templates: [value.trim(), ...prefs.templates].slice(0, 20) })}>
+                    Сохранить как шаблон
+                  </MenuItem>
+                )}
+                <span className="my-1 block h-px bg-hair" aria-hidden="true" />
+                {MODES.map((m) => (
+                  <MenuItem key={m.id} icon={<ModeIcon mode={m.id} size={16} />} on={m.id === mode} onClick={() => switchMode(m.id)} hint={m.command}>
+                    {m.label}
+                  </MenuItem>
+                ))}
+              </div>
               <VoiceInput
                 onActiveChange={onVoiceActive}
                 onText={(t) => setValue(t)}
@@ -443,57 +552,23 @@ export function Composer({
                   glitch();
                 }}
               />
-              {canThink && (
-                <button
-                  type="button"
-                  aria-pressed={think}
-                  aria-label="Думать дольше: модель рассуждает перед ответом, дороже примерно в 1,7 раза"
-                  data-tip="Думать дольше"
-                  onClick={() => setThink((t) => !t)}
-                  className={cn(iconBtn, think ? "border-acc-line text-acc" : "border-line text-ink3 hover:text-ink")}
-                >
-                  <Brain size={16} strokeWidth={1.5} />
-                </button>
-              )}
-              {value.trim().length > 3 && (
-                <button
-                  type="button"
-                  aria-label="Улучшить промпт"
-                  data-tip="Улучшить промпт"
-                  onClick={() => {
-                    setValue((v) => enhancePrompt(v, mode, modeParams));
-                    retrigger(boxRef.current, "fx-flicker-border");
-                  }}
-                  className={cn(iconBtn, "border-line text-ink2 hover:border-acc-line hover:text-acc")}
-                >
-                  <Sparkles size={16} strokeWidth={1.5} />
-                </button>
-              )}
-              {value.trim().length > 10 && !prefs.templates.includes(value.trim()) && (
-                <button
-                  type="button"
-                  aria-label="Сохранить как шаблон"
-                  data-tip="Сохранить как шаблон · вызов по /"
-                  onClick={() => writePrefs({ templates: [value.trim(), ...prefs.templates].slice(0, 20) })}
-                  className={cn(iconBtn, "border-line text-ink2 hover:border-acc-line hover:text-acc")}
-                >
-                  <Bookmark size={16} strokeWidth={1.5} />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-pressed={web}
-                aria-label="Поиск в интернете"
-                data-tip={web ? "Поиск в интернете: вкл" : "Поиск в интернете: выкл"}
-                onClick={() => setWeb((w) => !w)}
-                className={cn(iconBtn, web ? "border-acc-line text-acc" : "border-line text-ink3")}
-              >
-                <Globe size={16} strokeWidth={1.5} />
-              </button>
               {mode !== "text" && (
-                <Label className="ml-1 hidden text-acc sm:inline">
-                  <Decode key={mode} text={`● ${cfg.label}`} />
-                </Label>
+                <span className="ml-1 inline-flex h-[30px] items-center gap-2 rounded-(--radius-field) bg-acc-soft pr-1 pl-2.5 text-[13px] text-acc">
+                  <ModeIcon mode={mode} size={14} />
+                  {cfg.label}
+                  <button type="button" onClick={() => switchMode("text")} aria-label={`Убрать «${cfg.label}»`} className="grid size-6 cursor-pointer place-items-center rounded-(--radius-field) hover:bg-acc-soft">
+                    <X size={14} strokeWidth={1.5} />
+                  </button>
+                </span>
+              )}
+              {think && canThink && (
+                <span className="ml-1 inline-flex h-[30px] items-center gap-2 rounded-(--radius-field) bg-s2 pr-1 pl-2.5 text-[13px] text-ink2">
+                  <Brain size={14} strokeWidth={1.5} />
+                  Думать дольше
+                  <button type="button" onClick={() => setThink(false)} aria-label="Выключить «Думать дольше»" className="grid size-6 cursor-pointer place-items-center rounded-(--radius-field) hover:bg-s3">
+                    <X size={14} strokeWidth={1.5} />
+                  </button>
+                </span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -553,5 +628,25 @@ export function Composer({
         </div>
       )}
     </form>
+  );
+}
+
+function MenuItem({ icon, on, hint, onClick, children }: { icon: React.ReactNode; on?: boolean; hint?: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role={on === undefined ? undefined : "menuitemcheckbox"}
+      aria-checked={on}
+      onClick={onClick}
+      className={cn(
+        "flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-(--radius-field) px-2.5 text-left text-[13.5px] hover:bg-s2 pointer-coarse:h-11",
+        on ? "text-ink" : "text-ink2 hover:text-ink",
+      )}
+    >
+      <span className={on ? "text-acc" : "text-ink3"}>{icon}</span>
+      <span className="flex-1">{children}</span>
+      {hint && <span className="font-mono text-[11px] text-ink3">{hint}</span>}
+      {on && <Check size={14} strokeWidth={1.5} className="text-acc" />}
+    </button>
   );
 }

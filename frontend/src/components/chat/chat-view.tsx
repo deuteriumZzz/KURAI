@@ -322,7 +322,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         }}
         className="relative flex-1 overflow-y-auto"
       >
-        <div className="mx-auto flex w-full max-w-[var(--read-width,48rem)] flex-col gap-6 px-4 py-6 text-[length:var(--read-size,15px)] md:px-6">
+        <div className="mx-auto flex w-full max-w-[var(--read-width,48rem)] flex-col gap-9 px-4 py-6 text-[length:var(--read-size,15.5px)] md:px-6">
           <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
             {new Date(branch[0]?.createdAt ?? chat.updatedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
           </div>
