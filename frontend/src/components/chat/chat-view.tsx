@@ -242,13 +242,13 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   return (
     <div className="flex min-h-0 flex-1">
     <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 pl-16 md:pl-6">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 pl-16 md:pl-6">
         <h1 className="truncate text-[14px]">
           <Decode text={chat.title} />
         </h1>
         <div className="flex shrink-0 items-center gap-3">
           <Label className="hidden tabular-nums sm:inline">
-            #{chat.id.toUpperCase()} · {branch.length} сообщ. · {formatCredits(total)}
+            {branch.length} сообщ. · {formatCredits(total)}
           </Label>
           <button
             type="button"
@@ -256,17 +256,17 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
             aria-label="Поиск по чату"
             aria-expanded={findOpen}
             data-tip="Поиск по чату"
-            className="grid size-8 cursor-pointer place-items-center border border-line text-ink2 hover:border-acc-line hover:text-acc pointer-coarse:size-11"
+            className="grid size-8 cursor-pointer place-items-center rounded-(--radius-field) text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:size-11"
           >
             <Search size={14} strokeWidth={1.5} />
           </button>
-          <Link href={`/s/${chat.id}`} onClick={() => markStep("share")} className="border border-line px-2.5 py-1 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc">
+          <Link href={`/s/${chat.id}`} onClick={() => markStep("share")} className="rounded-(--radius-field) bg-s2 px-3 py-1.5 text-[12.5px] text-ink hover:bg-s3">
             Поделиться
           </Link>
         </div>
       </header>
       {findOpen && (
-        <div className="flex items-center gap-2 border-b border-line bg-g1 px-4 py-2 md:px-6">
+        <div className="flex items-center gap-2 bg-s1 px-4 py-2 md:px-6">
           <span aria-hidden="true" className="font-mono text-acc">›</span>
           <input
             autoFocus

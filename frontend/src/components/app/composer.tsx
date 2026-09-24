@@ -277,19 +277,19 @@ export function Composer({
             role="radio"
             aria-checked={on}
             onClick={() => switchMode(m.id)}
-            initial={variant === "home" ? { opacity: 0, y: 8 } : false}
-            animate={{ opacity: 1, y: 0 }}
+            initial={variant === "home" ? { y: 8 } : false}
+            animate={{ y: 0 }}
             transition={{ delay: variant === "home" ? 0.25 + i * 0.04 : 0, duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
             className={cn(
-              "fx-hover relative inline-flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 text-[13px] transition-colors duration-(--dur-fast) pointer-coarse:py-2.5",
-              on ? "border-acc-line text-acc" : "border-line bg-g1 text-ink2 hover:border-line2 hover:text-ink",
+              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-(--radius-field) px-3 py-1.5 text-[13px] transition-colors duration-(--dur-fast) pointer-coarse:py-2.5",
+              on ? "text-ink" : "bg-s1 text-ink2 hover:bg-s2 hover:text-ink",
             )}
           >
             {on && (
               <motion.span
                 layoutId={`mode-pill-${variant}`}
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 bg-acc-soft"
+                className="absolute inset-0 -z-10 rounded-(--radius-field) bg-s3 shadow-[inset_0_-2px_0_var(--color-acc)]"
                 transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
               />
             )}
@@ -302,7 +302,7 @@ export function Composer({
     </div>
   );
 
-  const iconBtn = "relative grid size-8 cursor-pointer place-items-center border pointer-coarse:size-11";
+  const iconBtn = "relative grid size-8 cursor-pointer place-items-center rounded-(--radius-field) hover:bg-s2 pointer-coarse:size-11";
 
   return (
     <form onSubmit={submit} className="flex w-full max-w-3xl flex-col gap-3">
@@ -331,7 +331,7 @@ export function Composer({
         </div>
       )}
       {value === "/" && (
-        <div role="listbox" aria-label="Команды и шаблоны" className="flex max-h-64 flex-col overflow-y-auto border border-line2 bg-g1 py-1">
+        <div role="listbox" aria-label="Команды и шаблоны" className="flex max-h-64 flex-col overflow-y-auto bg-g2 py-1 shadow-(--shadow-float)">
           {MODES.map((m) => (
             <button key={m.id} type="button" role="option" aria-selected="false" onClick={() => { switchMode(m.id); setValue(""); }} className="flex cursor-pointer items-center justify-between gap-3 px-3 py-1.5 text-left text-[13px] text-ink2 hover:bg-g2 hover:text-ink">
               <span className="flex items-center gap-2"><ModeIcon mode={m.id} size={14} /> {m.label}</span>
@@ -359,7 +359,7 @@ export function Composer({
         <div
           ref={boxRef}
           data-mode={mode}
-          className="fx-chamfer fx-texture fx-rim border border-line2 bg-g1 px-3.5 pt-3 pb-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)]"
+          className="fx-chamfer fx-texture fx-rim bg-g2 px-3.5 pt-3 pb-2.5 shadow-(--shadow-float) [--ch:var(--chamfer-lg)] focus-within:shadow-[inset_0_0_0_1px_var(--color-acc-line),var(--shadow-float)]"
         >
           <AttachmentChips
             items={files}

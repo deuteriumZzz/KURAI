@@ -122,12 +122,12 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
 
   return (
     <div className="group ml-auto flex max-w-[85%] flex-col items-end gap-1 sm:max-w-[75%]">
-      <div className="border border-line bg-g2 px-3.5 py-2.5 text-[14.5px]">
+      <div className="rounded-(--radius-field) bg-s2 px-3.5 py-2.5 text-[14.5px]">
         {m.mode !== "text" && <Label className="mb-1 block text-acc">{modeById(m.mode).label}</Label>}
         {files.length > 0 && (
           <ul className="mb-2 flex flex-wrap gap-1.5">
             {files.map((f) => (
-              <li key={f.name} className="border border-line2 bg-g1 px-2 py-1 font-mono text-[11.5px] text-ink2">
+              <li key={f.name} className="bg-s1 px-2 py-1 font-mono text-[11.5px] text-ink2">
                 {f.name} · {formatBytes(f.sizeBytes)}
               </li>
             ))}
@@ -206,7 +206,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
       }}
     >
       <div className="flex flex-wrap items-center gap-2.5">
-        {m.model && <span className="border border-acc-line bg-acc-soft px-1.5 py-0.5 font-mono text-[11px] text-acc">{m.model}</span>}
+        {m.model && <span className="inline-flex items-center gap-1.5 font-mono text-[11.5px] text-ink3"><i aria-hidden="true" className="size-1.5 rounded-full bg-acc" />{m.model}</span>}
         <VersionSwitch v={versions} />
         {run?.status === "aborted" && (
           <span className="border border-warn/40 px-1.5 py-0.5 font-mono text-[11px] text-warn">ПРЕРВАНО · списано {formatCredits(m.costMicro)}</span>
@@ -249,7 +249,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
         <ul aria-label="Источники" className="flex flex-wrap gap-1.5">
           {run.sources.map((s, i) => (
             <li key={s.url}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="fx-hover flex items-center gap-1.5 border border-line bg-g1 px-2 py-1 text-[12px] text-ink2 hover:border-line2 hover:text-ink">
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="fx-hover flex items-center gap-1.5 rounded-(--radius-field) bg-s1 px-2 py-1 text-[12px] text-ink2 hover:bg-s2 hover:text-ink">
                 <span className="font-mono text-[10px] text-acc">{i + 1}</span>
                 {new URL(s.url).hostname.replace(/^www\./, "")}
               </a>
@@ -267,7 +267,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.05, duration: 0.2 }}
-              className="fx-hover cursor-pointer border border-line bg-g1 px-2.5 py-1.5 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc pointer-coarse:py-2.5"
+              className="fx-hover cursor-pointer rounded-(--radius-field) bg-s1 px-2.5 py-1.5 text-[12.5px] text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:py-2.5"
             >
               ↳ {f}
             </motion.button>
@@ -290,18 +290,19 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
       {!streaming && (
         <div className="flex flex-wrap items-center gap-1 text-[12px] text-ink3">
           {text && (
-            <button type="button" onClick={copy} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
+            <button type="button" onClick={copy} aria-label={copied ? "Скопировано" : "Копировать"} data-tip={copied ? "Скопировано" : "Копировать"} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
               {copied ? <Check size={13} strokeWidth={1.5} /> : <Copy size={13} strokeWidth={1.5} />}
-              {copied ? "Скопировано" : "Копировать"}
             </button>
           )}
-          <button type="button" onClick={onRegenerate} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
-            <RotateCcw size={13} strokeWidth={1.5} /> Перегенерировать
+          <button type="button" onClick={onRegenerate} aria-label="Перегенерировать" data-tip="Перегенерировать" className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
+            <RotateCcw size={13} strokeWidth={1.5} />
           </button>
           {text && canSpeak && (
             <button
               type="button"
               aria-pressed={speaking}
+              aria-label={speaking ? "Остановить" : "Слушать"}
+              data-tip={speaking ? "Остановить" : "Слушать"}
               onClick={() => {
                 const synth = window.speechSynthesis;
                 if (speaking) {
@@ -318,17 +319,17 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
               }}
               className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${speaking ? "text-acc" : ""}`}
             >
-              {speaking ? <VolumeX size={13} strokeWidth={1.5} /> : <Volume2 size={13} strokeWidth={1.5} />} {speaking ? "Стоп" : "Слушать"}
+              {speaking ? <VolumeX size={13} strokeWidth={1.5} /> : <Volume2 size={13} strokeWidth={1.5} />}
             </button>
           )}
           {text.length > 500 && (
-            <button type="button" onClick={() => setReading(true)} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
-              <BookOpen size={13} strokeWidth={1.5} /> Читать
+            <button type="button" onClick={() => setReading(true)} aria-label="Режим чтения" data-tip="Режим чтения" className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
+              <BookOpen size={13} strokeWidth={1.5} />
             </button>
           )}
           {onPin && (
-            <button type="button" onClick={onPin} aria-pressed={pinned} className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${pinned ? "text-acc" : ""}`}>
-              <Pin size={13} strokeWidth={1.5} /> {pinned ? "Закреплено" : "Закрепить"}
+            <button type="button" onClick={onPin} aria-pressed={pinned} aria-label={pinned ? "Открепить" : "Закрепить"} data-tip={pinned ? "Открепить" : "Закрепить"} className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${pinned ? "text-acc" : ""}`}>
+              <Pin size={13} strokeWidth={1.5} />
             </button>
           )}
           <span className="mx-1 h-4 w-px bg-line" aria-hidden="true" />
