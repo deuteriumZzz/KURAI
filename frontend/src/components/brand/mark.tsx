@@ -18,7 +18,7 @@ export function KuraiLogo({ className, markClass }: { className?: string; markCl
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <KuraiMark className={cn("size-6", markClass)} />
-      <HoverDecode text="KURAI" className="font-display text-[15px] font-medium tracking-[0.36em]" />
+      <HoverDecode text="KURAI" className="font-brand text-[15px] font-medium tracking-[0.36em]" />
     </span>
   );
 }

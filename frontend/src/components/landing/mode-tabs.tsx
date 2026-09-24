@@ -22,7 +22,7 @@ export function ModeTabs() {
   return (
     <section aria-labelledby="modes-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Режимы</Label>
-      <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">
+      <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
         Один чат — шесть режимов
       </h2>
       <div role="tablist" aria-label="Режимы" className="isolate flex flex-wrap gap-2">

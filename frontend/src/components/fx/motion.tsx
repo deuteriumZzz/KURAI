@@ -13,10 +13,10 @@ type AppearProps = HTMLMotionProps<"div"> & {
   inView?: boolean;
 };
 
-/** Плавное появление: подъём на 10px и проявление. В спокойном режиме — без сдвига (MotionConfig). */
+/** Плавное появление: лёгкий подъём. Прозрачность не трогаем — контент виден всегда, даже если анимация не запустилась. */
 export function Appear({ index = 0, delay = 0, inView = false, children, ...rest }: AppearProps) {
-  const from = { opacity: 0, y: 10 };
-  const to = { opacity: 1, y: 0, transition: { duration: MOTION.base / 1000, ease, delay: delay + Math.min(index, 12) * 0.035 } };
+  const from = { y: 8 };
+  const to = { y: 0, transition: { duration: MOTION.base / 1000, ease, delay: delay + Math.min(index, 12) * 0.035 } };
   return inView ? (
     <motion.div initial={from} whileInView={to} viewport={{ once: true, margin: "0px 0px -40px 0px" }} {...rest}>
       {children}

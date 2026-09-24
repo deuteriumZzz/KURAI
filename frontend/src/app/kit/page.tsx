@@ -82,7 +82,7 @@ export default function KitPage() {
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <div>
           <Label className="text-acc">Витрина дизайн-системы · только для разработки</Label>
-          <h1 className="mt-2 font-display text-4xl font-extralight tracking-wide">
+          <h1 className="mt-2 font-display text-4xl font-normal tracking-wide">
             KUR<span className="text-acc">A</span>I <span className="text-ink3">/ kit</span>
           </h1>
           <p className="mt-2 max-w-[62ch] text-ink2">
@@ -108,7 +108,7 @@ export default function KitPage() {
       </Block>
 
       <Block title="Типографика" note="Exo 2 · Geist · JetBrains Mono">
-        <p className="font-display text-5xl leading-none font-extralight tracking-tight text-balance">
+        <p className="font-display text-5xl leading-none font-normal tracking-tight text-balance">
           Нейросети — <span className="font-medium text-acc">в одном терминале</span>
         </p>
         <p className="font-display text-2xl font-light">Заголовок раздела · Exo 2 Light</p>

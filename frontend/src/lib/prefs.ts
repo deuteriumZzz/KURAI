@@ -20,10 +20,11 @@ export type Prefs = {
   quiet: boolean;
   undoSend: boolean;
   templates: string[];
+  theme: "dark" | "light" | "system";
 };
 
 const KEY = "kurai:prefs";
-export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [] };
+export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [], theme: "dark" };
 
 export function readPrefs(): Prefs {
   try {
@@ -48,6 +49,7 @@ export function applyPrefs(p: Prefs): void {
   document.documentElement.classList.toggle("calm", p.calm);
   document.documentElement.classList.toggle("nohints", !p.hints);
   document.documentElement.classList.toggle("soft", p.softContrast);
+  document.documentElement.dataset.theme = resolveTheme(p.theme);
   const root = document.documentElement.style;
   root.setProperty("--read-size", { s: "14px", m: "15px", l: "17px" }[p.readSize]);
   root.setProperty("--read-width", p.readWidth === "wide" ? "60rem" : "48rem");
@@ -66,4 +68,10 @@ export function toggleFavorite(favs: string[], id: string): string[] {
 export function markStep(id: string): void {
   const p = readPrefs();
   if (!p.steps.includes(id)) writePrefs({ steps: [...p.steps, id] });
+}
+
+/** «Как в системе» → светлая или тёмная по настройке ОС. */
+export function resolveTheme(t: Prefs["theme"]): "dark" | "light" {
+  if (t !== "system") return t;
+  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }

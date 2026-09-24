@@ -86,6 +86,24 @@ export function SettingsForm({ user }: { user: User }) {
         <Switch label="Поиск в интернете по умолчанию" hint="Модель сможет смотреть свежие источники" checked={prefs.web} onChange={(web) => set({ web })} />
       </Section>
 
+      <Section title="Оформление">
+        <div role="radiogroup" aria-label="Тема" className="grid gap-2 sm:grid-cols-3">
+          {([["dark", "Тёмная", "фирменная, для долгой работы"], ["light", "Светлая", "мягкая, для дневного света"], ["system", "Как в системе", "следует за настройкой устройства"]] as const).map(([v, l, h]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={prefs.theme === v}
+              onClick={() => set({ theme: v })}
+              className={cn("cursor-pointer bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast) hover:bg-s2", prefs.theme === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
+            >
+              <span className="block text-[14px]">{l}</span>
+              <span className="text-[12.5px] text-ink3">{h}</span>
+            </button>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Интерфейс">
         <Switch
           label="Спокойный режим"

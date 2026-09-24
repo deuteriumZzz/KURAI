@@ -26,7 +26,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${exo2.variable} ${geist.variable} ${jbmono.variable} h-full`}>
+    <html lang="ru" data-theme="dark" suppressHydrationWarning className={`${exo2.variable} ${geist.variable} ${jbmono.variable} h-full`}>
+      <head>
+        {/* тема кабинета до первой отрисовки — без вспышки тёмного перед светлым; лендинг всегда фирменный тёмный */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(location.pathname.startsWith("/app")){var t=(JSON.parse(localStorage.getItem("kurai:prefs")||"{}").theme)||"dark";if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t}}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

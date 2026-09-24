@@ -32,7 +32,7 @@ export function Scenarios() {
   return (
     <section aria-labelledby="sc-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Сценарии</Label>
-      <h2 id="sc-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">Под вашу работу</h2>
+      <h2 id="sc-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Под вашу работу</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {SCENARIOS.map((s, i) => (
           <Appear inView index={i} key={s.who}>
@@ -64,7 +64,7 @@ export function Compare() {
   return (
     <section aria-labelledby="cmp-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Сравнение</Label>
-      <h2 id="cmp-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">KURAI против трёх отдельных подписок</h2>
+      <h2 id="cmp-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">KURAI против трёх отдельных подписок</h2>
       <div className="overflow-x-auto border border-line">
         <table className="w-full min-w-[560px] border-collapse text-[14px]">
           <thead>
@@ -98,7 +98,7 @@ export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="mx-auto max-w-3xl scroll-mt-20 px-4 pb-20 sm:px-6">
       <Label className="text-acc">Вопросы и ответы</Label>
-      <h2 id="faq-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">Коротко о главном</h2>
+      <h2 id="faq-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Коротко о главном</h2>
       <div className="flex flex-col border-t border-line">
         {FAQ.map(([q, a]) => (
           <details key={q} className="fx-faq group border-b border-line">

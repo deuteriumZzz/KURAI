@@ -63,7 +63,7 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6, transition: { duration: 0.12 } }}
             transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] border border-line2 bg-g1 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.8)] md:absolute md:top-0 md:left-full md:ml-2"
+            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] bg-g1 shadow-(--shadow-float) md:absolute md:top-0 md:left-full md:ml-2"
           >
             <div className="flex items-center justify-between border-b border-line px-3 py-2">
               <Label className="text-acc">Входящие</Label>

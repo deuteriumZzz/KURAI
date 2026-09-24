@@ -18,7 +18,7 @@ export function LinkPreview({ href, children }: { href: string; children: ReactN
       </a>
       <span
         role="tooltip"
-        className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 flex w-64 items-start gap-2.5 border border-line2 bg-g2 p-3 opacity-0 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.8)] transition-opacity delay-200 duration-(--dur-fast) group-focus-within/link:visible group-focus-within/link:opacity-100 group-hover/link:visible group-hover/link:opacity-100"
+        className="pointer-events-none invisible absolute bottom-full left-0 z-20 mb-2 flex w-64 items-start gap-2.5 bg-g2 p-3 opacity-0 shadow-(--shadow-float) transition-opacity delay-200 duration-(--dur-fast) group-focus-within/link:visible group-focus-within/link:opacity-100 group-hover/link:visible group-hover/link:opacity-100"
       >
         <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center border border-line2 font-mono text-[12px] text-acc uppercase">
           {host[0]}

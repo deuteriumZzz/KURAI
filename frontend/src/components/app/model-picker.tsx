@@ -148,7 +148,7 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
           exit={{ opacity: 0, y: 6, transition: { duration: 0.12 } }}
           transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
           style={{ transformOrigin: "bottom right" }}
-          className="fx-flicker-border z-40 grid border border-line2 bg-g1 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:w-full max-sm:pb-[env(safe-area-inset-bottom)] sm:absolute sm:right-0 sm:bottom-full sm:mb-2 sm:w-[min(600px,calc(100vw-32px))] shadow-[0_24px_60px_-20px_rgb(0_0_0/0.8)] sm:grid-cols-[1fr_220px]"
+          className="fx-flicker-border z-40 grid bg-g1 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:w-full max-sm:pb-[env(safe-area-inset-bottom)] sm:absolute sm:right-0 sm:bottom-full sm:mb-2 sm:w-[min(600px,calc(100vw-32px))] shadow-(--shadow-float) sm:grid-cols-[1fr_220px]"
         >
           <div className="flex min-w-0 flex-col border-line sm:border-r">
             <label className="flex items-center gap-2 border-b border-line px-3 py-2 font-mono text-[13px]">

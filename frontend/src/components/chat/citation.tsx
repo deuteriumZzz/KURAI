@@ -15,7 +15,7 @@ export function Citation({ n, source }: { n: number; source?: { url: string; tit
       </a>
       <span
         role="tooltip"
-        className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 border border-line2 bg-g2 p-3 text-left opacity-0 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.8)] transition-opacity duration-(--dur-fast) group-focus-within/cite:visible group-focus-within/cite:opacity-100 group-hover/cite:visible group-hover/cite:opacity-100"
+        className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 bg-g2 p-3 text-left opacity-0 shadow-(--shadow-float) transition-opacity duration-(--dur-fast) group-focus-within/cite:visible group-focus-within/cite:opacity-100 group-hover/cite:visible group-hover/cite:opacity-100"
       >
         <span className="flex items-center gap-2">
           <span aria-hidden="true" className="grid size-5 place-items-center border border-line2 font-mono text-[10px] text-acc uppercase">

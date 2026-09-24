@@ -50,7 +50,7 @@ export function SelectionMenu({ root, onAction }: { root: RefObject<HTMLElement 
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
           transition={{ duration: 0.14 }}
-          className="fixed z-40 flex -translate-x-1/2 -translate-y-full border border-line2 bg-g2 shadow-[0_12px_30px_-12px_rgb(0_0_0/0.8)]"
+          className="fixed z-40 flex -translate-x-1/2 -translate-y-full bg-g2 shadow-(--shadow-float)"
           style={{ left: Math.max(120, Math.min(sel.x, window.innerWidth - 120)), top: sel.y - 8 }}
           onMouseDown={(e) => e.preventDefault()}
         >

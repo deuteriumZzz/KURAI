@@ -20,7 +20,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <KuraiLogo />
         </Link>
         <div className="relative">
-          <p className="font-display text-5xl leading-[1.05] font-extralight tracking-wide">
+          <p className="font-display text-5xl leading-[1.05] font-normal tracking-wide">
             Продолжите
             <br />с того же
             <br />

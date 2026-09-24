@@ -62,7 +62,7 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
     <section id="top-up" aria-labelledby="top-up-title" className="grid gap-6 border border-line bg-g1 p-5 md:grid-cols-2 md:p-6">
       <div className="flex flex-col gap-3">
         <Label>Баланс</Label>
-        <p ref={balRef} className="font-display text-5xl font-extralight tabular-nums">
+        <p ref={balRef} className="font-display text-5xl font-normal tabular-nums">
           {formatCredits(shown, { unit: false })} <span className="text-lg text-ink3">кредитов</span>
         </p>
         <Segments value={balance / grantMicro} count={20} label="Баланс относительно месячного начисления" />

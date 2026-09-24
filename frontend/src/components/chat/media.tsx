@@ -42,7 +42,7 @@ export function JobCard({ job, queuePosition, tip }: { job: Job; queuePosition?:
               key={i}
               className={cn(
                 "aspect-[16/10] border transition-colors duration-(--dur-base)",
-                i < Math.round(job.progress * 8) ? "border-acc-line bg-[linear-gradient(135deg,#123036,#0d1218_70%)]" : "border-line bg-g2",
+                i < Math.round(job.progress * 8) ? "border-acc-line bg-acc-soft" : "border-line bg-g2",
               )}
             />
           ))}

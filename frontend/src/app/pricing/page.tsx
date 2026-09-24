@@ -16,7 +16,7 @@ export default function PricingPage() {
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-3">
           <Label className="text-acc">Тарифы</Label>
-          <h1 className="max-w-3xl font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-tight font-extralight text-balance">
+          <h1 className="max-w-3xl font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-tight font-normal text-balance">
             Платите за запросы, а не за три подписки
           </h1>
           <p className="max-w-[60ch] text-ink2">Цена каждого запроса видна до отправки. За сбой модели кредиты возвращаются автоматически.</p>

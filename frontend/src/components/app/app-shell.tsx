@@ -36,7 +36,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const calm = useCalm();
   const chats = useStore(chatsStore);
 
-  useEffect(() => applyPrefs(readPrefs()), []);
+  useEffect(() => {
+    applyPrefs(readPrefs());
+    // «как в системе»: переключаемся вслед за ОС
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const on = () => readPrefs().theme === "system" && applyPrefs(readPrefs());
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   useEffect(() => {
     try {
@@ -155,8 +162,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
         }}
       >
-        {!focus && <div className="fx-backdrop -z-10" aria-hidden="true" />}
-        {!focus && <div className="fx-spotlight -z-10" aria-hidden="true" />}
+
         {focus && (
           <button
             type="button"
@@ -167,8 +173,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         )}
         <GridPulse />
-        <span aria-hidden="true" className="pointer-events-none absolute top-2 right-2 -z-10 size-3.5 border-t border-r border-line2" />
-        <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 -z-10 size-3.5 border-b border-l border-line2" />
         <button
           type="button"
           onClick={() => setDrawer(true)}

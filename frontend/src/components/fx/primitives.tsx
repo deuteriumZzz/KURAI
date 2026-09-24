@@ -37,10 +37,10 @@ export function SysLine({
   );
 }
 
-/** Моно-метка uppercase для метаданных. */
+/** Тихая подпись: метаданные, группы, пояснения. Моно — только для модели, цены и кода. */
 export function Label({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn("font-mono text-[11px] tracking-[0.12em] text-ink3 uppercase", className)}>{children}</span>
+    <span className={cn("text-[12.5px] text-ink3", className)}>{children}</span>
   );
 }
 

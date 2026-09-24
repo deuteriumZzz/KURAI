@@ -18,7 +18,7 @@ export function Gallery() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Label className="text-acc">Витрина</Label>
-          <h2 id="gal-title" className="mt-2 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">
+          <h2 id="gal-title" className="mt-2 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
             Сделано в KURAI
           </h2>
         </div>

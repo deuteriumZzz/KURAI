@@ -20,7 +20,7 @@ export function ShareCard({ lines }: { lines: string[] }) {
           ))}
         </div>
         <div className="flex items-center justify-between">
-          <span className="font-display text-[13px] font-medium tracking-[0.42em]">
+          <span className="font-brand text-[13px] font-medium tracking-[0.42em]">
             KUR<span className="text-acc">A</span>I
           </span>
           <Label>kurai.ai</Label>

@@ -31,7 +31,7 @@ export default async function AppHome(props: PageProps<"/app">) {
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-7 px-4 py-10">
-        <h1 className="mr-[-0.5em] font-display text-4xl font-light tracking-[0.5em] sm:text-5xl">
+        <h1 className="mr-[-0.44em] font-brand text-5xl font-extralight tracking-[0.44em] sm:text-5xl">
           <Decode text="KURAI" duration={420} />
         </h1>
         <p className="-mt-3 font-mono text-[11px] tracking-[0.16em] text-ink3 uppercase">

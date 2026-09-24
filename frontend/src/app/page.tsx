@@ -59,7 +59,7 @@ export default function Landing() {
             <Label className="text-acc">
               <Decode text="Один интерфейс · 300+ моделей" duration={600} />
             </Label>
-            <h1 className="fx-weight-in fx-chroma max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-extralight tracking-[-0.01em] text-balance">
+            <h1 className="fx-weight-in fx-chroma max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-normal tracking-[-0.01em] text-balance">
               Ведущие нейросети —<br />
               <span className="fx-neon fx-neon-on font-light">в одном терминале.</span>
             </h1>
@@ -97,7 +97,7 @@ export default function Landing() {
         <section className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="fx-rise flex flex-col gap-4">
             <Label className="text-acc">Как это работает</Label>
-            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-extralight text-balance">
+            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-normal text-balance">
               Один чат вместо пяти вкладок и трёх подписок
             </h2>
             <p className="max-w-[52ch] text-ink2">
@@ -137,7 +137,7 @@ export default function Landing() {
             { v: 15, s: "%", l: "скидка при оплате за год" },
           ].map((n) => (
             <div key={n.l} className="flex flex-col gap-1 bg-bg p-5 sm:p-6">
-              <span className="font-display text-4xl font-extralight text-acc">
+              <span className="font-display text-4xl font-normal text-acc">
                 <CountUp to={n.v} suffix={n.s} />
               </span>
               <span className="text-[13px] text-ink2">{n.l}</span>
@@ -165,7 +165,7 @@ export default function Landing() {
         {/* plans teaser */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-extralight">Платите за запросы, а не за подписки</h2>
+            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Платите за запросы, а не за подписки</h2>
             <Link href="/pricing" className="text-[14px] text-acc hover:underline">
               Калькулятор и все тарифы →
             </Link>
@@ -190,7 +190,7 @@ export default function Landing() {
         <section className="fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl">
           <div className="fx-halftone absolute inset-0 opacity-30" aria-hidden="true" />
           <div className="relative flex flex-col items-start gap-5 p-8 sm:p-12">
-            <h2 className="max-w-2xl font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-extralight text-balance">
+            <h2 className="max-w-2xl font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-normal text-balance">
               Подключитесь. Первые 5 запросов — бесплатно.
             </h2>
             <Link href="/register" className="fx-chamfer bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">

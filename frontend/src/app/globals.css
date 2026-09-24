@@ -31,8 +31,15 @@
   --color-warn-soft: rgb(242 180 75 / 0.13);
   --color-err-soft: rgb(255 77 94 / 0.14);
 
-  /* type */
-  --font-display: var(--font-exo2), "Geist", system-ui, sans-serif;
+  /* surfaces by tone (instead of borders): полупрозрачный белый над фоном */
+  --color-s1: rgb(255 255 255 / 0.035);
+  --color-s2: rgb(255 255 255 / 0.06);
+  --color-s3: rgb(255 255 255 / 0.09);
+  --color-hair: rgb(255 255 255 / 0.07);
+
+  /* type: Geist — весь интерфейс; Exo 2 — только знак KURAI */
+  --font-display: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-brand: var(--font-exo2), "Geist", system-ui, sans-serif;
   --font-sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-jbmono), ui-monospace, Menlo, monospace;
 
@@ -54,6 +61,47 @@
   --dur-fast: 150ms;
   --dur-base: 220ms;
   --dur-slow: 400ms;
+  /* одна тень — только у плавающих слоёв (поле ввода, меню, панели) */
+  --shadow-float: 0 30px 60px -28px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --radius-field: 0px;
+}
+
+/* ─────────────── светлая тема (вариант D): мягче, ближе к Kimi ─────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f6f7f9;
+  --color-g1: #ffffff;
+  --color-g2: #eef1f4;
+  --color-g3: #e4e8ed;
+  --color-line: #dde2e8;
+  --color-line2: #c8d0da;
+  --color-ink: #0e151d;
+  --color-ink2: #46515e;
+  --color-ink3: #6b7684;
+  --color-acc: #00808a;
+  --color-acc-ink: #ffffff;
+  --color-acc-soft: rgb(0 128 138 / 0.1);
+  --color-acc-line: rgb(0 128 138 / 0.4);
+  --color-ok: #0f8a56;
+  --color-warn: #9a6200;
+  --color-err: #d6304a;
+  --color-warn-soft: rgb(154 98 0 / 0.1);
+  --color-err-soft: rgb(214 48 74 / 0.1);
+  --color-s1: rgb(12 22 34 / 0.04);
+  --color-s2: rgb(12 22 34 / 0.07);
+  --color-s3: rgb(12 22 34 / 0.11);
+  --color-hair: rgb(12 22 34 / 0.08);
+  --shadow-float: 0 16px 40px -20px rgb(12 22 34 / 0.28), 0 0 0 1px rgb(12 22 34 / 0.08);
+  --radius-field: 18px;
+}
+/* в светлой теме геометрия мягкая: без срезов и скобок */
+:root[data-theme="light"] .fx-chamfer {
+  clip-path: none;
+  border-radius: var(--radius-field);
+}
+:root[data-theme="light"] .fx-brackets::before,
+:root[data-theme="light"] .fx-brackets::after {
+  display: none;
 }
 
 html,

@@ -419,7 +419,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
               const el = scroller.current;
               el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
             }}
-            className="absolute bottom-40 left-1/2 z-10 -translate-x-1/2 cursor-pointer border border-acc-line bg-g2 px-3 py-1.5 font-mono text-[12px] text-acc shadow-[0_12px_30px_-12px_rgb(0_0_0/0.8)] hover:bg-acc hover:text-acc-ink"
+            className="absolute bottom-40 left-1/2 z-10 -translate-x-1/2 cursor-pointer border border-acc-line bg-g2 px-3 py-1.5 font-mono text-[12px] text-acc shadow-(--shadow-float) hover:bg-acc hover:text-acc-ink"
           >
             ↓ Вниз {textStreaming ? "· идёт ответ" : ""}
           </motion.button>

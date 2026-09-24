@@ -96,7 +96,7 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
           initial={{ opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.15, delay: 0.35 }}
-          className="pointer-events-none fixed z-50 w-64 border border-line2 bg-g2 p-3 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.8)] max-md:hidden"
+          className="pointer-events-none fixed z-50 w-64 bg-g2 p-3 shadow-(--shadow-float) max-md:hidden"
           style={{ left: hover.x, top: hover.y }}
         >
           <p className="truncate text-[13px]">{chat.title}</p>
@@ -115,7 +115,7 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
             transition={{ duration: 0.14 }}
-            className="absolute top-8 right-0 z-30 w-44 border border-line2 bg-g1 py-1 shadow-[0_16px_40px_-16px_rgb(0_0_0/0.8)]"
+            className="absolute top-8 right-0 z-30 w-44 bg-g1 py-1 shadow-(--shadow-float)"
           >
             <button role="menuitem" type="button" className={item} onClick={() => { onPin(); setMenu(false); }}>
               {chat.pinned ? <PinOff size={14} strokeWidth={1.5} /> : <Pin size={14} strokeWidth={1.5} />}
