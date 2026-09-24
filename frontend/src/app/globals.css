@@ -561,3 +561,21 @@ dialog.fx-dialog::backdrop {
     0 0 0 3px var(--color-acc-soft),
     0 -12px 30px -18px rgb(0 232 240 / 0.35);
 }
+
+/* переезд поля ввода главная → чат (React <ViewTransition name="composer">) */
+::view-transition-group(composer) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+:root.calm::view-transition-group(*),
+:root.calm::view-transition-old(*),
+:root.calm::view-transition-new(*) {
+  animation: none !important;
+}

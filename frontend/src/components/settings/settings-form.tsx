@@ -32,7 +32,7 @@ export function SettingsForm({ user }: { user: User }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [exported, setExported] = useState(false);
   const [deleted, setDeleted] = useState<string | null>(null);
-  const [notif, setNotif] = useState({ browser: false, email: true, quiet: false });
+  const [notif, setNotif] = useState({ email: true, quiet: false });
   const [sessions, setSessions] = useState([
     { id: "s1", device: "MacBook · Chrome", place: "Москва", at: "сейчас", current: true },
     { id: "s2", device: "iPhone · Safari", place: "Москва", at: "вчера, 21:40", current: false },
@@ -93,6 +93,24 @@ export function SettingsForm({ user }: { user: User }) {
           checked={prefs.calm}
           onChange={(calm) => set({ calm })}
         />
+        <div className="flex flex-col gap-2 border border-line bg-g1 px-4 py-3">
+          <span className="text-[14px]">Размер текста ответов</span>
+          <div role="radiogroup" aria-label="Размер текста ответов" className="flex w-max border border-line">
+            {(["s", "m", "l"] as const).map((v) => (
+              <button key={v} type="button" role="radio" aria-checked={prefs.readSize === v} onClick={() => set({ readSize: v })} className={cn("cursor-pointer border-r border-line px-4 py-1.5 last:border-r-0", prefs.readSize === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink", { s: "text-[13px]", m: "text-[15px]", l: "text-[17px]" }[v])}>
+                Аа
+              </button>
+            ))}
+          </div>
+          <span className="mt-2 text-[14px]">Ширина колонки чата</span>
+          <div role="radiogroup" aria-label="Ширина колонки чата" className="flex w-max border border-line">
+            {([["narrow", "Узкая · удобно читать"], ["wide", "Широкая · таблицы и код"]] as const).map(([v, l]) => (
+              <button key={v} type="button" role="radio" aria-checked={prefs.readWidth === v} onClick={() => set({ readWidth: v })} className={cn("cursor-pointer border-r border-line px-3 py-1.5 text-[13px] last:border-r-0", prefs.readWidth === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
         <Switch label="Подсказки клавиш по Alt" hint="Зажмите Alt — на кнопках появятся горячие клавиши" checked={prefs.hints} onChange={(hints) => set({ hints })} />
         <Button variant="ghost" className="w-max" onClick={() => set({ onboarded: false })}>
           Показать знакомство с KURAI ещё раз
@@ -114,13 +132,13 @@ export function SettingsForm({ user }: { user: User }) {
         <Switch
           label="В браузере"
           hint="Сообщим, когда видео или отчёт готовы, даже если вкладка свёрнута"
-          checked={notif.browser}
+          checked={prefs.notifyBrowser}
           onChange={async (v) => {
             if (v && typeof Notification !== "undefined" && Notification.permission !== "granted") {
               const res = await Notification.requestPermission().catch(() => "denied" as NotificationPermission);
               if (res !== "granted") return;
             }
-            setNotif((n) => ({ ...n, browser: v }));
+            set({ notifyBrowser: v });
           }}
         />
         <Switch label="Письма о балансе и чеках" checked={notif.email} onChange={(email) => setNotif((n) => ({ ...n, email }))} />

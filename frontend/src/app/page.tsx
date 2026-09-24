@@ -4,6 +4,7 @@ import { Decode } from "@/components/fx/decode";
 import { KeyHint, Label, SysLine } from "@/components/fx/primitives";
 import { LiveDemo } from "@/components/landing/live-demo";
 import { NeuralField } from "@/components/landing/neural-field";
+import { NeuralCore } from "@/components/landing/neural-core";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { CountUp } from "@/components/landing/count-up";
 import { Compare, Faq, Scenarios } from "@/components/landing/sections";
@@ -48,6 +49,9 @@ export default function Landing() {
             300+ MODELS · ONLINE
           </span>
 
+          <div aria-hidden="true" className="absolute top-20 right-[max(0px,calc((100vw-72rem)/2))] hidden h-[480px] w-[480px] lg:block">
+            <NeuralCore />
+          </div>
           <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 pt-24 pb-28 sm:px-6 sm:pt-32 sm:pb-40">
             <Label className="text-acc">
               <Decode text="Один интерфейс · 300+ моделей" duration={600} />

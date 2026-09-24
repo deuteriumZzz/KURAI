@@ -8,6 +8,7 @@ import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
 import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
+import { readPrefs } from "@/lib/prefs";
 import { retrigger } from "@/lib/motion";
 import { ChevronDown, ChevronUp, Pin, Search, X } from "lucide-react";
 import { formatCredits } from "@/lib/format";
@@ -20,6 +21,7 @@ import { Label } from "@/components/fx/primitives";
 import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
 import { SidePanel } from "./side-panel";
+import { SelectionMenu } from "./selection-menu";
 import { AnimatePresence, motion } from "motion/react";
 import { notify } from "@/lib/app-state";
 import { Appear } from "@/components/fx/motion";
@@ -50,6 +52,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const [query, setQuery] = useState("");
   const [hit, setHit] = useState(0);
   const [pinned, setPinned] = useState<string[]>([]);
+  const [compare, setCompare] = useState<Record<string, string>>({});
 
   const branch = branchOf(state.head, state.messages);
   const textStreaming = branch.find((m) => state.runs[m.id]?.status === "streaming" && !isJobMode(m.mode));
@@ -78,6 +81,10 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           if (ev.type === "done" && mode === "video") {
             setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
             notify(`Видео готово · ${prompt.slice(0, 48)}`, `/app/c/${chat.id}`);
+            // системное уведомление, если вкладка свёрнута и пользователь разрешил
+            if (document.hidden && readPrefs().notifyBrowser && typeof Notification !== "undefined" && Notification.permission === "granted") {
+              new Notification("KURAI · видео готово", { body: prompt.slice(0, 80), icon: "/icon.svg" });
+            }
           }
           if (ev.type === "done" && (mode === "research" || mode === "slides")) notify(`${mode === "research" ? "Исследование" : "Слайды"} готово · ${prompt.slice(0, 40)}`, `/app/c/${chat.id}`);
         }
@@ -126,6 +133,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     stickToBottom.current = true;
     lastOpts.current = opts;
     void run(id, prompt, mode, 0, opts);
+    return id;
   }
 
   function postUser(parentId: string | null, text: string, mode: Mode, files: FileMeta[], opts: SimOptions) {
@@ -136,7 +144,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     ];
     const user: Message = { id: uid, chatId: chat.id, parentId, role: "user", mode, model: null, costMicro: 0, createdAt: new Date().toISOString(), parts };
     setState((s) => ({ ...s, messages: [...s.messages, user], head: uid }));
-    startAnswer(uid, text || files.map((f) => f.name).join(", "), mode, { ...opts, files });
+    return startAnswer(uid, text || files.map((f) => f.name).join(", "), mode, { ...opts, files });
   }
 
   function send(msg: Outgoing) {
@@ -305,7 +313,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         }}
         className="relative flex-1 overflow-y-auto"
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
+        <div className="mx-auto flex w-full max-w-[var(--read-width,48rem)] flex-col gap-6 px-4 py-6 text-[length:var(--read-size,15px)] md:px-6">
           <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
             {new Date(branch[0]?.createdAt ?? chat.updatedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
           </div>
@@ -351,6 +359,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
                     onRegenerate={() => regenerate(m)}
                     pinned={pinned.includes(m.id)}
+                    compareBefore={compare[m.id]}
                     onPin={() => setPinned((p) => (p.includes(m.id) ? p.filter((x) => x !== m.id) : [...p, m.id]))}
                     onImageAction={(a, i) => {
                       const alt = m.parts.filter((p) => p.type === "image")[i];
@@ -358,7 +367,11 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                       const opts = { ...lastOpts.current, files: [] };
                       if (a === "animate") postUser(state.head, `Оживи: ${what}`, "video", [], opts);
                       if (a === "variants") postUser(state.head, `Ещё варианты: ${what}`, "image", [], opts);
-                      if (a === "upscale") postUser(state.head, `Увеличь до 4K: ${what}`, "image", [], { ...opts, params: { count: "1" } });
+                      if (a === "upscale") {
+                        const aid = postUser(state.head, `Увеличь до 4K: ${what}`, "image", [], { ...opts, params: { count: "1" } });
+                        const src = alt?.type === "image" ? alt.url : undefined;
+                        if (src) setCompare((c) => ({ ...c, [aid]: src }));
+                      }
                     }}
                     onFollowup={(f) => {
                       const mode = modeForFollowup(f, m.mode);
@@ -375,6 +388,16 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         </div>
       </div>
 
+      <SelectionMenu
+        root={scroller}
+        onAction={(a, text) => {
+          const quote = text.length > 300 ? `${text.slice(0, 300)}…` : text;
+          const opts = { ...lastOpts.current, files: [] };
+          if (a === "explain") postUser(state.head, `Объясни проще: «${quote}»`, "text", [], opts);
+          else if (a === "translate") postUser(state.head, `Переведи на английский: «${quote}»`, "text", [], opts);
+          else window.dispatchEvent(new CustomEvent("kurai:prefill", { detail: a === "quote" ? `> ${quote}\n\n` : `Про фрагмент «${quote}»: ` }));
+        }}
+      />
       <AnimatePresence>
         {below && (
           <motion.button
@@ -396,6 +419,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       <div className="flex justify-center border-t border-line bg-bg px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Composer
           variant="dock"
+          draftKey={chat.id}
           onSend={send}
           busy={!!textStreaming}
           onStop={stop}

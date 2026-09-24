@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { cn } from "@/lib/cn";
 import { Scanline } from "./primitives";
 
@@ -35,6 +36,13 @@ export function PageSkeleton({ kind }: { kind: "grid" | "chat" | "list" }) {
           </>
         )}
       </div>
+      {kind === "chat" && (
+        <div className="mt-auto flex justify-center border-t border-line px-4 pt-3 pb-4">
+          <ViewTransition name="composer">
+            <div className="fx-chamfer h-24 w-full max-w-3xl border border-line2 bg-g1 [--ch:var(--chamfer-lg)]" />
+          </ViewTransition>
+        </div>
+      )}
     </main>
   );
 }

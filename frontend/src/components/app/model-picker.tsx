@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
+import { readPrefs, writePrefs, pushRecent, toggleFavorite } from "@/lib/prefs";
 import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { GROUP_LABEL, modelsForMode, searchModels, type ModelInfo } from "@/lib/models";
@@ -66,8 +67,17 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const listId = useId();
-  const list = useMemo(() => searchModels(modelsForMode(mode), q), [mode, q]);
-  const current = list[active] ?? value;
+  const [favs, setFavs] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const list = useMemo(() => {
+    const all = searchModels(modelsForMode(mode), q);
+    if (q) return all.map((m) => ({ m, group: GROUP_LABEL[m.group] }));
+    const pinned = all.filter((m) => favs.includes(m.id)).map((m) => ({ m, group: "Избранные" }));
+    const rec = recent.map((id) => all.find((m) => m.id === id)).filter((m): m is ModelInfo => !!m && !favs.includes(m.id)).map((m) => ({ m, group: "Недавние" }));
+    const seen = new Set([...pinned, ...rec].map((x) => x.m.id));
+    return [...pinned, ...rec, ...all.filter((m) => !seen.has(m.id)).map((m) => ({ m, group: GROUP_LABEL[m.group] }))];
+  }, [mode, q, favs, recent]);
+  const current = list[active]?.m ?? value;
 
   useEffect(() => {
     if (!open) return;
@@ -77,13 +87,17 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
   }, [open]);
 
   function toggle() {
+    const p = readPrefs();
+    setFavs(p.favorites);
+    setRecent(p.recent);
     setQ("");
-    setActive(Math.max(0, modelsForMode(mode).findIndex((m) => m.id === value.id)));
+    setActive(0);
     setOpen((o) => !o);
   }
 
   function pick(m: ModelInfo | undefined) {
     if (!m) return;
+    writePrefs({ recent: pushRecent(readPrefs().recent, m.id) });
     onChange(m);
     setOpen(false);
   }
@@ -100,7 +114,7 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
       setActive((a) => Math.max(0, a - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      pick(list[active]);
+      pick(list[active]?.m);
     }
   }
 
@@ -149,10 +163,10 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
             </label>
             <ul id={listId} role="listbox" aria-label="Модели" className="max-h-72 overflow-y-auto py-1">
               {list.length === 0 && <li className="px-3 py-3 text-[13px] text-ink3">Не нашли такую модель</li>}
-              {list.map((m, i) => {
-                const header = m.group !== list[i - 1]?.group ? GROUP_LABEL[m.group] : null;
+              {list.map(({ m, group }, i) => {
+                const header = group !== list[i - 1]?.group ? group : null;
                 return (
-                  <li key={m.id} role="presentation">
+                  <li key={`${group}-${m.id}`} role="presentation">
                     {header && <Label className="block px-3 pt-2 pb-1">{header}</Label>}
                     <div
                       id={`${listId}-${m.id}`}
@@ -169,6 +183,20 @@ export function ModelPicker({ mode, value, onChange }: { mode: Mode; value: Mode
                       <span className="truncate">{m.name}</span>
                       {m.id === value.id && <span className="font-mono text-[10px] text-acc">●</span>}
                       <span className="ml-auto shrink-0 font-mono text-[11px] text-ink3">{formatCredits(m.priceHintMicro)}</span>
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        aria-label={favs.includes(m.id) ? `Убрать ${m.name} из избранного` : `Добавить ${m.name} в избранное`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next = toggleFavorite(favs, m.id);
+                          setFavs(next);
+                          writePrefs({ favorites: next });
+                        }}
+                        className={cn("grid size-6 shrink-0 place-items-center hover:text-acc", favs.includes(m.id) ? "text-acc" : "text-ink3")}
+                      >
+                        <Star size={12} strokeWidth={1.5} fill={favs.includes(m.id) ? "currentColor" : "none"} />
+                      </span>
                     </div>
                   </li>
                 );

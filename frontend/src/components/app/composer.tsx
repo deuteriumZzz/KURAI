@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, ViewTransition, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Brain, Globe, Paperclip, Sparkles, Square } from "lucide-react";
 import { ModeIcon } from "@/components/brand/mode-icons";
@@ -42,6 +42,8 @@ type Props = {
   onCompress?: () => void;
   /** ↑ в пустом поле — изменить последнее своё сообщение. */
   onEditLast?: () => void;
+  /** Ключ черновика: текст сохраняется, пока не отправлен (закрыли вкладку — он на месте). */
+  draftKey?: string;
 };
 
 let seq = 0;
@@ -58,6 +60,7 @@ export function Composer({
   contextChars = 0,
   onCompress,
   onEditLast,
+  draftKey,
 }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -131,6 +134,37 @@ export function Composer({
     [glitch],
   );
 
+  // черновик: восстановить при открытии, сохранять с задержкой
+  useEffect(() => {
+    if (!draftKey || initialValue) return;
+    try {
+      const saved = localStorage.getItem(`kurai:draft:${draftKey}`);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (saved) setValue(saved);
+    } catch {}
+  }, [draftKey, initialValue]);
+  useEffect(() => {
+    if (!draftKey) return;
+    const t = setTimeout(() => {
+      try {
+        if (value) localStorage.setItem(`kurai:draft:${draftKey}`, value);
+        else localStorage.removeItem(`kurai:draft:${draftKey}`);
+      } catch {}
+    }, 300);
+    return () => clearTimeout(t);
+  }, [draftKey, value]);
+
+  // «Спросить про это» / «Цитировать» из меню выделения подставляют текст в поле
+  useEffect(() => {
+    const onPrefill = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      setValue((v) => (v ? `${v}\n${text}` : text));
+      requestAnimationFrame(() => document.getElementById("composer-input")?.focus());
+    };
+    window.addEventListener("kurai:prefill", onPrefill);
+    return () => window.removeEventListener("kurai:prefill", onPrefill);
+  }, []);
+
   // перетаскивание файлов на всё окно
   useEffect(() => {
     let depth = 0;
@@ -171,6 +205,9 @@ export function Composer({
     setValue("");
     setFiles([]);
     setError(null);
+    // импульс по сетке фона от поля ввода — отмечает реальное событие «отправлено»
+    const r = boxRef.current?.getBoundingClientRect();
+    if (r) window.dispatchEvent(new CustomEvent("kurai:pulse", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }));
     if (onSend) onSend(msg);
     // тестовые данные: с главной запрос открывает демонстрационный чат
     else router.push("/app/c/7f3a");
@@ -253,6 +290,7 @@ export function Composer({
           </button>
         </div>
       )}
+      <ViewTransition name="composer">
       <div className="fx-brackets">
         <div
           ref={boxRef}
@@ -419,6 +457,7 @@ export function Composer({
           </div>
         </div>
       </div>
+      </ViewTransition>
       {usage >= 0.8 && onCompress && (
         <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-warn">
           Чат длинный — ответы дорожают.

@@ -3,6 +3,7 @@
 import { Clapperboard, Layers, Maximize2, Play } from "lucide-react";
 import { motion } from "motion/react";
 import { openLightbox } from "@/lib/app-state";
+import { PixelReveal } from "@/components/fx/pixel-reveal";
 import type { MessagePart } from "@/types/api";
 import { cn } from "@/lib/cn";
 import { Label, Scanline, Segments, SysLine } from "@/components/fx/primitives";
@@ -59,12 +60,13 @@ export function JobCard({ job, queuePosition, tip }: { job: Job; queuePosition?:
 
 export type ImageAction = "upscale" | "variants" | "animate";
 
-export function ImageGrid({ images, id, caption, onAction }: { images: Extract<MessagePart, { type: "image" }>[]; id: string; caption?: string; onAction?: (a: ImageAction, index: number) => void }) {
+export function ImageGrid({ images, id, caption, onAction, fresh = false }: { images: Extract<MessagePart, { type: "image" }>[]; id: string; caption?: string; onAction?: (a: ImageAction, index: number) => void; fresh?: boolean }) {
   const items = images.map((img, i) => ({ id: `${id}-${i}`, src: img.url, alt: img.alt, caption, kind: "image" as const }));
   return (
-    <div className={cn("fx-reveal fx-flicker-border grid max-w-lg gap-1.5 border border-line p-1.5", images.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+    <div className={cn("fx-flicker-border grid max-w-lg gap-1.5 border border-line p-1.5", images.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
       {images.map((img, i) => (
         <div key={i} className="group relative overflow-hidden border border-line">
+          <PixelReveal src={img.url} active={fresh}>
           <button type="button" onClick={() => openLightbox(items, i)} aria-label={`Открыть: ${img.alt}`} className="block w-full cursor-zoom-in">
             <motion.img
               layoutId={`media-${id}-${i}`}
@@ -75,6 +77,7 @@ export function ImageGrid({ images, id, caption, onAction }: { images: Extract<M
               className="aspect-square w-full object-cover transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.03]"
             />
           </button>
+          </PixelReveal>
           {onAction && (
             <div className="absolute inset-x-1 bottom-1 flex gap-1 opacity-0 transition-opacity duration-(--dur-fast) group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
               {([

@@ -1,8 +1,22 @@
 /** Пользовательские настройки интерфейса в localStorage (только удобства; серверные настройки — в API). */
-export type Prefs = { calm: boolean; hints: boolean; web: boolean; model: string; onboarded: boolean; useCase?: string };
+export type ReadSize = "s" | "m" | "l";
+export type ReadWidth = "narrow" | "wide";
+export type Prefs = {
+  calm: boolean;
+  hints: boolean;
+  web: boolean;
+  model: string;
+  onboarded: boolean;
+  useCase?: string;
+  readSize: ReadSize;
+  readWidth: ReadWidth;
+  favorites: string[];
+  recent: string[];
+  notifyBrowser: boolean;
+};
 
 const KEY = "kurai:prefs";
-export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false };
+export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false };
 
 export function readPrefs(): Prefs {
   try {
@@ -25,4 +39,16 @@ export function writePrefs(patch: Partial<Prefs>): Prefs {
 export function applyPrefs(p: Prefs): void {
   document.documentElement.classList.toggle("calm", p.calm);
   document.documentElement.classList.toggle("nohints", !p.hints);
+  const root = document.documentElement.style;
+  root.setProperty("--read-size", { s: "14px", m: "15px", l: "17px" }[p.readSize]);
+  root.setProperty("--read-width", p.readWidth === "wide" ? "60rem" : "48rem");
+}
+
+/** Недавние модели: новая — первой, без повторов, не больше 3. */
+export function pushRecent(recent: string[], id: string): string[] {
+  return [id, ...recent.filter((x) => x !== id)].slice(0, 3);
+}
+
+export function toggleFavorite(favs: string[], id: string): string[] {
+  return favs.includes(id) ? favs.filter((x) => x !== id) : [...favs, id];
 }

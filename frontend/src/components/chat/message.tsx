@@ -15,6 +15,7 @@ const LazyMarkdown = lazy(() => import("./markdown").then((m) => ({ default: m.M
 type Src = { url: string; title: string };
 import { ImageGrid, JobCard, VideoCard, type ImageAction } from "./media";
 import { AgentChoice, AgentSummary, FileScan, QuestLog, SourceNet } from "./agent";
+import { BeforeAfter } from "./before-after";
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
@@ -22,7 +23,7 @@ const textOf = (m: Message) => m.parts.map((p) => (p.type === "text" ? p.text : 
 /** Пока чанк Markdown не загружен — показываем текст как есть. */
 function MarkdownOrText({ text, sources }: { text: string; sources?: Src[] }) {
   return (
-    <Suspense fallback={<p className="text-[14.5px] leading-relaxed whitespace-pre-wrap">{text}</p>}>
+    <Suspense fallback={<p className="text-[length:var(--read-size,15px)] leading-relaxed whitespace-pre-wrap">{text}</p>}>
       <LazyMarkdown text={text} sources={sources} />
     </Suspense>
   );
@@ -155,9 +156,11 @@ type Props = {
   onImageAction?: (a: ImageAction, index: number) => void;
   pinned?: boolean;
   onPin?: () => void;
+  /** Исходник для сравнения «до / после» (апскейл). */
+  compareBefore?: string;
 };
 
-export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction, pinned = false, onPin }: Props) {
+export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction, pinned = false, onPin, compareBefore }: Props) {
   const [copied, setCopied] = useState(false);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
@@ -195,7 +198,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
       {m.parts.map((p, i) => {
         if (p.type === "text")
           return streaming ? (
-            <div key={i} className="text-[14.5px] leading-relaxed">
+            <div key={i} className="text-[length:var(--read-size,15px)] leading-relaxed">
               <StreamText text={p.text} done={false} />
             </div>
           ) : (
@@ -205,7 +208,12 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
         if (p.type === "video") return <VideoCard key={i} video={p} id={`${m.id}-v${i}`} />;
         return null;
       })}
-      {images.length > 0 && <ImageGrid images={images} id={m.id} caption={`${m.model ?? ""}`} onAction={onImageAction} />}
+      {images.length > 0 &&
+        (compareBefore && images[0] ? (
+          <BeforeAfter before={compareBefore} after={images[0].url} alt={images[0].alt} />
+        ) : (
+          <ImageGrid images={images} id={m.id} caption={`${m.model ?? ""}`} onAction={onImageAction} fresh={!!run} />
+        ))}
       {run?.status === "done" && run.tasks && <AgentSummary run={run} costMicro={m.costMicro} onOpenArtifact={onOpenArtifact} />}
       {!run?.tasks && run?.sources && run.sources.length > 0 && !streaming && (
         <ul aria-label="Источники" className="flex flex-wrap gap-1.5">

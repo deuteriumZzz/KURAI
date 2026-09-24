@@ -14,6 +14,7 @@ import { OfflineBanner } from "./offline-banner";
 import { Lightbox } from "@/components/media/lightbox";
 import { NavProgress } from "./nav-progress";
 import { Shortcuts } from "./shortcuts";
+import { GridPulse } from "./grid-pulse";
 import { MotionConfig } from "motion/react";
 import { useCalm } from "@/lib/use-calm";
 
@@ -152,6 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <div className="fx-backdrop -z-10" aria-hidden="true" />
         <div className="fx-spotlight -z-10" aria-hidden="true" />
+        <GridPulse />
         <span aria-hidden="true" className="pointer-events-none absolute top-2 right-2 -z-10 size-3.5 border-t border-r border-line2" />
         <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 -z-10 size-3.5 border-b border-l border-line2" />
         <button
