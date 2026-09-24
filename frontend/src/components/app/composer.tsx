@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, AudioLines, Brain, Clapperboard, Globe, Image as ImageIcon, MessageSquare, Paperclip, Presentation, Sparkles, Square, Telescope } from "lucide-react";
+import { ArrowUp, Brain, Globe, Paperclip, Sparkles, Square } from "lucide-react";
+import { ModeIcon } from "@/components/brand/mode-icons";
 import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } from "@/lib/prompt";
 import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
@@ -21,8 +22,6 @@ import { Hint } from "./hint";
 import { ModelPicker } from "./model-picker";
 import { VoiceInput } from "./voice-input";
 import { AttachmentChips, type Attachment } from "./attachments";
-
-const MODE_ICON = { text: MessageSquare, image: ImageIcon, video: Clapperboard, audio: AudioLines, research: Telescope, slides: Presentation } as const;
 
 export type Outgoing = { text: string; mode: Mode; model: ModelInfo; web: boolean; think: boolean; params: ModeParams; files: FileMeta[] };
 
@@ -200,7 +199,6 @@ export function Composer({
   const chips = (
     <div role="radiogroup" aria-label="Режим" className={cn("isolate flex flex-wrap gap-2", variant === "home" ? "justify-center" : "")}>
       {MODES.map((m, i) => {
-        const Icon = MODE_ICON[m.id];
         const on = m.id === mode;
         return (
           <motion.button
@@ -225,7 +223,7 @@ export function Composer({
                 transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
               />
             )}
-            <Icon size={14} strokeWidth={1.5} aria-hidden="true" />
+            <ModeIcon mode={m.id} size={14} />
             {m.label}
             {variant === "dock" && <span className="font-mono text-[10px] text-ink3">{m.command}</span>}
           </motion.button>
@@ -258,7 +256,8 @@ export function Composer({
       <div className="fx-brackets">
         <div
           ref={boxRef}
-          className="fx-chamfer border border-line2 bg-g1 px-3.5 pt-3 pb-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)]"
+          data-mode={mode}
+          className="fx-chamfer fx-texture fx-rim border border-line2 bg-g1 px-3.5 pt-3 pb-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)]"
         >
           <AttachmentChips
             items={files}

@@ -516,3 +516,48 @@ dialog.fx-dialog::backdrop {
     height: auto;
   }
 }
+
+/* ─────────────── stage 2: signature details ─────────────── */
+
+/* фактура поля ввода по режиму: акцент один, меняется только рисунок фона */
+.fx-texture[data-mode="image"] {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1.2px);
+  background-size: 10px 10px;
+}
+.fx-texture[data-mode="video"] {
+  background-image:
+    repeating-linear-gradient(90deg, var(--color-line) 0 6px, transparent 6px 14px),
+    repeating-linear-gradient(90deg, var(--color-line) 0 6px, transparent 6px 14px);
+  background-size: 100% 3px, 100% 3px;
+  background-position: 0 4px, 0 calc(100% - 4px);
+  background-repeat: no-repeat;
+}
+.fx-texture[data-mode="audio"] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M0 20 Q15 8 30 20 T60 20 T90 20 T120 20' fill='none' stroke='%23243040' stroke-width='1'/></svg>");
+  background-size: 120px 40px;
+  background-position: 0 100%;
+  background-repeat: repeat-x;
+}
+.fx-texture[data-mode="research"] {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+.fx-texture[data-mode="research"],
+.fx-texture[data-mode="image"] {
+  background-color: var(--color-g1);
+}
+.fx-texture[data-mode="slides"] {
+  background-image: linear-gradient(135deg, transparent calc(100% - 22px), var(--color-line) calc(100% - 22px), var(--color-line) calc(100% - 21px), transparent calc(100% - 21px));
+}
+
+/* кромочный свет: тонкая подсветка верхней грани у активного поля и выбранного */
+.fx-rim:focus-within,
+.fx-rim[data-selected="true"] {
+  box-shadow:
+    inset 0 1px 0 rgb(0 232 240 / 0.45),
+    0 0 0 3px var(--color-acc-soft),
+    0 -12px 30px -18px rgb(0 232 240 / 0.35);
+}

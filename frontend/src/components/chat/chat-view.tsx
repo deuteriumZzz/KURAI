@@ -7,6 +7,7 @@ import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/strea
 import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
 import { findMatches } from "@/lib/search";
+import { useTabStatus } from "@/lib/use-tab-status";
 import { retrigger } from "@/lib/motion";
 import { ChevronDown, ChevronUp, Pin, Search, X } from "lucide-react";
 import { formatCredits } from "@/lib/format";
@@ -182,6 +183,18 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [textStreaming]);
+
+  // вкладка браузера: прогресс самой долгой активной задачи
+  const activeJob = state.messages
+    .map((m) => ({ m, job: m.parts.find((p) => p.type === "job") }))
+    .find(({ m, job }) => job?.type === "job" && state.runs[m.id]?.status === "streaming");
+  const jobLabel =
+    activeJob?.job?.type === "job"
+      ? `${activeJob.job.kind === "video" ? "Видео" : "Изображение"} ${Math.round(activeJob.job.progress * 100)}%`
+      : textStreaming
+        ? "Отвечает"
+        : null;
+  useTabStatus(jobLabel);
 
   const matches = findMatches(branch.map(textOf), query);
   const pinnedMsgs = branch.filter((m) => pinned.includes(m.id));

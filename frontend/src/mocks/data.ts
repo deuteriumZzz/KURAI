@@ -76,3 +76,18 @@ export const MOCK_LEDGER: import("@/types/api").LedgerEntry[] = [
   { id: "l2", at: "2026-09-02T10:00:00Z", kind: "bonus", title: "Промокод KURAI20", amountMicro: 2_000_000 },
   { id: "l1", at: "2026-09-01T00:00:00Z", kind: "grant", title: "Начисление тарифа Pro", amountMicro: 10_000_000 },
 ];
+
+/** Расходы по дням за 30 дней (тестовые данные, детерминированные). */
+export const MOCK_SPEND: { date: string; micro: number; models: { name: string; micro: number }[] }[] = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date(Date.UTC(2026, 7, 25 + i));
+  const wave = Math.abs(Math.sin(i * 0.7)) * 60 + ((i * 37) % 23) + (i % 7 === 5 ? 120 : 0);
+  const credits = Math.round(wave);
+  const video = i % 7 === 5 ? 118 : 0;
+  const rest = Math.max(0, credits - video);
+  const models = [
+    ...(video ? [{ name: "Veo 3", micro: video * 10_000 }] : []),
+    { name: "Claude Sonnet 5", micro: Math.round(rest * 0.6) * 10_000 },
+    { name: "Nano Banana Pro", micro: Math.round(rest * 0.4) * 10_000 },
+  ].filter((m) => m.micro > 0);
+  return { date: d.toISOString().slice(0, 10), micro: models.reduce((s, m) => s + m.micro, 0), models };
+});
