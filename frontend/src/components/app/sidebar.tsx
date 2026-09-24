@@ -6,21 +6,23 @@ import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
 import { Avatar } from "@/components/brand/avatar";
 import { FlapNumber } from "@/components/fx/flap-number";
 import { usePathname } from "next/navigation";
-import { Flame, House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
-import type { Balance, ChatSummary, User } from "@/types/api";
+import { Check, ChevronsUpDown, Flame, Gift, Images, LayoutGrid, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, UserRound, Wallet, type LucideIcon } from "lucide-react";
+import type { Balance, ChatSummary, Mode, User } from "@/types/api";
+import { modeById } from "@/lib/modes";
+import { ModeIcon } from "@/components/brand/mode-icons";
 import { formatCredits, groupChats } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Label, Segments } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 import { ChatRow } from "./chat-row";
-import { Checklist } from "./checklist";
 import { Inbox } from "./inbox";
 import { chatsStore } from "@/lib/app-state";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 
-const NAV: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/app", label: "Главная", icon: House },
+const TOOLS: Mode[] = ["image", "video", "research", "slides", "audio"];
+
+const MENU: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/app/profile", label: "Профиль", icon: UserRound },
   { href: "/app/media", label: "Медиатека", icon: Images },
   { href: "/app/explore", label: "Тренды и шаблоны", icon: Flame },
   { href: "/app/billing", label: "Баланс и тарифы", icon: Wallet },
@@ -51,8 +53,8 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
   }, [removed]);
   const itemCls = (active: boolean) =>
     cn(
-      "relative flex h-9 items-center gap-2.5 px-2.5 text-[13.5px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
-      active ? "bg-g2 text-ink shadow-[inset_2px_0_0_var(--color-acc)]" : "text-ink2 hover:bg-g2 hover:text-ink",
+      "relative flex h-9 items-center gap-2.5 rounded-(--radius-field) px-2.5 text-[13.5px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
+      active ? "bg-s2 text-ink" : "text-ink2 hover:bg-s1 hover:text-ink",
       collapsed && "justify-center px-0",
     );
 
@@ -60,7 +62,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
     <aside
       aria-label="Навигация"
       className={cn(
-        "flex h-full flex-col border-r border-line bg-g1 transition-[width] duration-(--dur-base) ease-(--ease-out)",
+        "flex h-full flex-col bg-g1 transition-[width] duration-(--dur-base) ease-(--ease-out)",
         collapsed ? "w-14" : "w-64",
       )}
     >
@@ -81,20 +83,20 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </button>
       </div>
 
-      <div className="isolate flex flex-col gap-1 px-2">
+      <div className="isolate flex flex-col gap-0.5 px-2">
         <Link
           href="/app"
           onClick={onNavigate}
           title="Новый чат"
           className={cn(
-            "fx-chamfer relative flex h-9 items-center gap-2.5 border border-line2 px-2.5 text-[13.5px] text-ink [--ch:var(--chamfer-sm)] hover:border-acc-line pointer-coarse:h-11",
+            "relative mb-1.5 flex h-9 items-center gap-2.5 rounded-(--radius-field) bg-s2 px-2.5 text-[13.5px] text-ink hover:bg-s3 pointer-coarse:h-11",
             collapsed && "justify-center px-0",
           )}
         >
           <Plus size={16} strokeWidth={1.5} />
           {!collapsed && (
             <>
-              Новый чат <Label className="ml-auto text-[10px]">N</Label>
+              Новый чат <Label className="ml-auto text-[11px]">N</Label>
             </>
           )}
           <Hint k="N" />
@@ -103,21 +105,28 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           <Search size={16} strokeWidth={1.5} />
           {!collapsed && (
             <>
-              Поиск <Label className="ml-auto text-[10px]">⌘K</Label>
+              Поиск <Label className="ml-auto text-[11px]">⌘K</Label>
             </>
           )}
           <Hint k="⌘K" />
         </button>
         <Inbox collapsed={collapsed} onNavigate={onNavigate} />
-        {NAV.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} onClick={onNavigate} aria-label={collapsed ? label : undefined} data-tip={collapsed ? label : undefined} aria-current={pathname === href ? "page" : undefined} className={cn(itemCls(false), pathname === href && "text-ink hover:bg-transparent")}>
-            {pathname === href && (
-              <motion.span layoutId="nav-active" aria-hidden="true" className="absolute inset-0 -z-10 bg-g2 shadow-[inset_2px_0_0_var(--color-acc)]" transition={{ type: "tween", duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }} />
-            )}
-            <Icon size={16} strokeWidth={1.5} />
-            {!collapsed && label}
+
+        {!collapsed && <Label className="mt-3 block px-2.5 pb-1">Инструменты</Label>}
+        {TOOLS.map((m) => (
+          <Link key={m} href={`/app?mode=${m}`} onClick={onNavigate} aria-label={collapsed ? modeById(m).label : undefined} data-tip={collapsed ? modeById(m).label : undefined} className={itemCls(false)}>
+            <ModeIcon mode={m} />
+            {!collapsed && modeById(m).label}
           </Link>
         ))}
+        <Link href="/app/models" onClick={onNavigate} aria-current={pathname === "/app/models" ? "page" : undefined} aria-label={collapsed ? "Все модели" : undefined} data-tip={collapsed ? "Все модели" : undefined} className={itemCls(pathname === "/app/models")}>
+          <LayoutGrid size={16} strokeWidth={1.5} />
+          {!collapsed && (
+            <>
+              Все модели <Label className="ml-auto text-[11px]">300+</Label>
+            </>
+          )}
+        </Link>
       </div>
 
       <nav aria-label="История чатов" className={cn("mt-3 flex-1 overflow-y-auto px-2 pb-3", collapsed && "invisible")}>
@@ -144,7 +153,6 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         ))}
       </nav>
 
-      {!collapsed && <Checklist />}
       {removed && !collapsed && (
         <div role="status" className="mx-2 mb-2 flex items-center justify-between gap-2 border border-line2 bg-g2 px-2.5 py-2 text-[12.5px]">
           <span className="truncate text-ink2">Чат удалён</span>
@@ -160,28 +168,67 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           </button>
         </div>
       )}
-      <div className={cn("border-t border-line p-3", collapsed && "px-2")}>
-        {!collapsed && (
-          <Link href="/app/billing" onClick={onNavigate} className="mb-3 block">
-            <span className="mb-1.5 flex items-baseline justify-between text-[12.5px] text-ink2">
-              Баланс <FlapNumber value={formatCredits(balance.micro)} className="font-mono text-[15px] text-ink tabular-nums" />
-            </span>
-            <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />
-          </Link>
-        )}
-        <Link href="/app/profile" onClick={onNavigate} className={cn("flex items-center gap-2.5 hover:text-acc", collapsed && "justify-center")}>
+      {!collapsed && <Invite />}
+      <div className={cn("p-2", collapsed && "px-1.5")}>
+        <button
+          type="button"
+          popoverTarget="account-menu"
+          className={cn("flex w-full cursor-pointer items-center gap-2.5 rounded-(--radius-field) p-1.5 text-left hover:bg-s2", collapsed && "justify-center")}
+        >
           <Avatar seed={user.email} />
           {!collapsed && (
-            <span className="min-w-0 text-[13px] leading-tight">
+            <span className="min-w-0 flex-1 text-[13px] leading-tight">
               <span className="block truncate">{user.name}</span>
-              <Label className="text-[10px]">
-                {PLAN[balance.plan]}
-                {balance.planUntil && ` · до ${new Date(balance.planUntil).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}`}
+              <Label className="text-[11.5px]">
+                {PLAN[balance.plan]} · <FlapNumber value={formatCredits(balance.micro)} className="font-mono tabular-nums" />
               </Label>
             </span>
           )}
-        </Link>
+          {!collapsed && <ChevronsUpDown size={14} strokeWidth={1.5} className="text-ink3" />}
+        </button>
+        <div
+          id="account-menu"
+          popover="auto"
+          onClick={(e) => (e.target as Element).closest("a") && e.currentTarget.hidePopover()}
+          className="fixed border-0 inset-auto bottom-16 left-2 m-0 w-60 rounded-(--radius-field) bg-g2 p-1.5 text-ink shadow-(--shadow-float)"
+        >
+          <Link href="/app/billing" onClick={onNavigate} className="mb-1 block rounded-[calc(var(--radius-field)-6px)] bg-s1 px-2.5 py-2">
+            <span className="mb-1.5 flex items-baseline justify-between text-[12.5px] text-ink2">
+              Баланс <span className="font-mono text-[14px] text-ink tabular-nums">{formatCredits(balance.micro)}</span>
+            </span>
+            <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />
+          </Link>
+          {MENU.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} onClick={onNavigate} aria-current={pathname === href ? "page" : undefined} className={cn(itemCls(pathname === href), "rounded-[calc(var(--radius-field)-6px)]")}>
+              <Icon size={16} strokeWidth={1.5} />
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
     </aside>
+  );
+}
+
+/** «Пригласите друга» — копирует реферальную ссылку. */
+function Invite() {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [copied]);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard?.writeText(`${location.origin}/r/u_1`).catch(() => {});
+        setCopied(true);
+      }}
+      className="mx-2 flex cursor-pointer items-center gap-2.5 rounded-(--radius-field) px-2.5 py-2 text-left text-[12.5px] text-ink2 hover:bg-s1 hover:text-ink"
+    >
+      {copied ? <Check size={16} strokeWidth={1.5} className="text-acc" /> : <Gift size={16} strokeWidth={1.5} />}
+      {copied ? "Ссылка скопирована" : <span>Пригласить друга · <span className="text-acc">+200 кр</span></span>}
+    </button>
   );
 }

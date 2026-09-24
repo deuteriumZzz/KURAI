@@ -37,8 +37,8 @@ export function InspirationStrip() {
   return (
     <section aria-labelledby="insp-title" className="w-full max-w-5xl">
       <div className="mb-3 flex items-baseline justify-between px-1">
-        <h2 id="insp-title" className="font-mono text-[11px] tracking-[0.14em] text-ink3 uppercase">
-          › С чего начать
+        <h2 id="insp-title" className="text-[15px] text-ink">
+          Найти вдохновение
         </h2>
         <Label>нажмите — поле заполнится</Label>
       </div>
@@ -46,16 +46,16 @@ export function InspirationStrip() {
         {INSPIRATION.map((it, i) => (
           <motion.li
             key={it.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ y: 12 }}
+            animate={{ y: 0 }}
             transition={{ delay: 0.45 + i * 0.05, duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <Link
               href={`/app?mode=${it.mode}&prompt=${encodeURIComponent(it.prompt)}`}
               scroll={false}
-              className="fx-hover group flex h-full flex-col border border-line bg-g1 hover:border-line2"
+              className="fx-hover group flex h-full flex-col overflow-hidden rounded-(--radius-field) bg-s1 hover:bg-s2"
             >
-              <span className="relative block aspect-[16/10] overflow-hidden border-b border-line">
+              <span className="relative block aspect-[16/10] overflow-hidden">
                 <span className="block h-full w-full transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.04]">
                   <Art kind={it.art} seed={i} />
                 </span>

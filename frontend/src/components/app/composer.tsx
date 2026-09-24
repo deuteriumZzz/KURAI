@@ -19,7 +19,7 @@ import { readPrefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import { retrigger } from "@/lib/motion";
 import { Decode } from "@/components/fx/decode";
-import { Hatch, KeyHint, Label, Scanline, Segments, useFx } from "@/components/fx/primitives";
+import { Hatch, Label, Scanline, Segments, useFx } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 import { ModelPicker } from "./model-picker";
 import { VoiceInput } from "./voice-input";
@@ -536,14 +536,6 @@ export function Composer({
         </p>
       )}
       {variant === "home" && chips}
-      {variant === "home" && (
-        <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-ink3">
-          <span><KeyHint>Enter</KeyHint> отправить</span>
-          <span><KeyHint>/</KeyHint> команды</span>
-          <span><KeyHint>⌘K</KeyHint> поиск</span>
-          <span><KeyHint>Alt</KeyHint> подсказки клавиш</span>
-        </p>
-      )}
       {dragging && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-50 grid place-items-center overflow-hidden border border-dashed border-acc bg-bg/80">
           <Scanline active />
