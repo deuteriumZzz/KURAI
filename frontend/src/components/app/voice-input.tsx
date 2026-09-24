@@ -157,7 +157,7 @@ export function VoiceInput({ onText, onAudio, onError, onActiveChange }: Props) 
           });
         }}
         aria-label="Голосовой ввод (на телефоне — удерживайте)"
-        className="relative grid size-8 cursor-pointer place-items-center border border-line text-ink2 hover:text-ink pointer-coarse:size-11"
+        className="relative grid size-8 cursor-pointer place-items-center rounded-(--radius-field) text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:size-11"
       >
         <Mic size={16} strokeWidth={1.5} />
         <Hint k="Голос" />

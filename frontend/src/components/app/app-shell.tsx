@@ -177,7 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           type="button"
           onClick={() => setDrawer(true)}
           aria-label="Открыть меню"
-          className="absolute top-3 left-3 z-10 grid size-11 cursor-pointer place-items-center border border-line bg-g1 text-ink2 md:hidden"
+          className="absolute top-3 left-3 z-10 grid size-11 cursor-pointer place-items-center rounded-(--radius-field) bg-s1 text-ink2 md:hidden"
         >
           <Menu size={18} strokeWidth={1.5} />
         </button>
