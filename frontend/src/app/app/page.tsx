@@ -14,6 +14,7 @@ import type { Mode } from "@/types/api";
 export default async function AppHome(props: PageProps<"/app">) {
   const sp = await props.searchParams;
   const mode = MODES.find((m) => m.id === sp.mode)?.id as Mode | undefined;
+  const model = typeof sp.model === "string" ? sp.model : undefined;
   const prompt = typeof sp.prompt === "string" ? sp.prompt.slice(0, 2000) : "";
   return (
     <main className="relative flex flex-1 flex-col overflow-y-auto">
@@ -35,7 +36,7 @@ export default async function AppHome(props: PageProps<"/app">) {
         </h1>
         <Greeting name={MOCK_USER.name} />
         <Appear delay={0.12} className="flex w-full justify-center">
-          <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
+          <Composer key={`${mode}:${model}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} initialModel={model} balanceMicro={MOCK_BALANCE.micro} />
         </Appear>
       </div>
       <div className="flex justify-center px-4 pb-12">

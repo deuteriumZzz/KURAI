@@ -11,7 +11,7 @@ import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } fro
 import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
-import { defaultModel, type ModelInfo } from "@/lib/models";
+import { defaultModel, modelById, type ModelInfo } from "@/lib/models";
 import { contextUsage } from "@/lib/context";
 import { fileError, type FileMeta } from "@/lib/files";
 import { formatCredits } from "@/lib/format";
@@ -32,6 +32,8 @@ type Props = {
   variant: "home" | "dock";
   initialMode?: Mode;
   initialValue?: string;
+  /** Модель из каталога «Все модели» (/app?model=…). */
+  initialModel?: string;
   /** Отправка внутри чата; без неё главная ведёт в чат. */
   onSend?: (msg: Outgoing) => void;
   /** Идёт ответ — кнопка отправки становится «Стоп». */
@@ -55,6 +57,7 @@ export function Composer({
   variant,
   initialMode = "text",
   initialValue = "",
+  initialModel,
   onSend,
   busy = false,
   onStop,
@@ -68,7 +71,10 @@ export function Composer({
   const [mode, setMode] = useState<Mode>(initialMode);
   const [value, setValue] = useState(initialValue);
   const [web, setWeb] = useState(true);
-  const [picked, setPicked] = useState<Partial<Record<Mode, ModelInfo>>>({});
+  const [picked, setPicked] = useState<Partial<Record<Mode, ModelInfo>>>(() => {
+    const m = initialModel ? modelById(initialModel) : undefined;
+    return m?.modes.includes(initialMode) ? { [initialMode]: m } : {};
+  });
   const [preferred, setPreferred] = useState<string | undefined>();
   const [files, setFiles] = useState<Attachment[]>([]);
   const [error, setError] = useState<string | null>(null);
