@@ -3,7 +3,7 @@
 import { lazy, Suspense, useState } from "react";
 import { motion } from "motion/react";
 import { Brain } from "lucide-react";
-import { Check, ChevronLeft, ChevronRight, Copy, Pencil, RotateCcw } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Pencil, Pin, RotateCcw } from "lucide-react";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
 import { formatBytes, formatCredits } from "@/lib/format";
@@ -153,9 +153,11 @@ type Props = {
   onOpenArtifact?: () => void;
   onFollowup?: (text: string) => void;
   onImageAction?: (a: ImageAction, index: number) => void;
+  pinned?: boolean;
+  onPin?: () => void;
 };
 
-export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction }: Props) {
+export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction, pinned = false, onPin }: Props) {
   const [copied, setCopied] = useState(false);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
@@ -258,6 +260,11 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
           <button type="button" onClick={onRegenerate} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
             <RotateCcw size={13} strokeWidth={1.5} /> Перегенерировать
           </button>
+          {onPin && (
+            <button type="button" onClick={onPin} aria-pressed={pinned} className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${pinned ? "text-acc" : ""}`}>
+              <Pin size={13} strokeWidth={1.5} /> {pinned ? "Закреплено" : "Закрепить"}
+            </button>
+          )}
           <span className="ml-1 font-mono text-[11px] opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 group-focus-within:opacity-100">
             {time(m.createdAt)} · {formatCredits(m.costMicro)}
             {run?.durationMs ? ` · ${(run.durationMs / 1000).toFixed(1).replace(".", ",")} с` : ""}

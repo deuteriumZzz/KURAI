@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { MOCK_BALANCE, MOCK_NOW, MOCK_USER } from "@/mocks/data";
@@ -13,6 +13,7 @@ import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
 import { Lightbox } from "@/components/media/lightbox";
 import { NavProgress } from "./nav-progress";
+import { Shortcuts } from "./shortcuts";
 import { MotionConfig } from "motion/react";
 import { useCalm } from "@/lib/use-calm";
 
@@ -28,6 +29,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
+  const [help, setHelp] = useState(false);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const calm = useCalm();
   const chats = useStore(chatsStore);
 
@@ -63,7 +66,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         return;
       }
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "/") {
+      if (e.key === "?") {
+        e.preventDefault();
+        setHelp(true);
+      } else if (e.key === "/") {
         const input = document.getElementById("composer-input");
         if (input) {
           e.preventDefault();
@@ -104,7 +110,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <MotionConfig reducedMotion={calm ? "always" : "user"}>
-    <div className="flex h-dvh overflow-hidden">
+    <div
+      className="flex h-dvh overflow-hidden"
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        if (t) swipe.current = { x: t.clientX, y: t.clientY };
+      }}
+      onTouchEnd={(e) => {
+        const start = swipe.current;
+        const t = e.changedTouches[0];
+        swipe.current = null;
+        if (!start || !t) return;
+        const dx = t.clientX - start.x;
+        const dy = Math.abs(t.clientY - start.y);
+        // свайп от левого края открывает шторку, свайп влево — закрывает
+        if (!drawer && start.x < 28 && dx > 60 && dy < 60) setDrawer(true);
+        if (drawer && dx < -60 && dy < 60) setDrawer(false);
+      }}
+    >
       <div className="hidden md:block">{sidebar(false)}</div>
 
       {/* телефон: шторка */}
@@ -145,6 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} chats={chats} />
       <Lightbox />
+      <Shortcuts open={help} onClose={() => setHelp(false)} />
     </div>
     </MotionConfig>
   );

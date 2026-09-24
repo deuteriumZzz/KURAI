@@ -20,6 +20,7 @@ const when = (iso: string) =>
 /** Журнал операций: только чтение; возвраты за сбои отдельной строкой. */
 export function Ledger({ entries }: { entries: LedgerEntry[] }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  const [sent, setSent] = useState<string | null>(null);
   const rows = entries.filter((e) => filter === "all" || e.kind === filter || (filter === "topup" && (e.kind === "grant" || e.kind === "bonus")));
 
   return (
@@ -72,7 +73,15 @@ export function Ledger({ entries }: { entries: LedgerEntry[] }) {
                     e.title
                   )}
                 </td>
-                <td className="px-3 py-2.5 text-ink2">{e.model ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ink2">
+                  {e.kind === "topup" ? (
+                    <button type="button" onClick={() => setSent(e.id)} className="cursor-pointer text-[12px] text-acc hover:underline">
+                      {sent === e.id ? "✓ чек отправлен на почту" : "Чек на почту"}
+                    </button>
+                  ) : (
+                    (e.model ?? "—")
+                  )}
+                </td>
                 <td className={cn("px-3 py-2.5 text-right font-mono tabular-nums", e.amountMicro > 0 ? "text-ok" : "text-ink")}>
                   {e.amountMicro > 0 ? "+" : "−"}
                   {formatCredits(Math.abs(e.amountMicro), { unit: false })}

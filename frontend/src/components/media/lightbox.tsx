@@ -48,7 +48,7 @@ export function Lightbox() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[60] flex flex-col bg-bg/94 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[60] flex flex-col bg-bg/96"
           onClick={(e) => e.target === e.currentTarget && lightboxStore.set(null)}
         >
           <div className="flex items-center justify-between gap-3 px-4 py-3">

@@ -8,6 +8,7 @@ import { Hatch, Label, SysLine } from "@/components/fx/primitives";
 import { DEFAULT_PREFS, readPrefs, writePrefs, type Prefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import type { User } from "@/types/api";
+import { Avatar } from "@/components/brand/avatar";
 
 const MODELS = [
   { id: "auto", label: "Авто", note: "подбираем модель под задачу" },
@@ -31,6 +32,12 @@ export function SettingsForm({ user }: { user: User }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [exported, setExported] = useState(false);
   const [deleted, setDeleted] = useState<string | null>(null);
+  const [notif, setNotif] = useState({ browser: false, email: true, quiet: false });
+  const [sessions, setSessions] = useState([
+    { id: "s1", device: "MacBook · Chrome", place: "Москва", at: "сейчас", current: true },
+    { id: "s2", device: "iPhone · Safari", place: "Москва", at: "вчера, 21:40", current: false },
+    { id: "s3", device: "Telegram-бот", place: "—", at: "20.09", current: false },
+  ]);
 
   // localStorage доступен только в браузере — читаем после монтирования
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -40,6 +47,13 @@ export function SettingsForm({ user }: { user: User }) {
   return (
     <div className="flex flex-col gap-10">
       <Section title="Профиль">
+        <div className="flex items-center gap-4 border border-line bg-g1 p-4">
+          <Avatar seed={user.email} className="size-14 p-1.5" />
+          <div className="flex flex-col gap-1">
+            <p className="text-[14px]">Аватар создан из вашего email</p>
+            <p className="text-[12.5px] text-ink3">Узор уникален для аккаунта. Загрузка своего фото появится вместе с медиахранилищем.</p>
+          </div>
+        </div>
         <div className="grid gap-px border border-line bg-line sm:grid-cols-2">
           <div className="bg-g1 px-4 py-3">
             <Label>Имя</Label>
@@ -83,6 +97,70 @@ export function SettingsForm({ user }: { user: User }) {
         <Button variant="ghost" className="w-max" onClick={() => set({ onboarded: false })}>
           Показать знакомство с KURAI ещё раз
         </Button>
+      </Section>
+
+      <Section title="Язык">
+        <div role="radiogroup" aria-label="Язык интерфейса" className="flex w-max border border-line">
+          <button type="button" role="radio" aria-checked="true" className="bg-acc-soft px-4 py-2 text-[13px] text-acc">
+            Русский
+          </button>
+          <button type="button" role="radio" aria-checked="false" disabled className="border-l border-line px-4 py-2 text-[13px] text-ink3">
+            English · скоро
+          </button>
+        </div>
+      </Section>
+
+      <Section title="Уведомления">
+        <Switch
+          label="В браузере"
+          hint="Сообщим, когда видео или отчёт готовы, даже если вкладка свёрнута"
+          checked={notif.browser}
+          onChange={async (v) => {
+            if (v && typeof Notification !== "undefined" && Notification.permission !== "granted") {
+              const res = await Notification.requestPermission().catch(() => "denied" as NotificationPermission);
+              if (res !== "granted") return;
+            }
+            setNotif((n) => ({ ...n, browser: v }));
+          }}
+        />
+        <Switch label="Письма о балансе и чеках" checked={notif.email} onChange={(email) => setNotif((n) => ({ ...n, email }))} />
+        <Switch label="Тихие часы · 23:00–08:00" hint="Ночью уведомления копятся во «Входящих» без звука и всплывающих окон" checked={notif.quiet} onChange={(quiet) => setNotif((n) => ({ ...n, quiet }))} />
+      </Section>
+
+      <Section title="Сеансы и устройства">
+        <ul className="flex flex-col gap-px border border-line bg-line">
+          {sessions.map((d) => (
+            <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 bg-g1 px-4 py-3">
+              <span className="flex flex-col">
+                <span className="text-[14px]">
+                  {d.device} {d.current && <Label className="ml-1 text-acc">это устройство</Label>}
+                </span>
+                <span className="font-mono text-[11.5px] text-ink3">
+                  {d.place} · {d.at}
+                </span>
+              </span>
+              {!d.current && (
+                <Button size="sm" variant="ghost" onClick={() => setSessions((ss) => ss.filter((x) => x.id !== d.id))}>
+                  Завершить
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+        {sessions.length > 1 && (
+          <Button variant="secondary" className="w-max" onClick={() => setSessions((ss) => ss.filter((x) => x.current))}>
+            Завершить все, кроме этого
+          </Button>
+        )}
+      </Section>
+
+      <Section title="API-ключи">
+        <Hatch>
+          API-доступ входит в тариф Ultra: ключи для своих приложений и ботов, тот же баланс и цены.{" "}
+          <a href="/app/billing" className="underline underline-offset-2">
+            Перейти на Ultra
+          </a>
+        </Hatch>
       </Section>
 
       <Section title="Данные">

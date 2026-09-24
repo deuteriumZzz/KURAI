@@ -13,6 +13,8 @@ const COMMANDS: Item[] = [
   { id: "media", label: "Медиатека", hint: "—", href: "/app/media" },
   { id: "billing", label: "Баланс и пополнение", hint: "—", href: "/app/billing" },
   { id: "settings", label: "Настройки", hint: "—", href: "/app/settings" },
+  { id: "profile", label: "Профиль и статистика", hint: "—", href: "/app/profile" },
+  { id: "pricing", label: "Тарифы и калькулятор", hint: "—", href: "/pricing" },
 ];
 
 /** ⌘K в стиле терминала: команды и чаты, стрелки + Enter. Нативный <dialog> даёт фокус-ловушку и Esc. */

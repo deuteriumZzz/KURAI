@@ -6,6 +6,9 @@ import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
 import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
+import { findMatches } from "@/lib/search";
+import { retrigger } from "@/lib/motion";
+import { ChevronDown, ChevronUp, Pin, Search, X } from "lucide-react";
 import { formatCredits } from "@/lib/format";
 import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
 import type { Outgoing } from "@/components/app/composer";
@@ -42,6 +45,10 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const scroller = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   const [below, setBelow] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [hit, setHit] = useState(0);
+  const [pinned, setPinned] = useState<string[]>([]);
 
   const branch = branchOf(state.head, state.messages);
   const textStreaming = branch.find((m) => state.runs[m.id]?.status === "streaming" && !isJobMode(m.mode));
@@ -176,6 +183,23 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     return () => window.removeEventListener("keydown", onKey);
   }, [textStreaming]);
 
+  const matches = findMatches(branch.map(textOf), query);
+  const pinnedMsgs = branch.filter((m) => pinned.includes(m.id));
+
+  function scrollToMsg(id: string) {
+    const el = document.getElementById(`msg-${id}`) ?? document.querySelector(`[data-msg="${id}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    retrigger(el?.querySelector("article, div") ?? null, "fx-flicker-border");
+  }
+
+  function jump(d: number) {
+    if (!matches.length) return;
+    const next = (hit + d + matches.length) % matches.length;
+    setHit(next);
+    const m = branch[matches[next] ?? 0];
+    if (m) scrollToMsg(m.id);
+  }
+
   // разделитель «дальше отвечает X» там, где сменилась модель ответа
   const dividers = new Set<string>();
   branch
@@ -196,11 +220,68 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           <Label className="hidden tabular-nums sm:inline">
             #{chat.id.toUpperCase()} · {branch.length} сообщ. · {formatCredits(total)}
           </Label>
+          <button
+            type="button"
+            onClick={() => setFindOpen((o) => !o)}
+            aria-label="Поиск по чату"
+            aria-expanded={findOpen}
+            data-tip="Поиск по чату"
+            className="grid size-8 cursor-pointer place-items-center border border-line text-ink2 hover:border-acc-line hover:text-acc pointer-coarse:size-11"
+          >
+            <Search size={14} strokeWidth={1.5} />
+          </button>
           <Link href={`/s/${chat.id}`} className="border border-line px-2.5 py-1 text-[12.5px] text-ink2 hover:border-acc-line hover:text-acc">
             Поделиться
           </Link>
         </div>
       </header>
+      {findOpen && (
+        <div className="flex items-center gap-2 border-b border-line bg-g1 px-4 py-2 md:px-6">
+          <span aria-hidden="true" className="font-mono text-acc">›</span>
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setHit(0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") jump(e.shiftKey ? -1 : 1);
+              if (e.key === "Escape") setFindOpen(false);
+            }}
+            aria-label="Найти в чате"
+            placeholder="найти в этом чате…"
+            className="min-w-0 flex-1 bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-ink3"
+          />
+          <span className="font-mono text-[11px] text-ink3 tabular-nums" aria-live="polite">
+            {query ? (matches.length ? `${Math.min(hit, matches.length - 1) + 1} из ${matches.length}` : "нет совпадений") : ""}
+          </span>
+          <button type="button" onClick={() => jump(-1)} aria-label="Предыдущее совпадение" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+            <ChevronUp size={14} strokeWidth={1.5} />
+          </button>
+          <button type="button" onClick={() => jump(1)} aria-label="Следующее совпадение" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+            <ChevronDown size={14} strokeWidth={1.5} />
+          </button>
+          <button type="button" onClick={() => setFindOpen(false)} aria-label="Закрыть поиск" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+            <X size={14} strokeWidth={1.5} />
+          </button>
+        </div>
+      )}
+      {pinnedMsgs.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-line px-4 py-2 md:px-6">
+          <Pin size={12} strokeWidth={1.5} className="shrink-0 text-acc" aria-hidden="true" />
+          {pinnedMsgs.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => scrollToMsg(m.id)}
+              className="max-w-56 shrink-0 cursor-pointer truncate border border-line bg-g1 px-2 py-0.5 text-[12px] text-ink2 hover:border-acc-line hover:text-ink"
+            >
+              {textOf(m).slice(0, 60) || m.model}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div
         ref={scroller}
@@ -224,7 +305,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                 return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
               };
               return (
-                <Appear key={m.id} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
+                <Appear key={m.id} data-msg={m.id} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
                 <UserMessage
                   m={m}
                   editing={editing === m.id}
@@ -256,6 +337,8 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
                     run={state.runs[m.id]}
                     versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
                     onRegenerate={() => regenerate(m)}
+                    pinned={pinned.includes(m.id)}
+                    onPin={() => setPinned((p) => (p.includes(m.id) ? p.filter((x) => x !== m.id) : [...p, m.id]))}
                     onImageAction={(a, i) => {
                       const alt = m.parts.filter((p) => p.type === "image")[i];
                       const what = alt?.type === "image" ? alt.alt : "картинку";
@@ -297,7 +380,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           </motion.button>
         )}
       </AnimatePresence>
-      <div className="flex justify-center border-t border-line px-4 pt-3 pb-4">
+      <div className="flex justify-center border-t border-line bg-bg px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <Composer
           variant="dock"
           onSend={send}

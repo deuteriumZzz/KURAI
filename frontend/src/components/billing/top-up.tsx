@@ -8,6 +8,8 @@ import { cn } from "@/lib/cn";
 import { formatCredits, MICRO_PER_CREDIT } from "@/lib/format";
 import { isCalm, retrigger } from "@/lib/motion";
 import type { Micro } from "@/types/api";
+import { redeem } from "@/lib/promo";
+import { Switch } from "@/components/ui/switch";
 
 const PRESETS = [500, 1000, 3000, 5000];
 const STEPS = ["Создание платежа", "Подтверждение банка", "Зачисление кредитов"];
@@ -19,6 +21,9 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
   const [step, setStep] = useState(-1);
   const [shown, setShown] = useState(initialMicro);
   const balRef = useRef<HTMLParagraphElement>(null);
+  const [promo, setPromo] = useState("");
+  const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [auto, setAuto] = useState(false);
 
   useEffect(() => {
     if (shown === balance) return;
@@ -103,7 +108,47 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
             ))}
           </ol>
         )}
+        <ul aria-label="Способы оплаты" className="flex flex-wrap gap-1.5">
+          {["Карта МИР", "Visa / Mastercard РФ", "СБП", "SberPay", "T-Pay"].map((m) => (
+            <li key={m} className="border border-line px-2 py-0.5 font-mono text-[11px] text-ink3">
+              {m}
+            </li>
+          ))}
+        </ul>
         <p className="text-[12px] text-ink3">Платёж через ЮKassa · чек по 54-ФЗ придёт на email</p>
+        <form
+          className="flex flex-col gap-1.5 border-t border-line pt-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const r = redeem(promo);
+            if (r.ok) {
+              setBalance((b) => b + r.bonusMicro);
+              setPromoMsg({ ok: true, text: `Промокод применён · +${formatCredits(r.bonusMicro)}` });
+              setPromo("");
+            } else setPromoMsg({ ok: false, text: r.error });
+          }}
+        >
+          <label htmlFor="promo" className="text-[13px] text-ink2">
+            Промокод
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="promo"
+              value={promo}
+              onChange={(e) => setPromo(e.target.value)}
+              placeholder="например, KURAI20"
+              className="h-10 min-w-0 flex-1 border border-line bg-bg px-3 font-mono text-[13px] uppercase outline-none placeholder:normal-case placeholder:text-ink3 focus:border-acc-line"
+            />
+            <Button type="submit">Применить</Button>
+          </div>
+          {promoMsg && <SysLine tone={promoMsg.ok ? "ok" : "err"} decode={promoMsg.ok}>{promoMsg.text}</SysLine>}
+        </form>
+        <Switch
+          label="Автопополнение"
+          hint="Когда на балансе меньше 100 кр — пополнить на выбранную сумму, чтобы видео не встало в очередь"
+          checked={auto}
+          onChange={setAuto}
+        />
       </div>
     </section>
   );

@@ -3,6 +3,7 @@
 import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
+import { Avatar } from "@/components/brand/avatar";
 import { usePathname } from "next/navigation";
 import { House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
@@ -165,9 +166,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
           </Link>
         )}
         <Link href="/app/profile" onClick={onNavigate} className={cn("flex items-center gap-2.5 hover:text-acc", collapsed && "justify-center")}>
-          <span className="grid size-8 shrink-0 place-items-center border border-line2 bg-g3 font-mono text-[12px]">
-            {user.name.slice(0, 2).toUpperCase()}
-          </span>
+          <Avatar seed={user.email} />
           {!collapsed && (
             <span className="min-w-0 text-[13px] leading-tight">
               <span className="block truncate">{user.name}</span>
