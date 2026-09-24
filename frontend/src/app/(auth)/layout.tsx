@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KuraiLogo } from "@/components/brand/mark";
 import { Label, Scanline } from "@/components/fx/primitives";
 
 /** Оболочка входа: слева панель с сеткой (на телефоне скрыта), справа форма. */
@@ -15,8 +16,8 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         }}
       >
         <Scanline active />
-        <Link href="/" className="relative font-display text-[15px] font-medium tracking-[0.42em]">
-          KUR<span className="text-acc">A</span>I
+        <Link href="/" className="relative" aria-label="KURAI — на главную">
+          <KuraiLogo />
         </Link>
         <div className="relative">
           <p className="font-display text-5xl leading-[1.05] font-extralight tracking-wide">
@@ -30,8 +31,8 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <Label className="relative">SYS · ONLINE · NODE-EU-01</Label>
       </aside>
       <main className="flex flex-col px-4 py-8 sm:px-8">
-        <Link href="/" className="font-display text-[15px] font-medium tracking-[0.42em] md:hidden">
-          KUR<span className="text-acc">A</span>I
+        <Link href="/" className="md:hidden" aria-label="KURAI — на главную">
+          <KuraiLogo />
         </Link>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">{children}</div>
       </main>

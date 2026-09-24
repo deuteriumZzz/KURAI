@@ -2,6 +2,7 @@
 
 import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
+import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
 import { usePathname } from "next/navigation";
 import { House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
@@ -60,9 +61,10 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
       )}
     >
       <div className={cn("flex h-14 items-center px-3", collapsed ? "justify-center" : "justify-between")}>
+        {collapsed && <KuraiMark className="size-6 max-md:hidden" />}
         {!collapsed && (
-          <Link href="/app" onClick={onNavigate} className="font-display text-[15px] font-medium tracking-[0.42em]">
-            KUR<span className="text-acc">A</span>I
+          <Link href="/app" onClick={onNavigate} aria-label="KURAI — главная">
+            <KuraiLogo />
           </Link>
         )}
         <button

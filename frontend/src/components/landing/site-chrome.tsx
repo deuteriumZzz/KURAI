@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { KuraiLogo } from "@/components/brand/mark";
 
 /** Шапка и подвал публичных страниц (лендинг, тарифы, документы). */
 export function SiteHeader() {
   return (
     <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-      <Link href="/" className="font-display text-[15px] font-medium tracking-[0.42em]">
-        KUR<span className="text-acc">A</span>I
+      <Link href="/" aria-label="KURAI — на главную">
+        <KuraiLogo />
       </Link>
       <nav aria-label="Основное" className="flex items-center gap-5 text-[13.5px] text-ink2">
         <Link href="/#models" className="hidden hover:text-ink sm:inline">Модели</Link>
