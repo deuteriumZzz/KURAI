@@ -67,8 +67,15 @@ export function ImageGrid({ images, id, caption, onAction, fresh = false }: { im
       {images.map((img, i) => (
         <div key={i} className="group relative overflow-hidden border border-line">
           <PixelReveal src={img.url} active={fresh}>
-          <button type="button" onClick={() => openLightbox(items, i)} aria-label={`Открыть: ${img.alt}`} className="block w-full cursor-zoom-in">
+          <button
+            type="button"
+            onClick={() => openLightbox(items, i)}
+            onDragStart={(e) => e.dataTransfer.setData("application/x-kurai-image", img.url)}
+            aria-label={`Открыть: ${img.alt}. Можно перетащить в поле ввода как референс`}
+            className="block w-full cursor-zoom-in"
+          >
             <motion.img
+              draggable
               layoutId={`media-${id}-${i}`}
               src={img.url}
               alt={img.alt}

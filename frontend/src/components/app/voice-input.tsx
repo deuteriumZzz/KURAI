@@ -43,6 +43,7 @@ export function VoiceInput({ onText, onAudio, onError, onActiveChange }: Props) 
   const [levels, setLevels] = useState<number[]>(() => Array(16).fill(0));
   const [secs, setSecs] = useState(0);
   const stopAll = useRef<(commit: boolean) => void>(() => {});
+  const held = useRef(false);
 
   useEffect(() => onActiveChange(active), [active, onActiveChange]);
 
@@ -136,8 +137,26 @@ export function VoiceInput({ onText, onAudio, onError, onActiveChange }: Props) 
     return (
       <button
         type="button"
-        onClick={start}
-        aria-label="Голосовой ввод"
+        onClick={() => {
+          if (held.current) {
+            held.current = false;
+            return;
+          }
+          void start();
+        }}
+        onPointerDown={(e) => {
+          // на телефоне — как рация: держите, говорите, отпустите
+          if (e.pointerType !== "touch") return;
+          held.current = true;
+          void start().then(() => {
+            const up = () => {
+              window.removeEventListener("pointerup", up);
+              stopAll.current(true);
+            };
+            window.addEventListener("pointerup", up);
+          });
+        }}
+        aria-label="Голосовой ввод (на телефоне — удерживайте)"
         className="relative grid size-8 cursor-pointer place-items-center border border-line text-ink2 hover:text-ink pointer-coarse:size-11"
       >
         <Mic size={16} strokeWidth={1.5} />

@@ -1,9 +1,13 @@
 "use client";
 
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState, useSyncExternalStore } from "react";
+
+const noop = () => () => {};
 import { motion } from "motion/react";
 import { Brain } from "lucide-react";
-import { Check, ChevronLeft, ChevronRight, Copy, Pencil, Pin, RotateCcw } from "lucide-react";
+import { BookOpen, Check, ChevronLeft, ChevronRight, Copy, Pencil, Pin, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { AnimatePresence } from "motion/react";
+import { Reader } from "./reader";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
 import { formatBytes, formatCredits } from "@/lib/format";
@@ -163,6 +167,10 @@ type Props = {
 export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction, pinned = false, onPin, compareBefore }: Props) {
   const [copied, setCopied] = useState(false);
   const swipeX = useRef<number | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [reading, setReading] = useState(false);
+  // без рассинхрона гидрации: на сервере озвучки нет, в браузере — есть
+  const canSpeak = useSyncExternalStore(noop, () => "speechSynthesis" in window, () => false);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
   const images = m.parts.filter((p): p is Extract<MessagePart, { type: "image" }> => p.type === "image");
@@ -285,6 +293,34 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
           <button type="button" onClick={onRegenerate} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
             <RotateCcw size={13} strokeWidth={1.5} /> Перегенерировать
           </button>
+          {text && canSpeak && (
+            <button
+              type="button"
+              aria-pressed={speaking}
+              onClick={() => {
+                const synth = window.speechSynthesis;
+                if (speaking) {
+                  synth.cancel();
+                  setSpeaking(false);
+                  return;
+                }
+                const u = new SpeechSynthesisUtterance(text.replace(/[#*|>`_\[\]()-]/g, " "));
+                u.lang = "ru-RU";
+                u.onend = () => setSpeaking(false);
+                synth.cancel();
+                synth.speak(u);
+                setSpeaking(true);
+              }}
+              className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${speaking ? "text-acc" : ""}`}
+            >
+              {speaking ? <VolumeX size={13} strokeWidth={1.5} /> : <Volume2 size={13} strokeWidth={1.5} />} {speaking ? "Стоп" : "Слушать"}
+            </button>
+          )}
+          {text.length > 500 && (
+            <button type="button" onClick={() => setReading(true)} className="inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11">
+              <BookOpen size={13} strokeWidth={1.5} /> Читать
+            </button>
+          )}
           {onPin && (
             <button type="button" onClick={onPin} aria-pressed={pinned} className={`inline-flex h-7 cursor-pointer items-center gap-1.5 px-1.5 hover:text-ink pointer-coarse:h-11 ${pinned ? "text-acc" : ""}`}>
               <Pin size={13} strokeWidth={1.5} /> {pinned ? "Закреплено" : "Закрепить"}
@@ -296,6 +332,7 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
           </span>
         </div>
       )}
+      <AnimatePresence>{reading && <Reader text={text} model={m.model} onClose={() => setReading(false)} />}</AnimatePresence>
     </article>
   );
 }

@@ -24,6 +24,7 @@ import { SidePanel } from "./side-panel";
 import { SelectionMenu } from "./selection-menu";
 import { ContextPanel } from "./context-panel";
 import { vibrate } from "@/lib/haptics";
+import { isQuietHour } from "@/lib/quiet";
 import { AnimatePresence, motion } from "motion/react";
 import { notify } from "@/lib/app-state";
 import { Appear } from "@/components/fx/motion";
@@ -82,10 +83,11 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           if (ev.type === "artifact") setPanel(ev.artifact);
           if (ev.type === "done" && (mode === "video" || mode === "image")) vibrate(40);
           if (ev.type === "done" && mode === "video") {
-            setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
+            const quiet = readPrefs().quiet && isQuietHour();
+            if (!quiet) setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
             notify(`Видео готово · ${prompt.slice(0, 48)}`, `/app/c/${chat.id}`);
             // системное уведомление, если вкладка свёрнута и пользователь разрешил
-            if (document.hidden && readPrefs().notifyBrowser && typeof Notification !== "undefined" && Notification.permission === "granted") {
+            if (!quiet && document.hidden && readPrefs().notifyBrowser && typeof Notification !== "undefined" && Notification.permission === "granted") {
               new Notification("KURAI · видео готово", { body: prompt.slice(0, 80), icon: "/icon.svg" });
             }
           }

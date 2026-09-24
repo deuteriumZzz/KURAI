@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, ViewTransition, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Brain, Globe, Paperclip, Sparkles, Square } from "lucide-react";
+import { ArrowUp, Bookmark, Brain, Globe, Paperclip, Sparkles, Square } from "lucide-react";
+import { usePrefs } from "@/lib/use-prefs";
+import { writePrefs } from "@/lib/prefs";
 import { ModeIcon } from "@/components/brand/mode-icons";
 import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } from "@/lib/prompt";
 import { AnimatePresence, motion } from "motion/react";
@@ -74,6 +76,8 @@ export function Composer({
   const [recording, setRecording] = useState(false);
   const [think, setThink] = useState(false);
   const [params, setParams] = useState<Partial<Record<Mode, ModeParams>>>({});
+  const [pending, setPending] = useState<{ msg: Outgoing; left: number; text: string } | null>(null);
+  const prefs = usePrefs();
   const boxRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const voiceBase = useRef("");
@@ -165,10 +169,23 @@ export function Composer({
     return () => window.removeEventListener("kurai:prefill", onPrefill);
   }, []);
 
+  // отмена отправки: 3 секунды, потом уходит
+  useEffect(() => {
+    if (!pending) return;
+    if (pending.left <= 0) {
+      onSend?.(pending.msg);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- завершение таймера отправки
+      setPending(null);
+      return;
+    }
+    const t = setTimeout(() => setPending((p) => (p ? { ...p, left: p.left - 1 } : p)), 1000);
+    return () => clearTimeout(t);
+  }, [pending, onSend]);
+
   // перетаскивание файлов на всё окно
   useEffect(() => {
     let depth = 0;
-    const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes("Files");
+    const hasFiles = (e: DragEvent) => !!e.dataTransfer && (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes("application/x-kurai-image"));
     const enter = (e: DragEvent) => {
       if (!hasFiles(e)) return;
       depth++;
@@ -185,6 +202,12 @@ export function Composer({
       depth = 0;
       setDragging(false);
       if (e.dataTransfer?.files.length) addFiles(e.dataTransfer.files);
+      // картинка из ответа, перетащенная в поле, становится референсом
+      const url = e.dataTransfer?.getData("application/x-kurai-image");
+      if (url)
+        void fetch(url)
+          .then((r) => r.blob())
+          .then((b) => addFiles([new File([b], `референс-${Date.now()}.${b.type.includes("svg") ? "svg" : "png"}`, { type: b.type || "image/svg+xml" })]));
     };
     window.addEventListener("dragenter", enter);
     window.addEventListener("dragover", over);
@@ -208,6 +231,10 @@ export function Composer({
     // импульс по сетке фона от поля ввода — отмечает реальное событие «отправлено»
     const r = boxRef.current?.getBoundingClientRect();
     if (r) window.dispatchEvent(new CustomEvent("kurai:pulse", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }));
+    if (onSend && prefs.undoSend) {
+      setPending({ msg, left: 3, text: value });
+      return;
+    }
     if (onSend) onSend(msg);
     // тестовые данные: с главной запрос открывает демонстрационный чат
     else router.push("/app/c/7f3a");
@@ -281,6 +308,37 @@ export function Composer({
             Пополнить
           </Link>
         </Hatch>
+      )}
+      {pending && (
+        <div role="status" className="flex items-center justify-between gap-3 border border-acc-line bg-g1 px-3 py-2 text-[13px]">
+          <span className="font-mono text-acc">› отправка через {pending.left} с</span>
+          <button
+            type="button"
+            onClick={() => {
+              setValue(pending.text);
+              setPending(null);
+            }}
+            className="cursor-pointer text-ink2 underline underline-offset-2 hover:text-ink"
+          >
+            Отменить
+          </button>
+        </div>
+      )}
+      {value === "/" && (
+        <div role="listbox" aria-label="Команды и шаблоны" className="flex max-h-64 flex-col overflow-y-auto border border-line2 bg-g1 py-1">
+          {MODES.map((m) => (
+            <button key={m.id} type="button" role="option" aria-selected="false" onClick={() => { switchMode(m.id); setValue(""); }} className="flex cursor-pointer items-center justify-between gap-3 px-3 py-1.5 text-left text-[13px] text-ink2 hover:bg-g2 hover:text-ink">
+              <span className="flex items-center gap-2"><ModeIcon mode={m.id} size={14} /> {m.label}</span>
+              <span className="font-mono text-[11px] text-ink3">{m.command}</span>
+            </button>
+          ))}
+          {prefs.templates.length > 0 && <span className="px-3 pt-2 pb-1 font-mono text-[10.5px] tracking-[0.1em] text-ink3 uppercase">Мои шаблоны</span>}
+          {prefs.templates.map((t) => (
+            <button key={t} type="button" role="option" aria-selected="false" onClick={() => setValue(t)} className="cursor-pointer truncate px-3 py-1.5 text-left text-[13px] text-ink2 hover:bg-g2 hover:text-ink">
+              ☆ {t}
+            </button>
+          ))}
+        </div>
       )}
       {error && (
         <div ref={errRef} role="alert" className="flex items-start justify-between gap-3 border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err">
@@ -403,6 +461,17 @@ export function Composer({
                   className={cn(iconBtn, "border-line text-ink2 hover:border-acc-line hover:text-acc")}
                 >
                   <Sparkles size={16} strokeWidth={1.5} />
+                </button>
+              )}
+              {value.trim().length > 10 && !prefs.templates.includes(value.trim()) && (
+                <button
+                  type="button"
+                  aria-label="Сохранить как шаблон"
+                  data-tip="Сохранить как шаблон · вызов по /"
+                  onClick={() => writePrefs({ templates: [value.trim(), ...prefs.templates].slice(0, 20) })}
+                  className={cn(iconBtn, "border-line text-ink2 hover:border-acc-line hover:text-acc")}
+                >
+                  <Bookmark size={16} strokeWidth={1.5} />
                 </button>
               )}
               <button

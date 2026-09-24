@@ -32,7 +32,7 @@ export function SettingsForm({ user }: { user: User }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [exported, setExported] = useState(false);
   const [deleted, setDeleted] = useState<string | null>(null);
-  const [notif, setNotif] = useState({ email: true, quiet: false });
+  const [notif, setNotif] = useState({ email: true });
   const [sessions, setSessions] = useState([
     { id: "s1", device: "MacBook · Chrome", place: "Москва", at: "сейчас", current: true },
     { id: "s2", device: "iPhone · Safari", place: "Москва", at: "вчера, 21:40", current: false },
@@ -111,6 +111,8 @@ export function SettingsForm({ user }: { user: User }) {
             ))}
           </div>
         </div>
+        <Switch label="Мягкий контраст" hint="Приглушённый белый для работы ночью. Акцент и читаемость сохраняются." checked={prefs.softContrast} onChange={(softContrast) => set({ softContrast })} />
+        <Switch label="Отмена отправки · 3 секунды" hint="Сообщение уходит не сразу — успеете отменить и поправить" checked={prefs.undoSend} onChange={(undoSend) => set({ undoSend })} />
         <Switch label="Подсказки клавиш по Alt" hint="Зажмите Alt — на кнопках появятся горячие клавиши" checked={prefs.hints} onChange={(hints) => set({ hints })} />
         <Button variant="ghost" className="w-max" onClick={() => set({ onboarded: false })}>
           Показать знакомство с KURAI ещё раз
@@ -142,7 +144,7 @@ export function SettingsForm({ user }: { user: User }) {
           }}
         />
         <Switch label="Письма о балансе и чеках" checked={notif.email} onChange={(email) => setNotif((n) => ({ ...n, email }))} />
-        <Switch label="Тихие часы · 23:00–08:00" hint="Ночью уведомления копятся во «Входящих» без звука и всплывающих окон" checked={notif.quiet} onChange={(quiet) => setNotif((n) => ({ ...n, quiet }))} />
+        <Switch label="Тихие часы · 23:00–08:00" hint="Ночью уведомления копятся во «Входящих» без звука и всплывающих окон" checked={prefs.quiet} onChange={(quiet) => set({ quiet })} />
       </Section>
 
       <Section title="Сеансы и устройства">
