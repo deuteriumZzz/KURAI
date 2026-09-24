@@ -31,6 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
+  const [focus, setFocus] = useState(false);
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const calm = useCalm();
   const chats = useStore(chatsStore);
@@ -67,7 +68,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         return;
       }
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "?") {
+      if (e.key.toLowerCase() === "f" || e.key.toLowerCase() === "а") {
+        e.preventDefault();
+        setFocus((f) => !f);
+      } else if (e.key === "?") {
         e.preventDefault();
         setHelp(true);
       } else if (e.key === "/") {
@@ -129,7 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (drawer && dx < -60 && dy < 60) setDrawer(false);
       }}
     >
-      <div className="hidden md:block">{sidebar(false)}</div>
+      <div className={cn("hidden transition-[margin] duration-(--dur-base) md:block", focus && "md:hidden")}>{sidebar(false)}</div>
 
       {/* телефон: шторка */}
       <div className={cn("fixed inset-0 z-40 md:hidden", drawer ? "" : "pointer-events-none")} inert={!drawer}>
@@ -151,8 +155,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
         }}
       >
-        <div className="fx-backdrop -z-10" aria-hidden="true" />
-        <div className="fx-spotlight -z-10" aria-hidden="true" />
+        {!focus && <div className="fx-backdrop -z-10" aria-hidden="true" />}
+        {!focus && <div className="fx-spotlight -z-10" aria-hidden="true" />}
+        {focus && (
+          <button
+            type="button"
+            onClick={() => setFocus(false)}
+            className="absolute top-3 right-3 z-20 border border-acc-line bg-g1 px-2.5 py-1 font-mono text-[11px] text-acc hover:bg-acc hover:text-acc-ink"
+          >
+            ФОКУС · F — выйти
+          </button>
+        )}
         <GridPulse />
         <span aria-hidden="true" className="pointer-events-none absolute top-2 right-2 -z-10 size-3.5 border-t border-r border-line2" />
         <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 -z-10 size-3.5 border-b border-l border-line2" />

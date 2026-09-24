@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Label, SysLine } from "@/components/fx/primitives";
+import { Scanner } from "./scanner";
 
 /** «Сигнал потерян» — общий вид 404 и 500. Крупный глитч разрешён только здесь. */
 export function SignalLost({ code, text, action }: { code: string; text: string; action?: ReactNode }) {
@@ -9,6 +10,7 @@ export function SignalLost({ code, text, action }: { code: string; text: string;
       <Label className="text-acc">{code}</Label>
       <h1 className="fx-glitch-loud font-display text-[clamp(2.2rem,7vw,4.5rem)] font-extralight tracking-[0.06em]">СИГНАЛ ПОТЕРЯН</h1>
       <p className="max-w-md text-ink2">{text}</p>
+      <Scanner />
       <div className="flex flex-wrap items-center justify-center gap-4">
         {action}
         <Link href="/" className="text-[14px] text-ink2 hover:text-ink">

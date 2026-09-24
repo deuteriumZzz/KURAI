@@ -2,6 +2,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Citation } from "./citation";
 import { CodeBlock } from "./code-block";
+import { LinkPreview } from "./link-preview";
 
 // Безопасность: сырой HTML не рендерится (skipHtml), ссылки проходят встроенный urlTransform
 // (javascript: и прочие опасные схемы вырезаются).
@@ -14,11 +15,7 @@ const components: Components = {
   ol: ({ children }) => <ol className="my-2 list-decimal pl-5 marker:font-mono marker:text-ink3">{children}</ol>,
   li: ({ children }) => <li className="my-1">{children}</li>,
   strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
-  a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-acc underline decoration-acc-line underline-offset-2 hover:decoration-acc">
-      {children}
-    </a>
-  ),
+  a: ({ children, href }) => <LinkPreview href={href ?? ""}>{children}</LinkPreview>,
   code: ({ children, className }) =>
     className ? (
       <code className={className}>{children}</code>

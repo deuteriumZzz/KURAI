@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "motion/react";
 import type { Artifact } from "@/lib/stream";
@@ -9,6 +9,7 @@ import { Label } from "@/components/fx/primitives";
 /** Боковая панель результата: слайды (дальше — документы, код, превью сайта). */
 export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [width, setWidth] = useState(520);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -24,7 +25,34 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
       exit={{ x: 40, opacity: 0, transition: { duration: 0.15 } }}
       transition={{ duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
       aria-label={`Слайды: ${artifact.title}`}
-      className="fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-line bg-g1 sm:w-[min(560px,48vw)] lg:static lg:z-auto">
+      className="fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-line bg-g1 sm:w-[min(560px,48vw)] lg:relative lg:z-auto lg:w-(--panel-w)"
+      style={{ ["--panel-w" as string]: `${width}px` }}
+    >
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Ширина панели"
+        aria-valuenow={width}
+        aria-valuemin={360}
+        aria-valuemax={900}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") setWidth((w) => Math.min(900, w + 40));
+          if (e.key === "ArrowRight") setWidth((w) => Math.max(360, w - 40));
+        }}
+        onPointerDown={(e) => {
+          const startX = e.clientX;
+          const startW = width;
+          const move = (ev: PointerEvent) => setWidth(Math.max(360, Math.min(Math.round(window.innerWidth * 0.7), startW + (startX - ev.clientX))));
+          const up = () => {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+          };
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", up);
+        }}
+        className="absolute inset-y-0 -left-1 z-10 hidden w-2 cursor-col-resize after:absolute after:inset-y-0 after:left-1 after:w-px after:bg-line hover:after:bg-acc focus-visible:after:bg-acc lg:block"
+      />
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4">
         <div className="min-w-0">
           <p className="truncate text-[14px]">{artifact.title}</p>
