@@ -3,6 +3,7 @@ import { Composer } from "@/components/app/composer";
 import { StatusBar } from "@/components/app/status-bar";
 import { FirstRun } from "@/components/app/first-run";
 import { InspirationStrip } from "@/components/app/inspiration";
+import { Announcement } from "@/components/app/announcement";
 import { Appear } from "@/components/fx/motion";
 import { Decode } from "@/components/fx/decode";
 import { Label } from "@/components/fx/primitives";
@@ -40,6 +41,7 @@ export default async function AppHome(props: PageProps<"/app">) {
         <Appear delay={0.12} className="flex w-full justify-center">
           <Composer key={`${mode}:${prompt}`} variant="home" initialMode={mode} initialValue={prompt} balanceMicro={MOCK_BALANCE.micro} />
         </Appear>
+        <Announcement />
         <InspirationStrip />
       </div>
 

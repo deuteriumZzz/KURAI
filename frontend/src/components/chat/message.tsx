@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Brain } from "lucide-react";
 import { Check, ChevronLeft, ChevronRight, Copy, Pencil, Pin, RotateCcw } from "lucide-react";
@@ -162,6 +162,7 @@ type Props = {
 
 export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onOpenArtifact, onFollowup, onImageAction, pinned = false, onPin, compareBefore }: Props) {
   const [copied, setCopied] = useState(false);
+  const swipeX = useRef<number | null>(null);
   const streaming = run?.status === "streaming";
   const text = textOf(m);
   const images = m.parts.filter((p): p is Extract<MessagePart, { type: "image" }> => p.type === "image");
@@ -175,7 +176,23 @@ export function AssistantMessage({ m, run, versions, onRegenerate, onAnswer, onO
   }
 
   return (
-    <article className="group flex flex-col gap-2" aria-busy={streaming}>
+    <article
+      className="group flex flex-col gap-2"
+      aria-busy={streaming}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        if (t) swipeX.current = t.clientX;
+      }}
+      onTouchEnd={(e) => {
+        const t = e.changedTouches[0];
+        if (!t || swipeX.current === null) return;
+        const dx = t.clientX - swipeX.current;
+        swipeX.current = null;
+        // свайп по ответу листает его версии
+        if (dx < -70) versions.next?.();
+        if (dx > 70) versions.prev?.();
+      }}
+    >
       <div className="flex flex-wrap items-center gap-2.5">
         {m.model && <span className="border border-acc-line bg-acc-soft px-1.5 py-0.5 font-mono text-[11px] text-acc">{m.model}</span>}
         <VersionSwitch v={versions} />

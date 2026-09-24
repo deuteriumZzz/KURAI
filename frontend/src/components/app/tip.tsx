@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Decode } from "@/components/fx/decode";
 
 const TIPS = [
+  "NEW · Veo 4 и Kling 3 уже в каталоге моделей",
   "совет: /v переключает поле ввода в видео",
   "совет: выделите текст в ответе — появится меню",
   "совет: зажмите Alt — покажем клавиши на кнопках",

@@ -22,6 +22,8 @@ import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
 import { SidePanel } from "./side-panel";
 import { SelectionMenu } from "./selection-menu";
+import { ContextPanel } from "./context-panel";
+import { vibrate } from "@/lib/haptics";
 import { AnimatePresence, motion } from "motion/react";
 import { notify } from "@/lib/app-state";
 import { Appear } from "@/components/fx/motion";
@@ -78,6 +80,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           if (ev.type === "delta") chars += ev.text.length;
           apply(id, ev);
           if (ev.type === "artifact") setPanel(ev.artifact);
+          if (ev.type === "done" && (mode === "video" || mode === "image")) vibrate(40);
           if (ev.type === "done" && mode === "video") {
             setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
             notify(`Видео готово · ${prompt.slice(0, 48)}`, `/app/c/${chat.id}`);
@@ -90,7 +93,10 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         }
       } catch (e) {
         if ((e as DOMException).name === "AbortError") apply(id, { type: "aborted", costMicro: partialCost(chars) });
-        else apply(id, { type: "error", message: "провайдер недоступен", refundedMicro: 0 });
+        else {
+          apply(id, { type: "error", message: "провайдер недоступен", refundedMicro: 0 });
+          vibrate([30, 40, 30]);
+        }
       } finally {
         controllers.current.delete(id);
       }
@@ -447,6 +453,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       )}
       </AnimatePresence>
     </main>
+    {!panel && <ContextPanel branch={branch} runs={state.runs} onJump={scrollToMsg} />}
     <AnimatePresence>{panel && <SidePanel key="panel" artifact={panel} onClose={() => setPanel(null)} />}</AnimatePresence>
     </div>
   );

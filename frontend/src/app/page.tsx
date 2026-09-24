@@ -8,6 +8,9 @@ import { NeuralCore } from "@/components/landing/neural-core";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { CountUp } from "@/components/landing/count-up";
 import { Compare, Faq, Scenarios } from "@/components/landing/sections";
+import { ModeTabs } from "@/components/landing/mode-tabs";
+import { Gallery } from "@/components/landing/gallery";
+import { Magnetic } from "@/components/landing/magnetic";
 
 const MODELS = ["GPT-5 · OpenAI", "Claude Opus · Anthropic", "Gemini 2.5 · Google", "DeepSeek V3", "Grok 4 · xAI", "Nano Banana Pro", "Veo 3", "Kling 2", "Qwen 3", "Flux 2"];
 
@@ -65,9 +68,11 @@ export default function Landing() {
               отправки и резервным маршрутом при сбое.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link href="/register" className="fx-chamfer bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
-                Создать аккаунт
-              </Link>
+              <Magnetic>
+                <Link href="/register" className="fx-chamfer fx-sheen inline-block bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
+                  Создать аккаунт
+                </Link>
+              </Magnetic>
               <Link href="/login" className="text-[14px] text-ink2 hover:text-ink">
                 Войти →
               </Link>
@@ -152,6 +157,8 @@ export default function Landing() {
           </div>
         </section>
 
+        <ModeTabs />
+        <Gallery />
         <Scenarios />
         <Compare />
 

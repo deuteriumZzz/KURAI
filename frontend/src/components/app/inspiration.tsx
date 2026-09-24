@@ -6,7 +6,7 @@ import { INSPIRATION, type Inspiration } from "@/mocks/inspiration";
 import { Label } from "@/components/fx/primitives";
 
 /** Процедурная обложка: сетка/солнце/волна/столбцы/кольца/город — линии акцентом на графите. */
-function Art({ kind, seed }: { kind: Inspiration["art"]; seed: number }) {
+export function Art({ kind, seed }: { kind: Inspiration["art"]; seed: number }) {
   const acc = "var(--color-acc)";
   const line = "var(--color-line2)";
   return (
