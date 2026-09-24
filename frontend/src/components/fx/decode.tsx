@@ -11,7 +11,8 @@ export function useDecode(text: string, duration: number = MOTION.decode): strin
   const [frame, setFrame] = useState({ src: text, out: text });
 
   useEffect(() => {
-    if (isCalm()) return;
+    // нулевая длительность — без анимации (иначе 0/0 даёт NaN и пустую строку)
+    if (isCalm() || duration <= 0) return;
     let raf = 0;
     const start = performance.now();
     const tick = (now: number) => {

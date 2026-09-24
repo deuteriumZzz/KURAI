@@ -579,3 +579,63 @@ dialog.fx-dialog::backdrop {
 :root.calm::view-transition-new(*) {
   animation: none !important;
 }
+
+/* ─────────────── stage 3: details ─────────────── */
+
+/* фирменный скроллбар: тонкий, при наведении на область — акцент */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line2) transparent;
+}
+*:hover {
+  scrollbar-color: var(--color-acc-line) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-acc);
+}
+
+/* каретка ввода — акцентом */
+input,
+textarea {
+  caret-color: var(--color-acc);
+}
+
+/* линейка-разделитель с делениями */
+.fx-ruler {
+  height: 7px;
+  background:
+    linear-gradient(var(--color-line), var(--color-line)) 0 100% / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--color-line2) 0 1px, transparent 1px 12px) 0 100% / 100% 4px no-repeat,
+    repeating-linear-gradient(90deg, var(--color-acc-line) 0 1px, transparent 1px 120px) 0 100% / 100% 7px no-repeat;
+}
+
+/* заголовки лендинга: статичная хроматическая кромка (намёк на экран, не глитч) */
+.fx-chroma {
+  text-shadow:
+    -1px 0 rgb(255 77 94 / 0.28),
+    1px 0 rgb(0 232 240 / 0.32);
+}
+
+/* «набор веса»: переменная толщина Exo 2 при появлении */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .fx-weight-in {
+    animation: fx-weight 1.1s var(--ease-out) both;
+  }
+}
+@keyframes fx-weight {
+  from { font-weight: 100; letter-spacing: 0.02em; }
+  to { font-weight: 250; letter-spacing: -0.01em; }
+}
+
+/* мягкий контраст для ночной работы: белый приглушён, акцент прежний */
+:root.soft {
+  --color-ink: #c9d4de;
+  --color-ink2: #8f9fb2;
+}

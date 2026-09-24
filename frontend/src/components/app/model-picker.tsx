@@ -7,21 +7,27 @@ import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { GROUP_LABEL, modelsForMode, searchModels, type ModelInfo } from "@/lib/models";
 import { formatCredits } from "@/lib/format";
+import { identicon } from "@/lib/identicon";
 import { cn } from "@/lib/cn";
 import { Decode } from "@/components/fx/decode";
 import { Label, Segments } from "@/components/fx/primitives";
 
+/** Глиф модели: уникальный узор 3×3 по id (не логотип компании), угол — буква провайдера. */
 function Emblem({ m, size = "sm" }: { m: ModelInfo; size?: "sm" | "lg" }) {
+  const cells = identicon(m.id).filter((_, i) => i % 5 < 3 && i < 15);
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "grid shrink-0 place-items-center border font-mono",
-        m.group === "auto" ? "border-acc-line text-acc" : "border-line2 text-ink2",
-        size === "sm" ? "size-6 text-[11px]" : "size-10 text-[15px]",
+        "relative grid shrink-0 grid-cols-3 gap-px border p-[3px]",
+        m.group === "auto" ? "border-acc-line" : "border-line2",
+        size === "sm" ? "size-6" : "size-10 p-1.5",
       )}
     >
-      {m.emblem}
+      {cells.map((on, i) => (
+        <i key={i} className={on ? (m.group === "auto" || i === 4 ? "bg-acc" : "bg-ink2") : "bg-transparent"} />
+      ))}
+      {size === "lg" && <span className="absolute -right-1 -bottom-1 bg-g1 px-0.5 font-mono text-[9px] leading-none text-ink3">{m.emblem}</span>}
     </span>
   );
 }

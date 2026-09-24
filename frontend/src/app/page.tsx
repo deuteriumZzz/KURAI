@@ -56,7 +56,7 @@ export default function Landing() {
             <Label className="text-acc">
               <Decode text="Один интерфейс · 300+ моделей" duration={600} />
             </Label>
-            <h1 className="max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-extralight tracking-[-0.01em] text-balance">
+            <h1 className="fx-weight-in fx-chroma max-w-4xl font-display text-[clamp(2.4rem,6.5vw,5rem)] leading-[1.02] font-extralight tracking-[-0.01em] text-balance">
               Ведущие нейросети —<br />
               <span className="fx-neon fx-neon-on font-light">в одном терминале.</span>
             </h1>

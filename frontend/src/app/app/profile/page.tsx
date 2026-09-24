@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/fx/page-title";
 import { ShareCard } from "@/components/settings/share-card";
 import { Label, Segments } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
@@ -25,7 +26,7 @@ export default function ProfilePage() {
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 pl-16 md:pl-6">
-        <h1 className="font-display text-lg font-light">Профиль</h1>
+        <PageTitle title="Профиль" code="SEC-05 // OPERATOR" />
         <Label>{MOCK_USER.email}</Label>
       </header>
       <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 py-6 md:grid-cols-[1.2fr_0.8fr] md:px-6">

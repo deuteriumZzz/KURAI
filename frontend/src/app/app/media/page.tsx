@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/fx/page-title";
 import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import type { MediaKind } from "@/types/api";
@@ -37,7 +38,7 @@ export default async function MediaPage(props: PageProps<"/app/media">) {
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 pl-16 md:pl-6">
-        <h1 className="font-display text-lg font-light">Медиатека</h1>
+        <PageTitle title="Медиатека" code="SEC-02 // MEDIA" />
         <Label>{count("all")} работ из всех чатов</Label>
       </header>
 

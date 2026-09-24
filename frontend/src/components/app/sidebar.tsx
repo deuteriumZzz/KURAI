@@ -4,6 +4,7 @@ import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
 import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
 import { Avatar } from "@/components/brand/avatar";
+import { FlapNumber } from "@/components/fx/flap-number";
 import { usePathname } from "next/navigation";
 import { House, Images, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, Wallet, type LucideIcon } from "lucide-react";
 import type { Balance, ChatSummary, User } from "@/types/api";
@@ -160,7 +161,7 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         {!collapsed && (
           <Link href="/app/billing" onClick={onNavigate} className="mb-3 block">
             <span className="mb-1.5 flex items-baseline justify-between text-[12.5px] text-ink2">
-              Баланс <span className="font-mono text-[15px] text-ink tabular-nums">{formatCredits(balance.micro)}</span>
+              Баланс <FlapNumber value={formatCredits(balance.micro)} className="font-mono text-[15px] text-ink tabular-nums" />
             </span>
             <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />
           </Link>

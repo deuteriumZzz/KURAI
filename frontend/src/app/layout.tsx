@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Exo_2, Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+// вариативный шрифт: толщина 100–900 плавно, для «набора веса» заголовков
 const exo2 = Exo_2({
   variable: "--font-exo2",
   subsets: ["latin", "cyrillic"],
-  weight: ["200", "300", "500"],
 });
 
 const geist = Geist({

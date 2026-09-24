@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { HoverDecode } from "@/components/fx/hover-decode";
 
 /** Знак KURAI — монограмма K: прямой штрих + cyan-стрелка и угловые скобки захвата. */
 export function KuraiMark({ className, title }: { className?: string; title?: string }) {
@@ -17,7 +18,7 @@ export function KuraiLogo({ className, markClass }: { className?: string; markCl
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <KuraiMark className={cn("size-6", markClass)} />
-      <span className="font-display text-[15px] font-medium tracking-[0.36em]">KURAI</span>
+      <HoverDecode text="KURAI" className="font-display text-[15px] font-medium tracking-[0.36em]" />
     </span>
   );
 }
