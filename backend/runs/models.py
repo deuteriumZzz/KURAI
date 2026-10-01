@@ -12,6 +12,8 @@ class Quote(models.Model):
     request_hash = models.CharField(max_length=64)
     resolved_model = models.CharField(max_length=160, default="openrouter/auto")
     attachment_ids = models.JSONField(default=list)
+    # Normalized run options (runs/options.py); part of request_hash, read by the worker.
+    options = models.JSONField(default=dict)
     estimated_cost_micro = models.BigIntegerField()
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)

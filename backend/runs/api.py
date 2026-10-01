@@ -15,6 +15,7 @@ from files.models import FileAsset
 from ledger.services import InsufficientCreditsError, release_hold, reserve_credits
 from runs.events import append_event, close_run_event_subscription, subscribe_run_events
 from runs.models import CompareRun, Quote, Run, RunAttachment, RunEvent
+from runs.options import RunOptionsError, normalize_options
 from runs.rate_limits import allow_member_request
 from runs.services import append_run_notice, canonical_attachment_ids, compare_payload_hash, request_hash, run_payload_hash
 from workspace.models import Chat, Message
@@ -28,6 +29,7 @@ class RunInputSerializer(serializers.Serializer):
     modelId = serializers.CharField(max_length=160, default="openrouter/auto")
     attachmentIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list, max_length=10)
     text = serializers.CharField(trim_whitespace=True, min_length=1, max_length=20_000)
+    options = serializers.DictField(required=False, default=dict)
 
 
 class RunEnvelopeSerializer(serializers.Serializer):
@@ -46,6 +48,7 @@ class CompareRunInputSerializer(serializers.Serializer):
     attachmentIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list, max_length=10)
     text = serializers.CharField(trim_whitespace=True, min_length=1, max_length=20_000)
     routes = CompareRouteSerializer(many=True, min_length=2, max_length=3)
+    options = serializers.DictField(required=False, default=dict)
 
     def validate_routes(self, routes):
         model_ids = [route["modelId"] for route in routes]
@@ -97,9 +100,13 @@ class RunCollectionView(KuraiAPIView):
             )
 
         data = serializer.validated_data
+        try:
+            options = normalize_options(data["mode"], data.get("options"))
+        except RunOptionsError as error:
+            return Response({"error": {"code": "invalid_options", "message": str(error)}}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         attachment_ids = canonical_attachment_ids(data["attachmentIds"])
         payload_hash = run_payload_hash(
-            chat_id=str(data["chatId"]), quote_id=str(data["quoteId"]), mode=data["mode"], model_id=data["modelId"], text=data["text"], attachment_ids=attachment_ids, parent_id=data["parentId"]
+            chat_id=str(data["chatId"]), quote_id=str(data["quoteId"]), mode=data["mode"], model_id=data["modelId"], text=data["text"], attachment_ids=attachment_ids, parent_id=data["parentId"], options=options
         )
         with transaction.atomic():
             existing = Run.objects.select_for_update().filter(user=request.user, idempotency_key=idempotency_key).first()
@@ -123,13 +130,13 @@ class RunCollectionView(KuraiAPIView):
             quote = Quote.objects.select_for_update().filter(id=data["quoteId"], user=request.user).first()
             if quote is None:
                 return Response({"error": {"code": "not_found", "message": "Расчёт стоимости не найден."}}, status=status.HTTP_404_NOT_FOUND)
-            if quote.used_at is not None or quote.expires_at <= timezone.now() or quote.attachment_ids != attachment_ids or quote.request_hash != request_hash(mode=data["mode"], model_id=data["modelId"], text=data["text"], attachment_ids=attachment_ids):
+            if quote.used_at is not None or quote.expires_at <= timezone.now() or quote.attachment_ids != attachment_ids or quote.request_hash != request_hash(mode=data["mode"], model_id=data["modelId"], text=data["text"], attachment_ids=attachment_ids, options=options):
                 return Response(
                     {"error": {"code": "quote_expired", "message": "Расчёт устарел. Получите новую стоимость."}},
                     status=status.HTTP_409_CONFLICT,
                 )
 
-            chat = Chat.objects.filter(id=data["chatId"], owner=request.user).first()
+            chat = Chat.objects.filter(id=data["chatId"], owner=request.user, archived_at__isnull=True).first()
             if chat is None:
                 return Response({"error": {"code": "not_found", "message": "Диалог не найден."}}, status=status.HTTP_404_NOT_FOUND)
             parent = None
@@ -214,6 +221,10 @@ class CompareRunCollectionView(KuraiAPIView):
             )
 
         data = serializer.validated_data
+        try:
+            options = normalize_options(data["mode"], data.get("options"))
+        except RunOptionsError as error:
+            return Response({"error": {"code": "invalid_options", "message": str(error)}}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         attachment_ids = canonical_attachment_ids(data["attachmentIds"])
         payload_hash = compare_payload_hash(
             chat_id=str(data["chatId"]),
@@ -222,6 +233,7 @@ class CompareRunCollectionView(KuraiAPIView):
             routes=data["routes"],
             attachment_ids=attachment_ids,
             parent_id=data["parentId"],
+            options=options,
         )
         created_runs: list[Run] = []
         with transaction.atomic():
@@ -243,7 +255,7 @@ class CompareRunCollectionView(KuraiAPIView):
                 response["Retry-After"] = str(retry_after)
                 return response
 
-            chat = Chat.objects.filter(id=data["chatId"], owner=request.user).first()
+            chat = Chat.objects.filter(id=data["chatId"], owner=request.user, archived_at__isnull=True).first()
             if chat is None:
                 return Response({"error": {"code": "not_found", "message": "Диалог не найден."}}, status=status.HTTP_404_NOT_FOUND)
             parent = None
@@ -270,7 +282,7 @@ class CompareRunCollectionView(KuraiAPIView):
                     or quote.mode != data["mode"]
                     or quote.resolved_model != route["modelId"]
                     or quote.attachment_ids != attachment_ids
-                    or quote.request_hash != request_hash(mode=data["mode"], model_id=route["modelId"], text=data["text"], attachment_ids=attachment_ids)
+                    or quote.request_hash != request_hash(mode=data["mode"], model_id=route["modelId"], text=data["text"], attachment_ids=attachment_ids, options=options)
                 ):
                     return Response(
                         {"error": {"code": "quote_expired", "message": "Один из расчётов устарел. Получите новую стоимость."}},

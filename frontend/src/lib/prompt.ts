@@ -22,6 +22,39 @@ export const PARAMS: Partial<Record<Mode, { key: string; label: string; options:
   ],
 };
 
+/** Параметры, которые сервер действительно исполняет (backend/runs/options.py); остальные в рабочем режиме не показываются. */
+export const LIVE_PARAMS: Partial<Record<Mode, string[]>> = {
+  image: ["aspect", "count", "style"],
+  video: ["duration", "aspect", "camera"],
+  research: ["depth"],
+  slides: ["slides", "look"],
+};
+
+export type RunOptions = Record<string, string | number | boolean>;
+
+const STYLE_API: Record<string, string> = { "Без стиля": "none", Кино: "cinema", Неон: "neon", Аниме: "anime", "3D": "3d", Минимализм: "minimal" };
+const CAMERA_API: Record<string, string> = { Статично: "static", Наезд: "push", Облёт: "orbit" };
+const LOOK_API: Record<string, string> = { KURAI: "kurai", Строгое: "strict", Яркое: "bright" };
+const DEPTH_API: Record<string, string> = { Стандарт: "standard", Глубоко: "deep" };
+
+/** Опции запуска для API: подписи интерфейса → канонические значения сервера. Неизвестное не отправляется. */
+export function apiOptions(mode: Mode, { web, think, params }: { web: boolean; think: boolean; params: ModeParams }): RunOptions {
+  const pick = (map: Record<string, string>, label: string | undefined) => (label !== undefined && map[label] ? map[label] : undefined);
+  const out: Record<string, string | number | boolean | undefined> =
+    mode === "text"
+      ? { web, think }
+      : mode === "research"
+        ? { think, depth: pick(DEPTH_API, params.depth) }
+        : mode === "slides"
+          ? { think, slides: params.slides ? Number(params.slides) : undefined, look: pick(LOOK_API, params.look) }
+          : mode === "image"
+            ? { count: params.count ? Number(params.count) : undefined, aspect: params.aspect, style: pick(STYLE_API, params.style) }
+            : mode === "video"
+              ? { duration: params.duration ? Number.parseInt(params.duration, 10) : undefined, aspect: params.aspect, camera: pick(CAMERA_API, params.camera) }
+              : {};
+  return Object.fromEntries(Object.entries(out).filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined));
+}
+
 export function defaultParams(mode: Mode): ModeParams {
   return Object.fromEntries((PARAMS[mode] ?? []).map((p) => [p.key, p.options[0] ?? ""]));
 }

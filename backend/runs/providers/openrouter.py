@@ -109,31 +109,38 @@ def sanitise_citations(citations) -> tuple[ResearchCitation, ...]:
     return tuple(accepted)
 
 
-def stream_openrouter_completion(*, model_id: str, prompt: str, user_id: str, session_id: str, research: bool = False) -> Iterator[CompletionChunk]:
+def stream_openrouter_completion(
+    *, model_id: str, prompt: str, user_id: str, session_id: str, research: bool = False,
+    search_uses: int | None = None, reasoning: bool = False, max_tokens: int | None = None,
+) -> Iterator[CompletionChunk]:
     if not settings.OPENROUTER_API_KEY:
         raise OpenRouterProviderError("OpenRouter is not configured")
     body = {
         "model": model_id,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": settings.KURAI_MAX_COMPLETION_TOKENS,
+        "max_tokens": max_tokens or settings.KURAI_MAX_COMPLETION_TOKENS,
         "stream": True,
         "stream_options": {"include_usage": True},
         "usage": {"include": True},
         "user": user_id,
         "session_id": session_id,
     }
+    if reasoning:
+        # «Думать дольше»: единый параметр рассуждения OpenRouter; бюджет ограничен max_tokens выше.
+        body["reasoning"] = {"effort": "high"}
     if research:
+        uses = search_uses or settings.KURAI_RESEARCH_MAX_USES
         body["tools"] = [{
             "type": "openrouter:web_search",
             "parameters": {
                 "engine": settings.KURAI_RESEARCH_SEARCH_ENGINE,
                 "max_results": settings.KURAI_RESEARCH_MAX_RESULTS,
                 "max_total_results": settings.KURAI_RESEARCH_MAX_TOTAL_RESULTS,
-                "max_uses": settings.KURAI_RESEARCH_MAX_USES,
+                "max_uses": uses,
                 "max_characters": settings.KURAI_RESEARCH_MAX_SOURCE_CHARACTERS,
             },
         }]
-        body["max_tool_calls"] = settings.KURAI_RESEARCH_MAX_TOOL_CALLS
+        body["max_tool_calls"] = max(settings.KURAI_RESEARCH_MAX_TOOL_CALLS, uses + 1)
     headers = {
         "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
@@ -271,7 +278,7 @@ def generate_openrouter_audio(*, model_id: str, text: str, user_id: str) -> Audi
     )
 
 
-def submit_openrouter_video(*, model_id: str, prompt: str, user_id: str) -> VideoGeneration:
+def submit_openrouter_video(*, model_id: str, prompt: str, user_id: str, duration: int | None = None) -> VideoGeneration:
     """Submit an asynchronous video job. Completion must be polled in a worker task."""
     if not settings.OPENROUTER_API_KEY:
         raise OpenRouterProviderError("OpenRouter is not configured")
@@ -284,7 +291,7 @@ def submit_openrouter_video(*, model_id: str, prompt: str, user_id: str) -> Vide
     }
     if settings.OPENROUTER_SITE_URL:
         headers["HTTP-Referer"] = settings.OPENROUTER_SITE_URL
-    body = {"model": model_id, "prompt": prompt, "duration": settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS, "user": user_id}
+    body = {"model": model_id, "prompt": prompt, "duration": duration or settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS, "user": user_id}
     request = Request(
         f"{settings.OPENROUTER_BASE_URL.rstrip('/')}/videos",
         data=json.dumps(body).encode("utf-8"), headers=headers, method="POST",

@@ -29,6 +29,8 @@ class Chat(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.SET_NULL, related_name="chats")
     title = models.CharField(max_length=160)
     pinned = models.BooleanField(default=False)
+    # Archived chats leave the history but keep runs and ledger records intact.
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

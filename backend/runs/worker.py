@@ -8,6 +8,7 @@ from django.utils import timezone
 from ledger.services import consume_hold, release_hold
 from runs.events import append_event
 from runs.models import Run, RunAttempt, RunEvent, RunSource
+from runs.options import completion_tokens, prompt_directives, search_uses
 from runs.services import append_run_notice
 from media.models import GeneratedAsset
 from runs.providers.openrouter import (
@@ -231,10 +232,8 @@ def complete_run(run_id: str, attempt_id, resolved_model: str, provider_request_
         finalize_cancellation(run_id, attempt_id)
 
 
-def complete_image_run(
-    run_id: str, attempt_id, *, data: bytes, content_type: str, resolved_model: str, provider_request_id: str, cost_usd: Decimal | None
-) -> None:
-    """Store the generated image before settling the hold, leaving an auditable immutable result."""
+def complete_image_run(run_id: str, attempt_id, *, images) -> None:
+    """Store every generated image before settling the hold, leaving an auditable immutable result."""
     extensions = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
     should_cancel = False
     with transaction.atomic():
@@ -247,7 +246,9 @@ def complete_image_run(
         elif run.status != Run.Status.RUNNING:
             return
         if not should_cancel:
-            billed_micro = micro_from_usd(cost_usd, run.estimated_cost_micro)
+            # Actual cost is known only when the provider reported it for every image.
+            costs = [image.cost_usd for image in images]
+            billed_micro = micro_from_usd(sum(costs, Decimal(0)) if all(cost is not None for cost in costs) else None, run.estimated_cost_micro)
             if billed_micro > run.hold.reserved_micro:
                 release_hold(run.hold)
                 run.status = Run.Status.FAILED
@@ -258,24 +259,29 @@ def complete_image_run(
                 attempt.save(update_fields=("status", "error_code", "completed_at"))
                 append_event(run, RunEvent.Type.ERROR, {"status": Run.Status.FAILED, "code": "cost_exceeded_quote"})
                 return
-            asset = GeneratedAsset.objects.create(
-                owner=run.user,
-                run=run,
-                message=run.output_message,
-                kind=GeneratedAsset.Kind.IMAGE,
-                file=ContentFile(data, name=f"image.{extensions[content_type]}"),
-                content_type=content_type,
-                size_bytes=len(data),
-                prompt=run.input_message.text,
-                requested_model=run.quote.resolved_model,
-                resolved_model=resolved_model,
-                cost_micro=billed_micro,
-            )
-            run.output_message.text = "Изображение готово."
+            resolved_model = images[0].model_id or run.quote.resolved_model
+            share = billed_micro // len(images)
+            assets = []
+            for position, image in enumerate(images):
+                assets.append(GeneratedAsset.objects.create(
+                    owner=run.user,
+                    run=run,
+                    message=run.output_message,
+                    kind=GeneratedAsset.Kind.IMAGE,
+                    file=ContentFile(image.data, name=f"image.{extensions[image.content_type]}"),
+                    content_type=image.content_type,
+                    size_bytes=len(image.data),
+                    prompt=run.input_message.text,
+                    requested_model=run.quote.resolved_model,
+                    resolved_model=image.model_id or resolved_model,
+                    # остаток от деления — у первого файла, чтобы сумма по файлам совпала со списанием
+                    cost_micro=share + (billed_micro - share * len(images) if position == 0 else 0),
+                ))
+            run.output_message.text = "Изображение готово." if len(assets) == 1 else f"Готово изображений: {len(assets)}."
             run.output_message.parts = [{
                 "type": "image", "assetId": str(asset.id), "url": f"/api/v1/media/{asset.id}/download",
                 "alt": run.input_message.text[:280], "width": 0, "height": 0,
-            }]
+            } for asset in assets]
             run.output_message.resolved_model = resolved_model
             run.output_message.save(update_fields=("text", "parts", "resolved_model"))
             if billed_micro:
@@ -284,13 +290,14 @@ def complete_image_run(
                 release_hold(run.hold)
             attempt.status = RunAttempt.Status.COMPLETED
             attempt.resolved_model = resolved_model
-            attempt.provider_request_id = provider_request_id[:160]
+            attempt.provider_request_id = ",".join(image.provider_request_id or "" for image in images)[:160]
             attempt.billed_cost_micro = billed_micro
             attempt.completed_at = timezone.now()
             attempt.save(update_fields=("status", "resolved_model", "provider_request_id", "billed_cost_micro", "completed_at"))
             run.status = Run.Status.COMPLETED
             run.save(update_fields=("status", "updated_at"))
-            append_event(run, RunEvent.Type.MEDIA, {"assetId": str(asset.id), "url": f"/api/v1/media/{asset.id}/download"})
+            for asset in assets:
+                append_event(run, RunEvent.Type.MEDIA, {"assetId": str(asset.id), "url": f"/api/v1/media/{asset.id}/download"})
             append_event(run, RunEvent.Type.DONE, {"status": Run.Status.COMPLETED, "costMicro": billed_micro, "model": resolved_model})
     if should_cancel:
         finalize_cancellation(run_id, attempt_id)
@@ -357,7 +364,8 @@ def complete_binary_media_run(
                 parts = [{"type": "audio", "assetId": str(asset.id), "url": url}]
                 text = "Аудио готово."
             else:
-                parts = [{"type": "video", "assetId": str(asset.id), "url": url, "durationSec": settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS}]
+                duration = (run.quote.options or {}).get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS)
+                parts = [{"type": "video", "assetId": str(asset.id), "url": url, "durationSec": duration}]
                 text = "Видео готово."
             run.output_message.text = text
             run.output_message.parts = parts
@@ -435,19 +443,24 @@ def process_run(run_id: str) -> None:
     if started is None:
         return
     prompt, model_id, user_id, chat_id, mode, attempt_id = started
+    # Options come only from the quote the run was launched with (bound by request_hash).
+    options = Run.objects.filter(id=run_id).values_list("quote__options", flat=True).first() or {}
+    directives = prompt_directives(mode, options)
+    if directives:
+        prompt = f"{prompt}\n\n{directives}"
     if mode == "image":
         if not settings.OPENROUTER_API_KEY:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
+        images = []
         try:
-            image = generate_openrouter_image(model_id=model_id, prompt=prompt, user_id=user_id)
+            # one request per image: «n» support differs between image models
+            for _ in range(options.get("count", 1)):
+                images.append(generate_openrouter_image(model_id=model_id, prompt=prompt, user_id=user_id))
         except OpenRouterProviderError:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
-        complete_image_run(
-            run_id, attempt_id, data=image.data, content_type=image.content_type,
-            resolved_model=image.model_id or model_id, provider_request_id=image.provider_request_id or "", cost_usd=image.cost_usd,
-        )
+        complete_image_run(run_id, attempt_id, images=images)
         return
     if mode == "audio":
         if not settings.OPENROUTER_API_KEY:
@@ -474,7 +487,7 @@ def process_run(run_id: str) -> None:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
         try:
-            video = submit_openrouter_video(model_id=model_id, prompt=prompt, user_id=user_id)
+            video = submit_openrouter_video(model_id=model_id, prompt=prompt, user_id=user_id, duration=options.get("duration"))
         except OpenRouterProviderError:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
@@ -511,8 +524,10 @@ def process_run(run_id: str) -> None:
     request_id = ""
     billed_cost_usd: Decimal | None = None
     try:
+        uses = search_uses(mode, options)
         for chunk in stream_openrouter_completion(
-            model_id=model_id, prompt=prompt, user_id=user_id, session_id=chat_id, research=mode == "research"
+            model_id=model_id, prompt=prompt, user_id=user_id, session_id=chat_id,
+            research=uses > 0, search_uses=uses or None, reasoning=bool(options.get("think")), max_tokens=completion_tokens(options),
         ):
             if chunk.model_id:
                 resolved_model = chunk.model_id

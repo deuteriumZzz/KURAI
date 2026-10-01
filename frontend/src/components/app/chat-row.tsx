@@ -112,7 +112,7 @@ export function ChatRow({ chat, active, now, onNavigate, onPin, onRename, onDele
             </button>
             <span aria-hidden="true" className="k-hatch-line mx-1 my-1 block" />
             <button role="menuitem" type="button" className={cn(item, "text-err hover:text-err")} onClick={() => { onDelete(); setMenu(false); }}>
-              <Trash size={14} strokeWidth={1.5} /> Удалить
+              <Trash size={14} strokeWidth={1.5} /> Убрать из истории
             </button>
           </motion.div>
         )}

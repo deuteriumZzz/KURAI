@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costFactor, defaultParams, enhancePrompt } from "./prompt";
+import { apiOptions, costFactor, defaultParams, enhancePrompt } from "./prompt";
 
 describe("params", () => {
   it("defaults are first options", () => {
@@ -24,5 +24,15 @@ describe("enhancePrompt", () => {
     const once = enhancePrompt("письмо клиенту", "text");
     expect(enhancePrompt(once, "text")).toBe(once);
     expect(enhancePrompt("   ", "text")).toBe("");
+  });
+});
+
+describe("apiOptions", () => {
+  it("maps interface labels to the server's canonical run options", () => {
+    expect(apiOptions("text", { web: true, think: false, params: {} })).toEqual({ web: true, think: false });
+    expect(apiOptions("image", { web: true, think: false, params: { aspect: "4:5", count: "4", style: "Кино" } })).toEqual({ count: 4, aspect: "4:5", style: "cinema" });
+    expect(apiOptions("video", { web: false, think: false, params: { duration: "10 с", aspect: "9:16", camera: "Облёт" } })).toEqual({ duration: 10, aspect: "9:16", camera: "orbit" });
+    expect(apiOptions("research", { web: true, think: true, params: { depth: "Глубоко" } })).toEqual({ think: true, depth: "deep" });
+    expect(apiOptions("audio", { web: true, think: false, params: { speed: "1.2×" } })).toEqual({});
   });
 });

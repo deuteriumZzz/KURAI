@@ -7,7 +7,7 @@ import { ArrowUp, Bookmark, Brain, Check, Globe, Paperclip, SlidersHorizontal, S
 import { usePrefs } from "@/lib/use-prefs";
 import { writePrefs } from "@/lib/prefs";
 import { ModeIcon } from "@/components/brand/mode-icons";
-import { costFactor, defaultParams, enhancePrompt, PARAMS, type ModeParams } from "@/lib/prompt";
+import { apiOptions, costFactor, defaultParams, enhancePrompt, LIVE_PARAMS, PARAMS, type ModeParams } from "@/lib/prompt";
 import { AnimatePresence, motion } from "motion/react";
 import type { Mode } from "@/types/api";
 import { MODES, modeById, parseCommand } from "@/lib/modes";
@@ -304,15 +304,16 @@ export function Composer({
         try {
           const chat = await api.createChat(msg.text.slice(0, 80) || modeById(msg.mode).label);
           const attachmentIds = msg.files.flatMap((file) => file.assetId ? [file.assetId] : []);
+          const options = apiOptions(msg.mode, msg);
           if (msg.compareModels && (msg.mode === "text" || msg.mode === "research")) {
             const routes = await Promise.all(msg.compareModels.map(async (candidate) => {
               const modelId = candidate.id === "auto" ? "openrouter/auto" : candidate.id;
-              const quote = await api.quote(msg.mode, msg.text, modelId, attachmentIds);
+              const quote = await api.quote(msg.mode, msg.text, modelId, attachmentIds, options);
               return { modelId, quoteId: quote.quoteId };
             }));
-            await api.startCompareRun({ chatId: chat.id, mode: msg.mode, text: msg.text, attachmentIds, routes, idempotencyKey: crypto.randomUUID() });
+            await api.startCompareRun({ chatId: chat.id, mode: msg.mode, text: msg.text, attachmentIds, options, routes, idempotencyKey: crypto.randomUUID() });
           } else {
-            const quote = await api.quote(msg.mode, msg.text, msg.model.id === "auto" ? "openrouter/auto" : msg.model.id, attachmentIds);
+            const quote = await api.quote(msg.mode, msg.text, msg.model.id === "auto" ? "openrouter/auto" : msg.model.id, attachmentIds, options);
             await api.startRun({
               chatId: chat.id,
               quoteId: quote.quoteId,
@@ -320,6 +321,7 @@ export function Composer({
               modelId: msg.model.id === "auto" ? "openrouter/auto" : msg.model.id,
               text: msg.text,
               attachmentIds,
+              options,
               idempotencyKey: crypto.randomUUID(),
             });
           }
@@ -379,9 +381,11 @@ export function Composer({
     </div>
   );
 
-  const paramsRow = (PARAMS[mode] ?? []).length > 0 && (
+  // в рабочем режиме показываем только параметры, которые сервер действительно исполняет
+  const visibleParams = (PARAMS[mode] ?? []).filter((p) => !kuraiApi || (LIVE_PARAMS[mode] ?? []).includes(p.key));
+  const paramsRow = visibleParams.length > 0 && (
     <div className="-mx-1 flex gap-5 overflow-x-auto px-1 pb-1">
-      {(PARAMS[mode] ?? []).map((p) => (
+      {visibleParams.map((p) => (
         <div key={p.key} role="radiogroup" aria-label={p.label} className="flex shrink-0 items-center gap-2">
           <span className="text-[12.5px] text-ink3">{p.label}</span>
           <span className="inline-flex rounded-(--radius-sm) border border-line p-0.5">

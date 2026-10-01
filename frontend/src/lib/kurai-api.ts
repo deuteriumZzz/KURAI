@@ -1,4 +1,5 @@
 import type { ChatSummary, Message, Mode, Project } from "@/types/api";
+import type { RunOptions } from "@/lib/prompt";
 
 type Fetcher = typeof fetch;
 
@@ -183,19 +184,24 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
       if (!response.ok) throw new KuraiApiError(response.status, payload.error?.code ?? "file_upload_failed", payload.error?.message ?? "Не удалось загрузить файл.");
       return payload.data;
     },
-    quote: (mode: Mode, text: string, modelId = "openrouter/auto", attachmentIds: string[] = []): Promise<ApiQuote> => request<ApiQuote>("/api/v1/runs/quote", { method: "POST", body: JSON.stringify({ mode, modelId, text, attachmentIds }) }),
-    startRun: ({ chatId, parentId, quoteId, mode, modelId = "openrouter/auto", text, attachmentIds = [], idempotencyKey }: { chatId: string; parentId?: string | null; quoteId: string; mode: Mode; modelId?: string; text: string; attachmentIds?: string[]; idempotencyKey: string }): Promise<KuraiRun> =>
+    // options входят в подпись расчёта на сервере: запуск обязан прислать те же, что и расчёт
+    quote: (mode: Mode, text: string, modelId = "openrouter/auto", attachmentIds: string[] = [], options: RunOptions = {}): Promise<ApiQuote> =>
+      request<ApiQuote>("/api/v1/runs/quote", { method: "POST", body: JSON.stringify({ mode, modelId, text, attachmentIds, options }) }),
+    startRun: ({ chatId, parentId, quoteId, mode, modelId = "openrouter/auto", text, attachmentIds = [], options = {}, idempotencyKey }: { chatId: string; parentId?: string | null; quoteId: string; mode: Mode; modelId?: string; text: string; attachmentIds?: string[]; options?: RunOptions; idempotencyKey: string }): Promise<KuraiRun> =>
       request<KuraiRun>("/api/v1/runs", {
         method: "POST",
         headers: { "Idempotency-Key": idempotencyKey },
-        body: JSON.stringify({ chatId, ...(parentId ? { parentId } : {}), quoteId, mode, modelId, text, attachmentIds }),
+        body: JSON.stringify({ chatId, ...(parentId ? { parentId } : {}), quoteId, mode, modelId, text, attachmentIds, options }),
       }),
-    startCompareRun: ({ chatId, parentId, mode, text, attachmentIds = [], routes, idempotencyKey }: { chatId: string; parentId?: string | null; mode: Extract<Mode, "text" | "research">; text: string; attachmentIds?: string[]; routes: { modelId: string; quoteId: string }[]; idempotencyKey: string }): Promise<KuraiCompareRun> =>
+    startCompareRun: ({ chatId, parentId, mode, text, attachmentIds = [], options = {}, routes, idempotencyKey }: { chatId: string; parentId?: string | null; mode: Extract<Mode, "text" | "research">; text: string; attachmentIds?: string[]; options?: RunOptions; routes: { modelId: string; quoteId: string }[]; idempotencyKey: string }): Promise<KuraiCompareRun> =>
       request<KuraiCompareRun>("/api/v1/runs/compare", {
         method: "POST",
         headers: { "Idempotency-Key": idempotencyKey },
-        body: JSON.stringify({ chatId, ...(parentId ? { parentId } : {}), mode, text, attachmentIds, routes }),
+        body: JSON.stringify({ chatId, ...(parentId ? { parentId } : {}), mode, text, attachmentIds, options, routes }),
       }),
+    /** Переименовать, закрепить или убрать чат в архив (обратимо; история запусков и списаний сохраняется). */
+    updateChat: (chatId: string, patch: { title?: string; pinned?: boolean; archived?: boolean }): Promise<unknown> =>
+      request<unknown>(`/api/v1/chats/${encodeURIComponent(chatId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
     getRun: (runId: string): Promise<KuraiRun> => request<KuraiRun>(`/api/v1/runs/${runId}`, { method: "GET" }),
     cancelRun: (runId: string): Promise<KuraiRun> => request<KuraiRun>(`/api/v1/runs/${runId}/cancel`, { method: "POST" }),
     exportSlides: async (messageId: string, title?: string): Promise<Blob> => {

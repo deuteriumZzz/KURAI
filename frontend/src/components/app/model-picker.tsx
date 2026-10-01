@@ -222,6 +222,7 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                   return (
                     <li key={`${group}-${m.id}`} role="presentation">
                       {header && i > 0 && <span className="k-index block px-3 pt-4 pb-2">{header}</span>}
+                      <div role="presentation" className="relative">
                       <div
                         id={`${listId}-${m.id}`}
                         role="option"
@@ -229,7 +230,7 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                         data-active={i === active || undefined}
                         onMouseEnter={() => setActive(i)}
                         onClick={() => pick(m)}
-                        className={cn("k-bay-row grid cursor-pointer items-center gap-3 px-3 py-3", COLS)}
+                        className={cn("k-bay-row grid cursor-pointer items-center gap-3 py-3 pr-11 pl-3", COLS)}
                       >
                         <span className="flex min-w-0 items-center gap-3">
                           <span className="k-radio" aria-hidden="true" />
@@ -240,23 +241,22 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                         </span>
                         <span className="line-clamp-2 text-[13px] leading-snug text-ink2 max-md:hidden">{m.note}</span>
                         <span className="font-mono text-[12px] text-ink2">{ctx(m.contextK)}</span>
-                        <span className="flex items-center justify-end gap-1 font-mono text-[12px] text-ink2">
-                          {formatCredits(m.priceHintMicro, { approx: true })}
-                          <button
-                            type="button"
-                            aria-label={favs.includes(m.id) ? `Убрать ${m.name} из избранного` : `Добавить ${m.name} в избранное`}
-                            aria-pressed={favs.includes(m.id)}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const next = toggleFavorite(favs, m.id);
-                              setFavs(next);
-                              writePrefs({ favorites: next });
-                            }}
-                            className={cn("grid size-7 shrink-0 cursor-pointer place-items-center rounded-(--radius-sm) hover:bg-s2", favs.includes(m.id) ? "text-acc" : "text-ink3")}
-                          >
-                            <Star size={13} strokeWidth={1.5} fill={favs.includes(m.id) ? "currentColor" : "none"} />
-                          </button>
-                        </span>
+                        <span className="text-right font-mono text-[12px] text-ink2">{formatCredits(m.priceHintMicro, { approx: true })}</span>
+                      </div>
+                      {/* избранное — отдельная кнопка рядом со строкой, а не элемент внутри варианта списка */}
+                      <button
+                        type="button"
+                        aria-label={favs.includes(m.id) ? `Убрать ${m.name} из избранного` : `Добавить ${m.name} в избранное`}
+                        aria-pressed={favs.includes(m.id)}
+                        onClick={() => {
+                          const next = toggleFavorite(favs, m.id);
+                          setFavs(next);
+                          writePrefs({ favorites: next });
+                        }}
+                        className={cn("k-act absolute top-1/2 right-1.5 -translate-y-1/2", favs.includes(m.id) ? "text-acc" : "text-ink3")}
+                      >
+                        <Star size={13} strokeWidth={1.5} fill={favs.includes(m.id) ? "currentColor" : "none"} />
+                      </button>
                       </div>
                     </li>
                   );

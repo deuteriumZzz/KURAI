@@ -17,6 +17,9 @@ describe("ModelPicker", () => {
     expect(screen.getByRole("listbox", { name: "Модели" })).toBeTruthy();
     expect(screen.getByRole("option", { name: /GPT-5/i })).toBeTruthy();
     expect(screen.getByRole("option", { name: /Авто/i }).getAttribute("aria-selected")).toBe("true");
+    // избранное — отдельная кнопка, не вложенная в вариант списка
+    expect(screen.getByRole("option", { name: /GPT-5/i }).querySelector("button")).toBeNull();
+    expect(screen.getByRole("button", { name: /Добавить GPT-5 в избранное/ })).toBeTruthy();
   });
 
   it("selects by keyboard and returns focus to the trigger on Escape", async () => {

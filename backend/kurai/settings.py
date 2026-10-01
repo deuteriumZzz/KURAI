@@ -113,6 +113,11 @@ try:
 except InvalidOperation as error:
     raise RuntimeError("KURAI_RESEARCH_SEARCH_COST_USD_PER_USE must be a decimal") from error
 KURAI_VIDEO_DEFAULT_DURATION_SECONDS = int(os.getenv("KURAI_VIDEO_DEFAULT_DURATION_SECONDS", "5"))
+# Run options (runs/options.py): bounded so a reserved hold always covers the run.
+KURAI_VIDEO_DURATIONS = tuple(int(value) for value in os.getenv("KURAI_VIDEO_DURATIONS", "5,8,10").split(","))
+KURAI_WEB_MAX_USES = int(os.getenv("KURAI_WEB_MAX_USES", "1"))
+KURAI_RESEARCH_DEEP_MAX_USES = int(os.getenv("KURAI_RESEARCH_DEEP_MAX_USES", "4"))
+KURAI_THINK_COMPLETION_MULTIPLIER = int(os.getenv("KURAI_THINK_COMPLETION_MULTIPLIER", "2"))
 KURAI_VIDEO_POLL_SECONDS = int(os.getenv("KURAI_VIDEO_POLL_SECONDS", "30"))
 KURAI_MEDIA_MAX_VIDEO_BYTES = int(os.getenv("KURAI_MEDIA_MAX_VIDEO_BYTES", str(500 * 1024 * 1024)))
 KURAI_MEDIA_MAX_AUDIO_BYTES = int(os.getenv("KURAI_MEDIA_MAX_AUDIO_BYTES", str(50 * 1024 * 1024)))
@@ -138,6 +143,10 @@ if KURAI_RESEARCH_MAX_RESULTS > 25 or KURAI_RESEARCH_MAX_TOOL_CALLS > 30:
     raise RuntimeError("KURAI research limits exceed the OpenRouter server-tool bounds")
 if KURAI_RESEARCH_SEARCH_COST_USD_PER_USE < 0:
     raise RuntimeError("KURAI_RESEARCH_SEARCH_COST_USD_PER_USE must be non-negative")
+if not all(value > 0 for value in KURAI_VIDEO_DURATIONS) or KURAI_VIDEO_DEFAULT_DURATION_SECONDS not in KURAI_VIDEO_DURATIONS:
+    raise RuntimeError("KURAI_VIDEO_DURATIONS must be positive and include the default duration")
+if KURAI_WEB_MAX_USES <= 0 or KURAI_RESEARCH_DEEP_MAX_USES < KURAI_RESEARCH_MAX_USES or not 1 <= KURAI_THINK_COMPLETION_MULTIPLIER <= 8:
+    raise RuntimeError("KURAI web, research depth or reasoning limits are invalid")
 if not DEBUG and not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY must be configured outside development")
 AUTH_RATE_LIMIT_COUNT = int(os.getenv("AUTH_RATE_LIMIT_COUNT", "20"))

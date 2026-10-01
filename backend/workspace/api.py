@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from django.http import HttpResponse
 from django.db.models import Sum
+from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
@@ -18,6 +19,19 @@ class ProjectInputSerializer(serializers.Serializer):
 class ChatInputSerializer(serializers.Serializer):
     title = serializers.CharField(trim_whitespace=True, min_length=1, max_length=160)
     projectId = serializers.UUIDField(required=False, allow_null=True, source="project_id")
+
+
+class ChatUpdateSerializer(serializers.Serializer):
+    """Rename, pin, or move a chat to the archive. Archive is reversible and keeps runs and ledger records."""
+
+    title = serializers.CharField(trim_whitespace=True, min_length=1, max_length=160, required=False)
+    pinned = serializers.BooleanField(required=False)
+    archived = serializers.BooleanField(required=False)
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError("Нечего изменить.")
+        return attrs
 
 
 class ProjectOutputSerializer(serializers.Serializer):
@@ -210,7 +224,7 @@ class ProjectCollectionView(KuraiAPIView):
 class ChatCollectionView(KuraiAPIView):
     @extend_schema(operation_id="v1_chats_list", responses=ChatListEnvelopeSerializer)
     def get(self, request):
-        chats = Chat.objects.filter(owner=request.user).only("id", "title", "project_id", "pinned", "created_at")
+        chats = Chat.objects.filter(owner=request.user, archived_at__isnull=True).only("id", "title", "project_id", "pinned", "created_at")
         return Response({"data": [chat_payload(chat) for chat in chats]})
 
     @extend_schema(request=ChatInputSerializer, responses={201: ChatEnvelopeSerializer})
@@ -249,6 +263,28 @@ class ChatDetailView(KuraiAPIView):
         return Response({"data": {"chat": chat_payload(chat), "messages": [
             message_payload(message, cost_micro=settled_costs.get(message.id, 0)) for message in messages
         ]}})
+
+    @extend_schema(operation_id="v1_chats_partial_update", request=ChatUpdateSerializer, responses=ChatEnvelopeSerializer)
+    def patch(self, request, chat_id):
+        chat = Chat.objects.filter(id=chat_id, owner=request.user).first()
+        if chat is None:
+            return Response({"error": {"code": "not_found", "message": "Диалог не найден."}}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ChatUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_error(serializer)
+        data = serializer.validated_data
+        fields = []
+        if "title" in data:
+            chat.title = data["title"]
+            fields.append("title")
+        if "pinned" in data:
+            chat.pinned = data["pinned"]
+            fields.append("pinned")
+        if "archived" in data:
+            chat.archived_at = timezone.now() if data["archived"] else None
+            fields.append("archived_at")
+        chat.save(update_fields=(*fields, "updated_at"))
+        return Response({"data": chat_payload(chat)})
 
 
 class ArtifactCollectionView(KuraiAPIView):

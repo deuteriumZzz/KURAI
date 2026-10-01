@@ -13,6 +13,7 @@ from model_catalog.capabilities import capability_payloads
 from files.models import FileAsset
 from runs.models import Quote
 from runs.rate_limits import allow_member_request
+from runs.options import RunOptionsError, normalize_options
 from runs.services import canonical_attachment_ids, estimate_cost_micro, request_hash
 
 
@@ -24,6 +25,7 @@ class QuoteRequestSerializer(serializers.Serializer):
     modelId = serializers.CharField(max_length=160, default="openrouter/auto")
     attachmentIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list, max_length=10)
     text = serializers.CharField(trim_whitespace=True, min_length=1, max_length=20_000)
+    options = serializers.DictField(required=False, default=dict)
 
 
 class HealthView(APIView):
@@ -121,6 +123,10 @@ class QuoteView(KuraiAPIView):
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
         data = serializer.validated_data
+        try:
+            options = normalize_options(data["mode"], data.get("options"))
+        except RunOptionsError as error:
+            return Response({"error": {"code": "invalid_options", "message": str(error)}}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         attachment_ids = canonical_attachment_ids(data["attachmentIds"])
         if len(attachment_ids) != len(data["attachmentIds"]) or FileAsset.objects.filter(owner=request.user, id__in=attachment_ids).count() != len(attachment_ids):
             return Response(
@@ -137,10 +143,11 @@ class QuoteView(KuraiAPIView):
         quote = Quote.objects.create(
             user=request.user,
             mode=data["mode"],
-            request_hash=request_hash(mode=data["mode"], model_id=model.id, text=data["text"], attachment_ids=attachment_ids),
+            request_hash=request_hash(mode=data["mode"], model_id=model.id, text=data["text"], attachment_ids=attachment_ids, options=options),
             resolved_model=model.id,
             attachment_ids=attachment_ids,
-            estimated_cost_micro=estimate_cost_micro(model=model, text=data["text"], mode=data["mode"]),
+            options=options,
+            estimated_cost_micro=estimate_cost_micro(model=model, text=data["text"], mode=data["mode"], options=options),
             expires_at=timezone.now() + timedelta(seconds=expires_in_seconds),
         )
         return Response(
@@ -150,6 +157,7 @@ class QuoteView(KuraiAPIView):
                     "mode": quote.mode,
                     "resolvedModel": quote.resolved_model,
                     "estimatedCostMicro": quote.estimated_cost_micro,
+                    "options": quote.options,
                     "expiresInSeconds": expires_in_seconds,
                 }
             }

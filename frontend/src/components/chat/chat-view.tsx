@@ -5,6 +5,7 @@ import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
 import { branchOf, forksOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
+import { apiOptions } from "@/lib/prompt";
 import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
 import { markStep, readPrefs } from "@/lib/prefs";
@@ -322,7 +323,8 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
     try {
       const modelId = msg.model.id === "auto" ? "openrouter/auto" : msg.model.id;
       const attachmentIds = msg.files.flatMap((file) => file.assetId ? [file.assetId] : []);
-      const quote = await api.quote(msg.mode, msg.text, modelId, attachmentIds);
+      const options = apiOptions(msg.mode, msg);
+      const quote = await api.quote(msg.mode, msg.text, modelId, attachmentIds, options);
       const started = await api.startRun({
         chatId: chat.id,
         parentId,
@@ -331,6 +333,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
         modelId,
         text: msg.text,
         attachmentIds,
+        options,
         idempotencyKey: crypto.randomUUID(),
       });
       liveRunId.current = started.runId;

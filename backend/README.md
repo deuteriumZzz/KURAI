@@ -60,6 +60,20 @@ HttpOnly and use `SameSite=Lax`.
   caps. Only validated HTTP(S) URL citations are persisted as `RunSource`,
   replayed through SSE and projected into the assistant message; the quote
   reserves the configured maximum search-tool budget before dispatch.
+- Run options (`runs/options.py`): quote, run and compare requests accept an
+  `options` object — `web`/`think` for text, `think`/`depth` for research,
+  `think`/`slides`/`look` for slides, `count`/`aspect`/`style` for images,
+  `duration`/`aspect`/`camera` for video. Only allowlisted keys and values pass;
+  the normalized set is part of the quote's request hash (a run must repeat it),
+  priced into the hold (reasoning budget, search uses, image count, video
+  duration) and sent to the provider (`reasoning`, web-search tool, one image
+  request per image, video `duration`). Options without a provider field become
+  a server-authored prompt instruction. Audio speed is not offered until the
+  provider contract is verified.
+- `PATCH /api/v1/chats/{chatId}` renames, pins or archives a chat (`title`,
+  `pinned`, `archived`). Archive is reversible and keeps runs and ledger
+  records; archived chats leave the list, refuse new runs and close their share
+  links.
 - `POST /api/v1/messages/{messageId}/exports/slides` builds a private,
   KURAI-styled `.pptx` from an owned assistant response. The binary is returned
   directly as an attachment and is never published through a public URL.

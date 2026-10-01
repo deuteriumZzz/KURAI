@@ -55,8 +55,8 @@ describe("KURAI API client", () => {
     const quote = await api.quote("text", "Собери план", "openai/gpt-5");
     await api.startRun({ chatId: "c1", quoteId: quote.quoteId, mode: "text", modelId: "openai/gpt-5", text: "Собери план", idempotencyKey: "idempotent-1" });
 
-    expect(fetcher).toHaveBeenNthCalledWith(2, "https://api.kurai.test/api/v1/runs/quote", expect.objectContaining({ body: JSON.stringify({ mode: "text", modelId: "openai/gpt-5", text: "Собери план", attachmentIds: [] }) }));
-    expect(fetcher).toHaveBeenNthCalledWith(3, "https://api.kurai.test/api/v1/runs", expect.objectContaining({ body: JSON.stringify({ chatId: "c1", quoteId: "q1", mode: "text", modelId: "openai/gpt-5", text: "Собери план", attachmentIds: [] }) }));
+    expect(fetcher).toHaveBeenNthCalledWith(2, "https://api.kurai.test/api/v1/runs/quote", expect.objectContaining({ body: JSON.stringify({ mode: "text", modelId: "openai/gpt-5", text: "Собери план", attachmentIds: [], options: {} }) }));
+    expect(fetcher).toHaveBeenNthCalledWith(3, "https://api.kurai.test/api/v1/runs", expect.objectContaining({ body: JSON.stringify({ chatId: "c1", quoteId: "q1", mode: "text", modelId: "openai/gpt-5", text: "Собери план", attachmentIds: [], options: {} }) }));
   });
 
   it("sends an optional parent message when creating a branch", async () => {
@@ -71,7 +71,7 @@ describe("KURAI API client", () => {
     expect(fetcher).toHaveBeenNthCalledWith(
       2,
       "https://api.kurai.test/api/v1/runs",
-      expect.objectContaining({ body: JSON.stringify({ chatId: "c1", parentId: "m-parent", quoteId: "q1", mode: "text", modelId: "openai/gpt-5", text: "Сделай короче", attachmentIds: [] }) }),
+      expect.objectContaining({ body: JSON.stringify({ chatId: "c1", parentId: "m-parent", quoteId: "q1", mode: "text", modelId: "openai/gpt-5", text: "Сделай короче", attachmentIds: [], options: {} }) }),
     );
   });
 
@@ -103,6 +103,7 @@ describe("KURAI API client", () => {
           mode: "text",
           text: "Собери план",
           attachmentIds: [],
+          options: {},
           routes: [
             { modelId: "openai/gpt-5", quoteId: "q1" },
             { modelId: "anthropic/claude-opus", quoteId: "q2" },
@@ -214,5 +215,25 @@ describe("KURAI API client", () => {
 
     expect(archive.type).toBe("application/zip");
     expect(fetcher).toHaveBeenCalledWith("https://api.kurai.test/api/v1/me/export", expect.objectContaining({ method: "GET", credentials: "include" }));
+  });
+});
+
+describe("KURAI API client — run options and chat actions", () => {
+  const ok = (data: unknown) => new Response(JSON.stringify({ data }), { status: 200 });
+
+  it("binds run options to the quote and archives a chat with PATCH", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(ok({ csrfToken: "csrf-1" }))
+      .mockResolvedValueOnce(ok({ quoteId: "q1", mode: "image", resolvedModel: "m", estimatedCostMicro: 1, expiresInSeconds: 60 }))
+      .mockResolvedValueOnce(ok({ id: "c1" }));
+    const api = createKuraiClient("https://api.kurai.test", fetcher);
+
+    await api.quote("image", "город", "acme/image", [], { count: 4 });
+    await api.updateChat("c1", { archived: true });
+
+    expect(JSON.parse(fetcher.mock.calls[1]?.[1]?.body as string)).toMatchObject({ mode: "image", options: { count: 4 } });
+    expect(fetcher.mock.calls[2]?.[0]).toBe("https://api.kurai.test/api/v1/chats/c1");
+    expect(fetcher.mock.calls[2]?.[1]).toMatchObject({ method: "PATCH", body: JSON.stringify({ archived: true }) });
   });
 });

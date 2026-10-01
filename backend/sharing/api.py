@@ -108,7 +108,8 @@ class SharedChatView(APIView):
 
     @extend_schema(responses=ShareEnvelopeSerializer)
     def get(self, request, token):
-        link = ShareLink.objects.select_related("chat").filter(token=token, revoked_at__isnull=True).first()
+        # архивный чат убран владельцем из работы — его снимок по ссылке больше не открывается
+        link = ShareLink.objects.select_related("chat").filter(token=token, revoked_at__isnull=True, chat__archived_at__isnull=True).first()
         if link is None or (link.expires_at is not None and link.expires_at <= timezone.now()):
             return not_found()
         # Snapshot is written at link creation. Older database rows are treated as unavailable

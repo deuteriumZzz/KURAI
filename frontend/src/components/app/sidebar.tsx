@@ -69,11 +69,25 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
     .filter((chat) => !projectChats.has(chat.id))
     .sort((a, b) => Number(b.pinned) - Number(a.pinned) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   const [removed, setRemoved] = useState<ChatSummary | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   useEffect(() => {
-    if (!removed) return;
-    const t = setTimeout(() => setRemoved(null), 6000);
+    if (!removed && !actionError) return;
+    const t = setTimeout(() => {
+      setRemoved(null);
+      setActionError(null);
+    }, 6000);
     return () => clearTimeout(t);
-  }, [removed]);
+  }, [removed, actionError]);
+
+  const patchChat = (id: string, change: Partial<ChatSummary>) => chatsStore.set((xs) => xs.map((x) => (x.id === id ? { ...x, ...change } : x)));
+  /** Изменение видно сразу; в рабочем режиме сохраняется на сервере, при отказе — откатывается с объяснением. */
+  function persist(id: string, patch: { title?: string; pinned?: boolean; archived?: boolean }, rollback: () => void) {
+    if (!kuraiApi) return;
+    kuraiApi.updateChat(id, patch).catch(() => {
+      rollback();
+      setActionError("Не удалось сохранить изменение — проверьте соединение.");
+    });
+  }
 
   const item = (active: boolean) =>
     cn(
@@ -144,11 +158,24 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
                   now={now}
                   active={pathname === `/app/c/${c.id}`}
                   onNavigate={onNavigate}
-                  onPin={() => chatsStore.set((xs) => xs.map((x) => (x.id === c.id ? { ...x, pinned: !x.pinned } : x)))}
-                  onRename={(title) => chatsStore.set((xs) => xs.map((x) => (x.id === c.id ? { ...x, title } : x)))}
+                  onPin={() => {
+                    const pinned = !c.pinned;
+                    patchChat(c.id, { pinned });
+                    persist(c.id, { pinned }, () => patchChat(c.id, { pinned: !pinned }));
+                  }}
+                  onRename={(title) => {
+                    const previous = c.title;
+                    patchChat(c.id, { title });
+                    persist(c.id, { title }, () => patchChat(c.id, { title: previous }));
+                  }}
                   onDelete={() => {
                     setRemoved(c);
                     chatsStore.set((xs) => xs.filter((x) => x.id !== c.id));
+                    // в архив, а не стирание: запуски и списания по чату остаются в журнале
+                    persist(c.id, { archived: true }, () => {
+                      chatsStore.set((xs) => [c, ...xs]);
+                      setRemoved(null);
+                    });
                   }}
                 />
               </li>
@@ -157,14 +184,19 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
         </section>
       </nav>
 
+      {actionError && !collapsed && (
+        <p role="alert" className="mx-3 mb-2 rounded-(--radius-sm) border border-err/40 bg-err-soft px-3 py-2 text-[12.5px] text-err">{actionError}</p>
+      )}
       {removed && !collapsed && (
         <div role="status" className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-(--radius-sm) border border-line bg-g2 px-3 py-2 text-[12.5px]">
-          <span className="truncate text-ink2">Чат удалён</span>
+          <span className="truncate text-ink2">Чат убран из истории</span>
           <button
             type="button"
             onClick={() => {
-              chatsStore.set((xs) => [removed, ...xs]);
+              const chat = removed;
+              chatsStore.set((xs) => [chat, ...xs]);
               setRemoved(null);
+              persist(chat.id, { archived: false }, () => chatsStore.set((xs) => xs.filter((x) => x.id !== chat.id)));
             }}
             className="shrink-0 cursor-pointer text-ink underline underline-offset-2 hover:text-acc"
           >
