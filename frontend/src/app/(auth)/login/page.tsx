@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/auth/field";
 import { TelegramLogin } from "@/components/auth/telegram-login";
-import { BootSequence } from "@/components/auth/boot-sequence";
 import { Button } from "@/components/ui/button";
-import { emailError, passwordError } from "@/lib/auth-validate";
+import { emailError, loginPasswordError } from "@/lib/auth-validate";
+import { kuraiApi } from "@/lib/kurai-api";
 import { useFx } from "@/components/fx/primitives";
 
 export default function LoginPage() {
@@ -16,26 +16,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string | null; password?: string | null; form?: string }>({});
   const [submitting, setSubmitting] = useState(false);
-  const [boot, setBoot] = useState(false);
-  const [ok, setOk] = useState(false);
   const [formRef, glitch] = useFx<HTMLFormElement>("fx-glitch");
-  const toApp = useCallback(() => router.push("/app"), [router]);
+
+  if (!kuraiApi) {
+    return (
+      <>
+        <h1 className="font-display text-3xl font-light">Локальный просмотр</h1>
+        <p className="mt-2 text-[14px] leading-6 text-ink2">
+          Сервер аккаунтов не подключён, поэтому войти или создать учётную запись в этой сборке нельзя.
+        </p>
+        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+          Открыть интерфейсный просмотр
+        </Link>
+        <p className="mt-4 border-l border-acc pl-3 font-mono text-[11.5px] leading-5 text-ink3">
+          АККАУНТ · НЕ ПОДКЛЮЧЁН<br />
+          ДАННЫЕ ПРОСМОТРА · ЛОКАЛЬНЫЕ
+        </p>
+      </>
+    );
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const next = { email: emailError(email), password: passwordError(password) };
+    const next = { email: emailError(email), password: loginPasswordError(password) };
     setErrors(next);
     if (next.email || next.password) return glitch();
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    setSubmitting(false);
-    // тестовые данные: пароль «wrongpass» показывает ошибку входа
-    if (password === "wrongpass") {
-      setErrors({ form: "Неверный email или пароль. Проверьте раскладку или восстановите пароль." });
-      return glitch();
+    try {
+      if (kuraiApi) await kuraiApi.login({ email: email.trim(), password });
+      else {
+        await new Promise((r) => setTimeout(r, 500));
+        if (password === "wrongpass") throw new Error("Неверный email или пароль. Проверьте раскладку или восстановите пароль.");
+      }
+      router.push("/app");
+    } catch (error) {
+      setErrors({ form: error instanceof Error ? error.message : "Не удалось войти. Попробуйте ещё раз." });
+      glitch();
+    } finally {
+      setSubmitting(false);
     }
-    setOk(true);
-    setTimeout(() => setBoot(true), 450);
   }
 
   return (
@@ -64,7 +83,7 @@ export default function LoginPage() {
           </p>
         )}
         <Button type="submit" variant="primary" size="lg" disabled={submitting} className="mt-1 w-full">
-          {ok ? "✓ Доступ подтверждён" : submitting ? "Проверяем…" : "Войти"}
+          {submitting ? "Проверяем…" : "Войти"}
         </Button>
       </form>
       <div className="my-5 flex items-center gap-3 text-[12px] text-ink3 before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">или</div>
@@ -75,7 +94,6 @@ export default function LoginPage() {
           Создать
         </Link>
       </p>
-      {boot && <BootSequence onDone={toApp} />}
     </>
   );
 }

@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KURAI workspace
 
-## Getting Started
+Next.js-интерфейс KURAI. Он может открываться в двух честно разделённых
+режимах:
 
-First, run the development server:
+- **локальный интерфейсный просмотр** — без API, с безопасными локальными
+  данными для оценки UX; не принимает логины, платежи или фиктивные ссылки;
+- **подключённый workspace** — с Django API, настоящими сессиями, проектами,
+  каталогом моделей, квотами и запусками.
+
+## Локальный просмотр
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте `http://localhost:3000`. Не задавайте
+`NEXT_PUBLIC_KURAI_API_BASE_URL`, если нужно посмотреть только интерфейс.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Подключённый локальный MVP
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+В отдельном терминале запустите API из `../backend`:
 
-## Learn More
+```bash
+./.venv/bin/python manage.py migrate
+KURAI_LOCAL_EXECUTE_RUNS=1 ./.venv/bin/python manage.py runserver 8000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Создайте `frontend/.env.local` на основе `.env.example`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```dotenv
+NEXT_PUBLIC_KURAI_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Затем перезапустите `npm run dev`. Можно также открыть фронтенд через
+`http://127.0.0.1:3000`: стандартная локальная CORS/CSRF-конфигурация API
+разрешает оба адреса. В этом режиме регистрация и вход создают настоящую
+сессию Django; Telegram OAuth и сброс пароля намеренно не отображаются как
+рабочие функции, пока не появятся их серверные контуры.
 
-## Deploy on Vercel
+## Проверки
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm test
+npm run typecheck
+npm run lint
+npx next build --webpack
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+См. `../docs/CAPABILITY.md` для границ MVP и его production-милстоунов.

@@ -2,7 +2,7 @@ export const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 const ALLOWED = [/^image\//, /^application\/pdf$/, /^text\//, /officedocument/, /^application\/msword$/, /^application\/vnd\.ms-excel$/, /^audio\//];
 
-export type FileMeta = { name: string; size: number; type: string };
+export type FileMeta = { name: string; size: number; type: string; assetId?: string };
 
 /** Проверка вложения до загрузки. Сервер проверяет ещё раз — по содержимому, а не по расширению. */
 export function fileError(f: FileMeta): string | null {

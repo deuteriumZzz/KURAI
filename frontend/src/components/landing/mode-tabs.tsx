@@ -4,16 +4,21 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ModeIcon } from "@/components/brand/mode-icons";
 import { Art } from "@/components/app/inspiration";
-import { Label, Segments, SysLine } from "@/components/fx/primitives";
+import { Label, SysLine } from "@/components/fx/primitives";
 import { cn } from "@/lib/cn";
+import { LANDING_MODES } from "@/lib/landing-content";
 import type { Mode } from "@/types/api";
 
-const TABS: { id: Mode; label: string; prompt: string }[] = [
-  { id: "text", label: "Текст", prompt: "Объясни, как устроена себестоимость ответа нейросети" },
-  { id: "image", label: "Изображение", prompt: "Обложка подкаста: неон, минимализм, 1:1" },
-  { id: "video", label: "Видео", prompt: "Оживи обложку: медленный наезд, 8 с" },
-  { id: "slides", label: "Слайды", prompt: "Питч-дек кофейни на 5 слайдов" },
-];
+const TAB_PROMPTS: Record<Mode, string> = {
+  text: "Объясни, как устроена себестоимость ответа нейросети",
+  image: "Обложка подкаста: ночной город, минимализм, квадрат",
+  video: "",
+  audio: "",
+  research: "Собери опорные источники и тезисы для решения команды",
+  slides: "Собери структуру короткого питча для новой идеи",
+};
+
+const TABS = LANDING_MODES.map((mode) => ({ id: mode.id, label: mode.label, prompt: TAB_PROMPTS[mode.id] }));
 
 /** Вкладки режимов на лендинге: один промпт → результат режима. Примеры, не пользовательские данные. */
 export function ModeTabs() {
@@ -23,7 +28,7 @@ export function ModeTabs() {
     <section aria-labelledby="modes-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Режимы</Label>
       <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
-        Один чат — шесть режимов
+        Один контекст — четыре готовых режима
       </h2>
       <div role="tablist" aria-label="Режимы" className="isolate flex flex-wrap gap-2">
         {TABS.map((t) => (
@@ -51,12 +56,27 @@ export function ModeTabs() {
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} className="min-h-72 p-4 sm:p-5">
             {tab === "text" && (
               <div className="flex max-w-2xl flex-col gap-3 text-[14.5px] leading-relaxed">
-                <SysLine>Claude Sonnet 5 · EU-01 · 240 мс</SysLine>
+                <SysLine>Режим: текст · модель выбираете вы</SysLine>
                 <p>
-                  Цена ответа складывается из <b className="text-ink">токенов на входе</b> (ваш вопрос и история чата) и <b className="text-ink">токенов на выходе</b> (сам ответ).
-                  Длинная переписка дорожает — поэтому KURAI показывает шкалу контекста и предлагает сжать историю.
+                  Соберите задачу в одном месте, выберите модель под неё и продолжайте разговор без потери контекста. Перед запуском KURAI показывает оценку работы.
                 </p>
-                <Label>2 кр · 3,1 с</Label>
+                <Label>ответ · ветка · следующий шаг</Label>
+              </div>
+            )}
+            {tab === "research" && (
+              <div className="grid max-w-2xl gap-px border border-line bg-line sm:grid-cols-[0.9fr_1.1fr]">
+                <div className="bg-g1 p-4">
+                  <Label className="text-acc">контур вопроса</Label>
+                  <p className="mt-5 text-[14px] leading-relaxed text-ink2">Границы темы, допущения и нужный формат результата остаются видимыми рядом с ходом работы.</p>
+                </div>
+                <div className="bg-bg p-4">
+                  <Label>опоры</Label>
+                  <ol className="mt-4 flex flex-col gap-3 text-[13px] text-ink2">
+                    <li><span className="mr-2 text-acc">01</span>Источники и заметки</li>
+                    <li><span className="mr-2 text-acc">02</span>Собранные тезисы</li>
+                    <li><span className="mr-2 text-acc">03</span>Проверяемый вывод</li>
+                  </ol>
+                </div>
               </div>
             )}
             {tab === "image" && (
@@ -66,15 +86,6 @@ export function ModeTabs() {
                     <Art kind={a} seed={40 + i} />
                   </div>
                 ))}
-              </div>
-            )}
-            {tab === "video" && (
-              <div className="flex max-w-xl flex-col gap-3">
-                <div className="aspect-video overflow-hidden border border-line">
-                  <Art kind="wave" seed={60} />
-                </div>
-                <Segments value={1} count={16} label="Видео готово" />
-                <SysLine tone="acc">Veo 3 · 8 с · 16:9 · готово</SysLine>
               </div>
             )}
             {tab === "slides" && (

@@ -1,12 +1,21 @@
 "use client";
 
-import type { ChatSummary } from "@/types/api";
-import { MOCK_CHATS } from "@/mocks/data";
+import type { Balance, ChatSummary, Project, User } from "@/types/api";
+import { MOCK_BALANCE, MOCK_CHATS, MOCK_PROJECTS, MOCK_USER } from "@/mocks/data";
 import { createStore } from "./store";
+import { kuraiApi } from "./kurai-api";
+
+/** Участник рабочего пространства: в локальном просмотре — демо-пользователь, с API — ответ /me. */
+export const memberStore = createStore<User>(kuraiApi ? { id: "", name: "", email: "" } : MOCK_USER);
+
+/** Один баланс на весь кабинет: рейка, поле ввода и чат читают одно значение (с API — из журнала). */
+export const balanceStore = createStore<Balance | null>(kuraiApi ? null : MOCK_BALANCE);
 
 export type InboxItem = { id: string; title: string; href?: string; at: string; unread: boolean; tone?: "default" | "warn" };
 
-export const chatsStore = createStore<ChatSummary[]>(MOCK_CHATS);
+// в рабочем режиме история приходит с сервера — демо-чаты не мелькают до ответа API
+export const chatsStore = createStore<ChatSummary[]>(kuraiApi ? [] : MOCK_CHATS);
+export const projectsStore = createStore<Project[]>(kuraiApi ? [] : MOCK_PROJECTS);
 
 export const inboxStore = createStore<InboxItem[]>([
   { id: "n1", title: "Отчёт «Рынок AI-агрегаторов» готов", href: "/app/c/b21c", at: "14:41", unread: true },

@@ -1,55 +1,19 @@
-"use client";
-
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
-import { Field } from "@/components/auth/field";
-import { Button } from "@/components/ui/button";
-import { SysLine, useFx } from "@/components/fx/primitives";
-import { emailError } from "@/lib/auth-validate";
 
+/** Password-reset email delivery is intentionally unavailable until its server flow exists. */
 export default function ResetPage() {
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
-  const [formRef, glitch] = useFx<HTMLFormElement>("fx-glitch");
-
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const err = emailError(email);
-    setError(err);
-    if (err) return glitch();
-    setSent(true);
-  }
-
   return (
     <>
-      <h1 className="font-display text-3xl font-light">Восстановление пароля</h1>
-      {sent ? (
-        <div className="mt-6 flex flex-col gap-4">
-          <SysLine tone="acc" decode>
-            ссылка для сброса отправлена
-          </SysLine>
-          <p className="text-[14px] text-ink2">
-            Если аккаунт с адресом <span className="text-ink">{email.trim()}</span> существует, письмо придёт в течение минуты.
-          </p>
-          <Link href="/login" className="text-[14px] text-acc hover:underline">
-            ← Вернуться ко входу
-          </Link>
-        </div>
-      ) : (
-        <>
-          <p className="mt-2 text-[14px] text-ink2">Пришлём ссылку для нового пароля.</p>
-          <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-4">
-            <Field id="email" label="Email" type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} error={error} />
-            <Button type="submit" variant="primary" size="lg" className="w-full">
-              Отправить ссылку
-            </Button>
-          </form>
-          <Link href="/login" className="mt-6 text-[14px] text-ink2 hover:text-ink">
-            ← Вернуться ко входу
-          </Link>
-        </>
-      )}
+      <h1 className="font-display text-3xl font-light">Восстановление недоступно</h1>
+      <p className="mt-2 text-[14px] leading-6 text-ink2">
+        Почтовый контур восстановления пароля ещё не подключён. Мы не принимаем email, пока не можем отправить настоящее письмо для сброса.
+      </p>
+      <Link href="/login" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+        Вернуться ко входу
+      </Link>
+      <p className="mt-4 border-l border-acc pl-3 font-mono text-[11.5px] leading-5 text-ink3">
+        EMAIL RESET · НЕ АКТИВИРОВАН
+      </p>
     </>
   );
 }

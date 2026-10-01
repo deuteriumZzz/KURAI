@@ -111,7 +111,7 @@ export function SpendChart({ days }: { days: Day[] }) {
                           key={s}
                           className={cn(
                             "block w-full max-w-6 shrink-0 transition-colors duration-(--dur-fast)",
-                            active === null || active === i ? "bg-acc" : "bg-acc/35",
+                            active === i ? "bg-acc" : "bg-ink3/45",
                           )}
                           style={{ height: `calc(${100 / SEG}% - 2px)` }}
                         />

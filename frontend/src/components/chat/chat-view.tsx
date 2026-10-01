@@ -1,45 +1,74 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Fragment, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ChatSummary, Message, Mode } from "@/types/api";
 import { applyEvent, newRun, type RunState, type StreamEvent } from "@/lib/stream";
-import { branchOf, leafOf, siblingsOf } from "@/lib/tree";
+import { branchOf, forksOf, leafOf, siblingsOf } from "@/lib/tree";
 import { modeForFollowup } from "@/lib/modes";
 import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
 import { markStep, readPrefs } from "@/lib/prefs";
 import { retrigger } from "@/lib/motion";
-import { ChevronDown, ChevronUp, Pin, Search, X } from "lucide-react";
-import { formatCredits } from "@/lib/format";
+import Link from "next/link";
+import { ArrowDown, ChevronDown, ChevronUp, PanelRight, Pin, PinOff, Plus, Search, Share2, X } from "lucide-react";
+import { DISPLAY_TZ, formatCredits } from "@/lib/format";
 import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
 import type { Outgoing } from "@/components/app/composer";
 import type { FileMeta } from "@/lib/files";
 import { Composer } from "@/components/app/composer";
-import { Decode } from "@/components/fx/decode";
-import { Label } from "@/components/fx/primitives";
 import { AssistantMessage, UserMessage } from "./message";
 import { IncomingToast } from "./toast";
 import { SidePanel } from "./side-panel";
 import { SelectionMenu } from "./selection-menu";
-import { ContextPanel } from "./context-panel";
+import { Inspector } from "./inspector";
 import { vibrate } from "@/lib/haptics";
+import { playSignal } from "@/lib/sound";
 import { isQuietHour } from "@/lib/quiet";
 import { AnimatePresence, motion } from "motion/react";
-import { notify } from "@/lib/app-state";
+import { chatsStore, notify } from "@/lib/app-state";
+import { useStore } from "@/lib/store";
+import { useCalm } from "@/lib/use-calm";
+import { useFocusTrap } from "@/lib/use-focus-trap";
+import { cn } from "@/lib/cn";
 import { Appear } from "@/components/fx/motion";
 import type { Artifact } from "@/lib/stream";
+import { kuraiApi, type KuraiShareLink } from "@/lib/kurai-api";
+import { defaultModel, modelById, type ModelInfo } from "@/lib/models";
 
 type State = { messages: Message[]; runs: Record<string, RunState>; head: string };
+
+const ANNOUNCE: Record<RunState["status"], string> = {
+  streaming: "Модель отвечает",
+  done: "Ответ готов",
+  error: "Ошибка: генерация не удалась",
+  aborted: "Ответ остановлен",
+};
+
+const WIDE = "(min-width: 1280px)";
+const subscribeWide = (cb: () => void) => {
+  const mq = window.matchMedia(WIDE);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+};
 
 const textOf = (m: Message | undefined) => m?.parts.map((p) => (p.type === "text" ? p.text : "")).join("") ?? "";
 const isJobMode = (mode: Mode) => mode === "image" || mode === "video";
 let seq = 0;
 const newId = (p: string) => `${p}_${Date.now().toString(36)}${(seq++).toString(36)}`;
 
+/** Source citations are a persisted message projection, so they survive an SSE reconnect or a full reload. */
+function persistedSourceRuns(messages: Message[]): Record<string, RunState> {
+  return Object.fromEntries(
+    messages.flatMap((message) => {
+      const sources = message.parts.find((part) => part.type === "sources");
+      return sources && sources.items.length > 0 ? [[message.id, { status: "done" as const, log: [], sources: sources.items }]] : [];
+    }),
+  );
+}
+
 /** Единый чат: одна лента для текста, изображений и видео; ветки ответов; стриминг с расшифровкой. */
-export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; initial: Message[]; balanceMicro: number }) {
-  const [state, setState] = useState<State>({ messages: initial, runs: {}, head: chat.headId });
+export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: ChatSummary; initial: Message[]; balanceMicro: number; live?: boolean }) {
+  const [state, setState] = useState<State>({ messages: initial, runs: persistedSourceRuns(initial), head: chat.headId });
   const [toast, setToast] = useState<{ title: string; id: string } | null>(null);
   const controllers = useRef(new Map<string, AbortController>());
   const askers = useRef(new Map<string, (choice: number) => void>());
@@ -56,6 +85,21 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   const [hit, setHit] = useState(0);
   const [pinned, setPinned] = useState<string[]>([]);
   const [compare, setCompare] = useState<Record<string, string>>({});
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "creating" | "ready">("idle");
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<KuraiShareLink | null>(null);
+  const liveRunId = useRef<string | null>(null);
+  const [docked, setDocked] = useState(true);
+  const [sheet, setSheet] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const calm = useCalm();
+  const listed = useStore(chatsStore).find((c) => c.id === chat.id);
+  useFocusTrap(sheet, sheetRef);
+  // колонка инспектора помещается только на широком экране; ниже он открывается листом
+  const wide = useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE).matches, () => true);
+  const liveEventSource = useRef<EventSource | null>(null);
 
   const branch = branchOf(state.head, state.messages);
   const textStreaming = branch.find((m) => state.runs[m.id]?.status === "streaming" && !isJobMode(m.mode));
@@ -70,6 +114,113 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     });
   }, []);
 
+  const exportSlides = useCallback(async (message: Message) => {
+    const api = kuraiApi;
+    if (!api) return;
+    try {
+      const file = await api.exportSlides(message.id, chat.title);
+      const objectUrl = URL.createObjectURL(file);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "kurai-slides.pptx";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setToast({ title: "Презентация скачана", id: `slides-${message.id}` });
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось подготовить презентацию.", id: `slides-error-${message.id}` });
+    }
+  }, [chat.title]);
+
+  useEffect(() => {
+    const api = kuraiApi;
+    if (!live || !api) return;
+    let active = true;
+    void api.shareLinks(chat.id).then((links) => {
+      // истёкшую ссылку не предлагаем как действующую
+      const latest = links.find((link) => !link.expiresAt || Date.parse(link.expiresAt) > Date.now());
+      if (!active || !latest) return;
+      setShareLink(latest);
+      setShareUrl(new URL(`/s/${latest.token}`, window.location.origin).toString());
+      setShareState("ready");
+    }).catch(() => {
+      // Sharing is optional. Its availability must not block the chat itself.
+    });
+    return () => {
+      active = false;
+    };
+  }, [chat.id, live]);
+
+  const createShareLink = useCallback(async () => {
+    const api = kuraiApi;
+    if (!api || shareState === "creating") return;
+    if (shareUrl) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setToast({ title: "Ссылка скопирована · только чтение · 7 дней", id: "share-copy" });
+      } catch {
+        setToast({ title: "Браузер не разрешил копирование ссылки.", id: "share-copy-error" });
+      }
+      return;
+    }
+    setShareState("creating");
+    try {
+      const link = await api.createShareLink(chat.id);
+      const url = new URL(`/s/${link.token}`, window.location.origin).toString();
+      setShareLink(link);
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setToast({ title: "Ссылка скопирована · только чтение · 7 дней", id: `share-${link.id}` });
+      } catch {
+        setToast({ title: "Ссылка создана. Повторно нажмите «Поделиться», чтобы скопировать её.", id: `share-${link.id}` });
+      }
+      setShareState("ready");
+      markStep("share");
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось создать ссылку.", id: "share-error" });
+      setShareState("idle");
+    }
+  }, [chat.id, shareState, shareUrl]);
+
+  const revokeShareLink = useCallback(async () => {
+    const api = kuraiApi;
+    if (!api || !shareLink) return;
+    try {
+      await api.revokeShareLink(shareLink.id);
+      setShareLink(null);
+      setShareUrl(null);
+      setShareState("idle");
+      setToast({ title: "Общий доступ отозван", id: `share-revoke-${shareLink.id}` });
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось отозвать ссылку.", id: "share-revoke-error" });
+    }
+  }, [shareLink]);
+
+  const saveArtifact = useCallback(async (message: Message) => {
+    const api = kuraiApi;
+    if (!api) return;
+    try {
+      const kind = message.mode === "research" ? "research_packet" : "document";
+      const artifact = await api.saveArtifact({ messageId: message.id, kind, title: chat.title });
+      setToast({ title: `Сохранено в артефакты · ${artifact.title}`, id: `artifact-${artifact.id}` });
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось сохранить артефакт.", id: `artifact-error-${message.id}` });
+    }
+  }, [chat.title]);
+
+  const saveRecipe = useCallback(async (message: Message) => {
+    const api = kuraiApi;
+    if (!api) return;
+    try {
+      const recipe = await api.saveRecipe({ messageId: message.id, title: chat.title });
+      setToast({ title: `Маршрут сохранён · ${recipe.title}`, id: `recipe-${recipe.id}` });
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось сохранить рецепт.", id: `recipe-error-${message.id}` });
+    }
+  }, [chat.title]);
+
   const run = useCallback(
     async (id: string, prompt: string, mode: Mode, fromProgress = 0, opts: SimOptions = {}) => {
       const ctrl = new AbortController();
@@ -82,6 +233,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
           apply(id, ev);
           if (ev.type === "artifact") setPanel(ev.artifact);
           if (ev.type === "done" && (mode === "video" || mode === "image")) vibrate(40);
+          if (ev.type === "done" && mode !== "text" && mode !== "audio") playSignal("done");
           if (ev.type === "done" && mode === "video") {
             const quiet = readPrefs().quiet && isQuietHour();
             if (!quiet) setToast({ title: `Видео готово · ${prompt.slice(0, 48)}`, id });
@@ -98,6 +250,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         else {
           apply(id, { type: "error", message: "провайдер недоступен", refundedMicro: 0 });
           vibrate([30, 40, 30]);
+          playSignal("error");
         }
       } finally {
         controllers.current.delete(id);
@@ -121,6 +274,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     return () => {
       clearTimeout(t);
       ctrls.forEach((c) => c.abort());
+      liveEventSource.current?.close();
     };
   }, [initial, run]);
 
@@ -155,19 +309,131 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     return startAnswer(uid, text || files.map((f) => f.name).join(", "), mode, { ...opts, files });
   }
 
+  function liveOutgoing(text: string, mode: Mode, modelId: string | null): Outgoing {
+    const fallback = modelById(modelId ?? "") ?? defaultModel(mode);
+    const id = modelId === "openrouter/auto" ? "auto" : modelId ?? fallback.id;
+    return { text, mode, model: { ...fallback, id } as ModelInfo, web: false, think: false, params: {}, files: [] };
+  }
+
+  async function sendLive(msg: Outgoing, parentId: string | null = null) {
+    const api = kuraiApi;
+    if (!api) return;
+    setLiveBusy(true);
+    try {
+      const modelId = msg.model.id === "auto" ? "openrouter/auto" : msg.model.id;
+      const attachmentIds = msg.files.flatMap((file) => file.assetId ? [file.assetId] : []);
+      const quote = await api.quote(msg.mode, msg.text, modelId, attachmentIds);
+      const started = await api.startRun({
+        chatId: chat.id,
+        parentId,
+        quoteId: quote.quoteId,
+        mode: msg.mode,
+        modelId,
+        text: msg.text,
+        attachmentIds,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      liveRunId.current = started.runId;
+      const snapshot = await api.getChat(chat.id);
+      setState((current) => ({ ...current, messages: snapshot.messages, runs: { ...current.runs, ...persistedSourceRuns(snapshot.messages) }, head: snapshot.chat.headId }));
+      const outputId = started.outputMessageId ?? snapshot.messages.at(-1)?.id;
+      if (!outputId) throw new Error("Сервер не вернул сообщение для ответа.");
+
+      const refreshSnapshot = async () => {
+        const next = await api.getChat(chat.id);
+        setState((current) => ({ ...current, messages: next.messages, runs: { ...current.runs, ...persistedSourceRuns(next.messages) }, head: next.chat.headId }));
+      };
+      const finishLiveRun = async () => {
+        liveEventSource.current?.close();
+        liveEventSource.current = null;
+        liveRunId.current = null;
+        setLiveBusy(false);
+        await refreshSnapshot();
+      };
+      const source = new EventSource(api.runEventUrl(started), { withCredentials: true });
+      liveEventSource.current?.close();
+      liveEventSource.current = source;
+      const onEvent = (event: MessageEvent<string>) => {
+        try {
+          const payload = JSON.parse(event.data) as { type?: string; text?: string; model?: string; costMicro?: number; code?: string; url?: string; title?: string };
+          switch (payload.type) {
+            case "routed":
+              apply(outputId, { type: "route", model: payload.model ?? msg.model.name, node: "OpenRouter", latencyMs: 0 });
+              break;
+            case "delta":
+              apply(outputId, { type: "delta", text: payload.text ?? "" });
+              break;
+            case "source":
+              if (payload.url && payload.title) apply(outputId, { type: "source", url: payload.url, title: payload.title });
+              break;
+            case "done":
+              apply(outputId, { type: "done", costMicro: payload.costMicro ?? 0, durationMs: 0 });
+              void finishLiveRun();
+              break;
+            case "error":
+              apply(outputId, { type: "error", message: payload.code ?? "Не удалось выполнить запрос.", refundedMicro: 0 });
+              void finishLiveRun();
+              break;
+            case "canceled":
+              apply(outputId, { type: "aborted", costMicro: 0 });
+              void finishLiveRun();
+              break;
+            case "media":
+              void refreshSnapshot();
+              break;
+          }
+        } catch {
+          // A malformed event cannot corrupt the chat; the reconnect fallback loads a snapshot.
+        }
+      };
+      ["routed", "delta", "source", "done", "error", "canceled", "media"].forEach((eventType) => source.addEventListener(eventType, onEvent));
+      source.onerror = () => {
+        // The server intentionally rotates bounded SSE connections. EventSource reconnects by
+        // itself; checking terminal state prevents pointless reconnects after a final event was
+        // delivered just before a network interruption.
+        void api
+          .getRun(started.runId)
+          .then((run) => (["completed", "failed", "canceled"].includes(run.status) ? finishLiveRun() : refreshSnapshot()))
+          .catch(() => undefined);
+      };
+    } catch (reason) {
+      setToast({ title: reason instanceof Error ? reason.message : "Не удалось отправить запрос.", id: "live-error" });
+    } finally {
+      // Completion happens asynchronously through SSE. Failures before the connection is opened
+      // still leave this block responsible for restoring the composer.
+      if (!liveEventSource.current) {
+        liveRunId.current = null;
+        setLiveBusy(false);
+      }
+    }
+  }
+
   function send(msg: Outgoing) {
     markStep(msg.mode === "image" ? "image" : msg.mode === "video" ? "video" : "text");
+    if (live) {
+      void sendLive(msg, state.head || null);
+      return;
+    }
     postUser(state.head, msg.text, msg.mode, msg.files, { model: msg.model.name, think: msg.think, web: msg.web, params: msg.params });
   }
 
   /** Изменить своё сообщение = новая ветка от того же родителя; старая сохраняется. */
   function editUser(m: Message, text: string) {
     setEditing(null);
+    if (live) {
+      void sendLive(liveOutgoing(text, m.mode, m.model), m.parentId);
+      return;
+    }
     postUser(m.parentId, text, m.mode, [], lastOpts.current.model ? { model: lastOpts.current.model } : {});
   }
 
   function regenerate(m: Message) {
     if (!m.parentId) return;
+    if (live) {
+      const input = state.messages.find((x) => x.id === m.parentId);
+      void sendLive(liveOutgoing(textOf(input), m.mode, input?.model ?? null), m.parentId);
+      return;
+    }
     startAnswer(m.parentId, textOf(state.messages.find((x) => x.id === m.parentId)), m.mode, { model: lastOpts.current.model });
   }
 
@@ -192,6 +458,10 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
   }, []);
 
   function stop() {
+    if (liveRunId.current && kuraiApi) {
+      void kuraiApi.cancelRun(liveRunId.current);
+      return;
+    }
     if (textStreaming) controllers.current.get(textStreaming.id)?.abort();
   }
 
@@ -230,7 +500,7 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
     if (m) scrollToMsg(m.id);
   }
 
-  // разделитель «дальше отвечает X» там, где сменилась модель ответа
+  // смена маршрута между ответами — тихая подпись «Маршрут → X»
   const dividers = new Set<string>();
   branch
     .filter((m) => m.role === "assistant" && m.model)
@@ -238,36 +508,103 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
       const prev = arr[i - 1];
       if (prev && prev.model !== m.model) dividers.add(m.id);
     });
+  const lastAnswerId = branch.filter((x) => x.role === "assistant").at(-1)?.id;
+  const lastRunStatus = lastAnswerId ? state.runs[lastAnswerId]?.status : undefined;
+  const contextChars = branch.reduce((n, m) => n + textOf(m).length, 0);
+  const inspectorProps = {
+    branch,
+    runs: state.runs,
+    totalMicro: total,
+    contextChars,
+    onJump: scrollToMsg,
+    onFollowup: (f: string) => postUser(state.head, f, modeForFollowup(f, "text"), [], { ...lastOpts.current, files: [] }),
+    forks: forksOf(branch, state.messages),
+    onSwitchBranch: (id: string) => setState((s) => ({ ...s, head: leafOf(id, s.messages) })),
+  };
+  const started = new Date(branch[0]?.createdAt ?? chat.updatedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: DISPLAY_TZ });
+
+  function toggleInspector() {
+    if (wide) setDocked((d) => !d);
+    else setSheet((s) => !s);
+  }
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="k-workbench flex min-h-0 flex-1">
     <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 pl-16 md:pl-6">
-        <h1 className="truncate text-[14px]">
-          <Decode text={chat.title} />
-        </h1>
-        <div className="flex shrink-0 items-center gap-3">
-          <Label className="hidden tabular-nums sm:inline">
-            {branch.length} сообщ. · {formatCredits(total)}
-          </Label>
+      <header className="flex h-14 shrink-0 items-center gap-2 pr-3 pl-16 md:pr-4 md:pl-6">
+        <div className="relative min-w-0" onKeyDown={(e) => e.key === "Escape" && setMenuOpen(false)}>
           <button
             type="button"
-            onClick={() => setFindOpen((o) => !o)}
-            aria-label="Поиск по чату"
-            aria-expanded={findOpen}
-            data-tip="Поиск по чату"
-            className="grid size-8 cursor-pointer place-items-center rounded-(--radius-field) text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:size-11"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="-ml-2 flex h-9 max-w-full cursor-pointer items-center gap-1.5 rounded-(--radius-sm) px-2 text-left hover:bg-s2"
           >
-            <Search size={14} strokeWidth={1.5} />
+            <span className="truncate text-[14.5px] text-ink">{chat.title}</span>
+            <ChevronDown size={14} strokeWidth={1.5} className={cn("shrink-0 text-ink3 transition-transform duration-(--dur-fast)", menuOpen && "rotate-180")} />
           </button>
-          <Link href={`/s/${chat.id}`} onClick={() => markStep("share")} className="rounded-(--radius-field) bg-s2 px-3 py-1.5 text-[12.5px] text-ink hover:bg-s3">
-            Поделиться
+          {menuOpen && (
+            <>
+              <button type="button" aria-hidden="true" tabIndex={-1} onClick={() => setMenuOpen(false)} className="fixed inset-0 z-(--z-bay) cursor-default" />
+              <div
+                aria-label="Действия с задачей"
+                className="absolute top-11 left-0 z-(--z-bay) w-64 rounded-(--radius-md) border border-line2 bg-g1 p-1 shadow-(--shadow-float)"
+              >
+                <MenuRow icon={<Search size={15} strokeWidth={1.5} />} onClick={() => { setFindOpen(true); setMenuOpen(false); }}>
+                  Найти в задаче
+                </MenuRow>
+                <MenuRow
+                  icon={listed?.pinned ? <PinOff size={15} strokeWidth={1.5} /> : <Pin size={15} strokeWidth={1.5} />}
+                  onClick={() => {
+                    chatsStore.set((xs) => xs.map((x) => (x.id === chat.id ? { ...x, pinned: !x.pinned } : x)));
+                    setMenuOpen(false);
+                  }}
+                >
+                  {listed?.pinned ? "Открепить в истории" : "Закрепить в истории"}
+                </MenuRow>
+                <MenuRow icon={<PanelRight size={15} strokeWidth={1.5} />} onClick={() => { toggleInspector(); setMenuOpen(false); }}>
+                  Контекст задачи
+                </MenuRow>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Link href="/app" aria-label="Новая задача" data-tip="Новая задача" className="k-act size-9">
+            <Plus size={17} strokeWidth={1.5} />
           </Link>
+          {live ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void createShareLink()}
+                disabled={shareState === "creating"}
+                aria-label={shareState === "ready" ? "Скопировать ссылку только для чтения" : "Создать ссылку только для чтения"}
+                className="k-tool disabled:cursor-wait disabled:opacity-60"
+              >
+                <Share2 size={15} strokeWidth={1.5} />
+                <span className="max-sm:hidden">{shareState === "creating" ? "Создаю…" : shareState === "ready" ? "Скопировать ссылку" : "Поделиться"}</span>
+              </button>
+              {shareLink && (
+                <button type="button" onClick={() => void revokeShareLink()} className="k-tool text-[12.5px] text-ink3 hover:text-warn">
+                  Отозвать
+                </button>
+              )}
+            </>
+          ) : (
+            <button type="button" aria-disabled="true" aria-label="Поделиться — включится после подключения рабочего API" data-tip="Включится после подключения API" className="k-tool">
+              <Share2 size={15} strokeWidth={1.5} />
+              <span className="max-sm:hidden">Поделиться</span>
+            </button>
+          )}
+          <button type="button" onClick={toggleInspector} aria-label="Контекст задачи" aria-pressed={wide ? docked : sheet} data-tip="Контекст задачи" className="k-act size-9">
+            <PanelRight size={17} strokeWidth={1.5} />
+          </button>
         </div>
       </header>
       {findOpen && (
-        <div className="flex items-center gap-2 bg-s1 px-4 py-2 md:px-6">
-          <span aria-hidden="true" className="font-mono text-acc">›</span>
+        <div className="mx-4 mb-2 flex h-10 items-center gap-2 rounded-(--radius-md) border border-line2 bg-g1 px-3 focus-within:border-ink3 md:mx-6">
+          <Search size={14} strokeWidth={1.5} className="shrink-0 text-ink3" aria-hidden="true" />
           <input
             autoFocus
             value={query}
@@ -279,33 +616,33 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
               if (e.key === "Enter") jump(e.shiftKey ? -1 : 1);
               if (e.key === "Escape") setFindOpen(false);
             }}
-            aria-label="Найти в чате"
-            placeholder="найти в этом чате…"
-            className="min-w-0 flex-1 bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-ink3"
+            aria-label="Найти в задаче"
+            placeholder="Найти в этой задаче…"
+            className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink3"
           />
-          <span className="font-mono text-[11px] text-ink3 tabular-nums" aria-live="polite">
+          <span className="k-meta" aria-live="polite">
             {query ? (matches.length ? `${Math.min(hit, matches.length - 1) + 1} из ${matches.length}` : "нет совпадений") : ""}
           </span>
-          <button type="button" onClick={() => jump(-1)} aria-label="Предыдущее совпадение" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+          <button type="button" onClick={() => jump(-1)} aria-label="Предыдущее совпадение" className="k-act size-7">
             <ChevronUp size={14} strokeWidth={1.5} />
           </button>
-          <button type="button" onClick={() => jump(1)} aria-label="Следующее совпадение" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+          <button type="button" onClick={() => jump(1)} aria-label="Следующее совпадение" className="k-act size-7">
             <ChevronDown size={14} strokeWidth={1.5} />
           </button>
-          <button type="button" onClick={() => setFindOpen(false)} aria-label="Закрыть поиск" className="grid size-7 cursor-pointer place-items-center text-ink2 hover:text-ink">
+          <button type="button" onClick={() => setFindOpen(false)} aria-label="Закрыть поиск" className="k-act size-7">
             <X size={14} strokeWidth={1.5} />
           </button>
         </div>
       )}
       {pinnedMsgs.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-line px-4 py-2 md:px-6">
-          <Pin size={12} strokeWidth={1.5} className="shrink-0 text-acc" aria-hidden="true" />
+        <div className="mx-4 mb-2 flex items-center gap-2 overflow-x-auto md:mx-6">
+          <Pin size={13} strokeWidth={1.5} className="shrink-0 text-ink3" aria-hidden="true" />
           {pinnedMsgs.map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => scrollToMsg(m.id)}
-              className="max-w-56 shrink-0 cursor-pointer truncate border border-line bg-g1 px-2 py-0.5 text-[12px] text-ink2 hover:border-acc-line hover:text-ink"
+              className="h-7 max-w-60 shrink-0 cursor-pointer truncate rounded-(--radius-sm) border border-line px-2.5 text-[12.5px] text-ink2 hover:border-line2 hover:text-ink"
             >
               {textOf(m).slice(0, 60) || m.model}
             </button>
@@ -322,81 +659,104 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         }}
         className="relative flex-1 overflow-y-auto"
       >
-        <div className="mx-auto flex w-full max-w-[var(--read-width,48rem)] flex-col gap-9 px-4 py-6 text-[length:var(--read-size,15.5px)] md:px-6">
-          <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
-            {new Date(branch[0]?.createdAt ?? chat.updatedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
-          </div>
-          {branch.map((m) => {
-            if (m.role === "user") {
-              const us = siblingsOf(m.id, state.messages);
-              const ui = us.findIndex((x) => x.id === m.id);
-              const goU = (i: number) => {
-                const target = us[i];
+        <div className="mx-auto w-full max-w-[calc(var(--read-width,42rem)+3.25rem)] px-4 pt-6 pb-12 md:px-8 md:pt-9">
+          <header className="mb-10 md:pl-[52px]">
+            <h1 className="text-[clamp(1.75rem,2.7vw,2.3rem)] leading-[1.15] font-light tracking-[-0.022em] text-balance text-ink">{chat.title}</h1>
+            <p className="k-meta mt-3 flex flex-wrap items-center gap-x-2">
+              <span>{started}</span>
+              <span aria-hidden="true">·</span>
+              <span>{branch.length} сообщ.</span>
+              {total > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{formatCredits(total)}</span>
+                </>
+              )}
+            </p>
+          </header>
+          <div className="flex flex-col gap-11">
+            {branch.map((m) => {
+              if (m.role === "user") {
+                const us = siblingsOf(m.id, state.messages);
+                const ui = us.findIndex((x) => x.id === m.id);
+                const goU = (i: number) => {
+                  const target = us[i];
+                  return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
+                };
+                return (
+                  <Appear key={m.id} data-msg={m.id} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
+                    <UserMessage
+                      m={m}
+                      editing={editing === m.id}
+                      onEdit={() => setEditing(m.id)}
+                      onCancel={() => setEditing(null)}
+                      onSubmitEdit={(t) => editUser(m, t)}
+                      versions={{ index: ui, total: us.length, prev: ui > 0 ? goU(ui - 1) : undefined, next: goU(ui + 1) }}
+                    />
+                  </Appear>
+                );
+              }
+              const sibs = siblingsOf(m.id, state.messages);
+              const idx = sibs.findIndex((x) => x.id === m.id);
+              const go = (i: number) => {
+                const target = sibs[i];
                 return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
               };
+              const divider = dividers.has(m.id) ? m.model : null;
               return (
-                <Appear key={m.id} data-msg={m.id} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
-                <UserMessage
-                  m={m}
-                  editing={editing === m.id}
-                  onEdit={() => setEditing(m.id)}
-                  onCancel={() => setEditing(null)}
-                  onSubmitEdit={(t) => editUser(m, t)}
-                  versions={{ index: ui, total: us.length, prev: ui > 0 ? goU(ui - 1) : undefined, next: goU(ui + 1) }}
-                />
-                </Appear>
+                <Fragment key={m.id}>
+                  {divider && (
+                    <div className="-mb-5 flex items-center gap-3 md:pl-[52px]">
+                      <span className="k-index">Маршрут → {divider}</span>
+                      <span aria-hidden="true" className="h-px flex-1 bg-line" />
+                    </div>
+                  )}
+                  <Appear id={`msg-${m.id}`} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
+                    <AssistantMessage
+                      m={m}
+                      run={state.runs[m.id]}
+                      versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
+                      last={m.id === lastAnswerId}
+                      onRegenerate={() => regenerate(m)}
+                      onStop={state.runs[m.id]?.status === "streaming" ? stop : undefined}
+                      onExportSlides={live ? () => void exportSlides(m) : undefined}
+                      onSaveArtifact={live ? () => void saveArtifact(m) : undefined}
+                      onSaveRecipe={live ? () => void saveRecipe(m) : undefined}
+                      pinned={pinned.includes(m.id)}
+                      compareBefore={compare[m.id]}
+                      onPin={() => setPinned((p) => (p.includes(m.id) ? p.filter((x) => x !== m.id) : [...p, m.id]))}
+                      onImageAction={(a, i) => {
+                        const alt = m.parts.filter((p) => p.type === "image")[i];
+                        const what = alt?.type === "image" ? alt.alt : "картинку";
+                        const opts = { ...lastOpts.current, files: [] };
+                        if (a === "animate") postUser(state.head, `Оживи: ${what}`, "video", [], opts);
+                        if (a === "variants") postUser(state.head, `Ещё варианты: ${what}`, "image", [], opts);
+                        if (a === "upscale") {
+                          const aid = postUser(state.head, `Увеличь до 4K: ${what}`, "image", [], { ...opts, params: { count: "1" } });
+                          const src = alt?.type === "image" ? alt.url : undefined;
+                          if (src) setCompare((c) => ({ ...c, [aid]: src }));
+                        }
+                      }}
+                      onFollowup={(f) => postUser(state.head, f, modeForFollowup(f, m.mode), [], { ...lastOpts.current, files: [] })}
+                      onAnswer={(c) => answer(m.id, c)}
+                      onOpenArtifact={() => {
+                        const a = state.runs[m.id]?.artifact;
+                        if (a) setPanel(a);
+                      }}
+                    />
+                  </Appear>
+                </Fragment>
               );
-            }
-            const sibs = siblingsOf(m.id, state.messages);
-            const idx = sibs.findIndex((x) => x.id === m.id);
-            const go = (i: number) => {
-              const target = sibs[i];
-              return target ? () => setState((s) => ({ ...s, head: leafOf(target.id, s.messages) })) : undefined;
-            };
-            const divider = dividers.has(m.id) ? m.model : null;
-            return (
-              <Fragment key={m.id}>
-                {divider && (
-                  <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.06em] text-ink3 before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
-                    дальше отвечает {divider}
-                  </div>
-                )}
-                <Appear id={`msg-${m.id}`} index={initialIds.has(m.id) ? branch.indexOf(m) : 0}>
-                  <AssistantMessage
-                    m={m}
-                    run={state.runs[m.id]}
-                    versions={{ index: idx, total: sibs.length, prev: idx > 0 ? go(idx - 1) : undefined, next: go(idx + 1) }}
-                    onRegenerate={() => regenerate(m)}
-                    pinned={pinned.includes(m.id)}
-                    compareBefore={compare[m.id]}
-                    onPin={() => setPinned((p) => (p.includes(m.id) ? p.filter((x) => x !== m.id) : [...p, m.id]))}
-                    onImageAction={(a, i) => {
-                      const alt = m.parts.filter((p) => p.type === "image")[i];
-                      const what = alt?.type === "image" ? alt.alt : "картинку";
-                      const opts = { ...lastOpts.current, files: [] };
-                      if (a === "animate") postUser(state.head, `Оживи: ${what}`, "video", [], opts);
-                      if (a === "variants") postUser(state.head, `Ещё варианты: ${what}`, "image", [], opts);
-                      if (a === "upscale") {
-                        const aid = postUser(state.head, `Увеличь до 4K: ${what}`, "image", [], { ...opts, params: { count: "1" } });
-                        const src = alt?.type === "image" ? alt.url : undefined;
-                        if (src) setCompare((c) => ({ ...c, [aid]: src }));
-                      }
-                    }}
-                    onFollowup={(f) => {
-                      const mode = modeForFollowup(f, m.mode);
-                      postUser(state.head, f, mode, [], { ...lastOpts.current, files: [] });
-                    }}
-                    onAnswer={(c) => answer(m.id, c)}
-                    onOpenArtifact={() => { const a = state.runs[m.id]?.artifact; if (a) setPanel(a); }}
-                  />
-                </Appear>
-              </Fragment>
-            );
-          })}
-          {branch.length === 0 && <p className="text-center text-ink3">Начните диалог — модель выберется автоматически.</p>}
+            })}
+            {branch.length === 0 && <p className="text-ink3 md:pl-[52px]">Опишите задачу ниже — модель подберётся автоматически, цена будет видна до запуска.</p>}
+          </div>
         </div>
       </div>
 
+      {/* объявления для скринридера: состояние последнего ответа, без повторов при каждом токене */}
+      <p role="status" aria-live="polite" className="fx-sr">
+        {lastRunStatus ? ANNOUNCE[lastRunStatus] : ""}
+      </p>
       <SelectionMenu
         root={scroller}
         onAction={(a, text) => {
@@ -411,52 +771,101 @@ export function ChatView({ chat, initial, balanceMicro }: { chat: ChatSummary; i
         {below && (
           <motion.button
             type="button"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18 }}
+            initial={{ opacity: 0, transform: "translate(-50%, 6px)" }}
+            animate={{ opacity: 1, transform: "translate(-50%, 0px)" }}
+            exit={{ opacity: 0, transform: "translate(-50%, 6px)" }}
+            transition={{ duration: 0.16 }}
             onClick={() => {
               const el = scroller.current;
-              el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+              el?.scrollTo({ top: el.scrollHeight, behavior: calm ? "auto" : "smooth" });
             }}
-            className="absolute bottom-40 left-1/2 z-10 -translate-x-1/2 cursor-pointer border border-acc-line bg-g2 px-3 py-1.5 font-mono text-[12px] text-acc shadow-(--shadow-float) hover:bg-acc hover:text-acc-ink"
+            className="absolute bottom-36 left-1/2 z-10 inline-flex h-8 cursor-pointer items-center gap-2 rounded-(--radius-sm) border border-line2 bg-g1 px-3 text-[12.5px] text-ink2 shadow-(--shadow-float) hover:text-ink"
           >
-            ↓ Вниз {textStreaming ? "· идёт ответ" : ""}
+            {textStreaming && <i aria-hidden="true" className="size-1.5 bg-acc" />}
+            <ArrowDown size={14} strokeWidth={1.5} />
+            {textStreaming ? "К ответу — он ещё пишется" : "К последнему сообщению"}
           </motion.button>
         )}
       </AnimatePresence>
-      <div className="flex justify-center border-t border-line bg-bg px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <Composer
-          variant="dock"
-          draftKey={chat.id}
-          onSend={send}
-          busy={!!textStreaming}
-          onStop={stop}
-          balanceMicro={balanceMicro}
-          contextChars={Math.round(branch.reduce((n, m) => n + textOf(m).length, 0) * (compressed ? 0.3 : 1))}
-          onCompress={() => setCompressed(true)}
-          onEditLast={() => {
-            const last = [...branch].reverse().find((m) => m.role === "user");
-            if (last) setEditing(last.id);
-          }}
-        />
+      <div className="relative shrink-0 px-3 pt-1 pb-[max(0.9rem,env(safe-area-inset-bottom))] md:px-8">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-full h-10 bg-linear-to-t from-bg to-transparent" />
+        <div className="mx-auto w-full max-w-[60rem]">
+          <Composer
+            variant="dock"
+            draftKey={chat.id}
+            onSend={send}
+            busy={!!textStreaming || liveBusy}
+            onStop={stop}
+            balanceMicro={balanceMicro}
+            contextChars={Math.round(contextChars * (compressed ? 0.3 : 1))}
+            onCompress={() => setCompressed(true)}
+            onEditLast={() => {
+              const last = [...branch].reverse().find((m) => m.role === "user");
+              if (last) setEditing(last.id);
+            }}
+          />
+        </div>
       </div>
 
       <AnimatePresence>
-      {toast && (
-        <IncomingToast
-          title={toast.title}
-          onClose={() => setToast(null)}
-          onOpen={() => {
-            document.getElementById(`msg-${toast.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-            setToast(null);
-          }}
-        />
-      )}
+        {toast && (
+          <IncomingToast
+            title={toast.title}
+            onClose={() => setToast(null)}
+            onOpen={() => {
+              document.getElementById(`msg-${toast.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              setToast(null);
+            }}
+          />
+        )}
       </AnimatePresence>
     </main>
-    {!panel && <ContextPanel branch={branch} runs={state.runs} onJump={scrollToMsg} />}
+
+    {/* Inspector: колонка на широком экране — появляется с правого края */}
+    <AnimatePresence initial={false}>
+      {!panel && docked && (
+        <motion.div
+          key="inspector"
+          className="hidden min-h-0 xl:flex"
+          initial={calm ? { opacity: 0 } : { opacity: 0, transform: "translateX(16px)" }}
+          animate={{ opacity: 1, transform: "translateX(0px)" }}
+          exit={calm ? { opacity: 0 } : { opacity: 0, transform: "translateX(16px)", transition: { duration: 0.16 } }}
+          transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          <Inspector {...inspectorProps} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+    {/* планшет и телефон: тот же Inspector листом поверх, фокус внутри, Esc закрывает */}
+    <AnimatePresence>
+      {sheet && !panel && (
+        <div ref={sheetRef} className="fixed inset-0 z-(--z-overlay) xl:hidden" onKeyDown={(e) => e.key === "Escape" && setSheet(false)}>
+          <motion.div aria-hidden="true" onClick={() => setSheet(false)} className="absolute inset-0 bg-bg/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Контекст задачи"
+            className="absolute inset-y-0 right-0 flex w-[min(380px,100vw)] shadow-(--shadow-float)"
+            initial={calm ? { opacity: 0 } : { transform: "translateX(100%)" }}
+            animate={calm ? { opacity: 1 } : { transform: "translateX(0%)" }}
+            exit={calm ? { opacity: 0 } : { transform: "translateX(100%)", transition: { duration: 0.18 } }}
+            transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            <Inspector {...inspectorProps} onClose={() => setSheet(false)} className="w-full" />
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
     <AnimatePresence>{panel && <SidePanel key="panel" artifact={panel} onClose={() => setPanel(null)} />}</AnimatePresence>
     </div>
+  );
+}
+
+function MenuRow({ icon, onClick, children }: { icon: React.ReactNode; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-(--radius-sm) px-2.5 text-left text-[13.5px] text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:h-11">
+      <span className="text-ink3">{icon}</span>
+      {children}
+    </button>
   );
 }

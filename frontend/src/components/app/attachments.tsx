@@ -6,11 +6,11 @@ import { fileKind } from "@/lib/files";
 import { formatBytes } from "@/lib/format";
 import { Segments } from "@/components/fx/primitives";
 
-export type Attachment = { id: string; name: string; size: number; type: string; progress: number; previewUrl?: string };
+export type Attachment = { id: string; name: string; size: number; type: string; progress: number; previewUrl?: string; assetId?: string };
 
 const ICON = { image: FileImage, pdf: FileText, doc: FileText, sheet: FileSpreadsheet, audio: AudioLines, text: FileText } as const;
 
-/** «Осколки данных» — вложения у поля ввода: тип, размер, загрузка шкалой, удаление. */
+/** Вложения у поля ввода — факты о файле: тип, размер, статус загрузки, удаление. */
 export function AttachmentChips({ items, onRemove }: { items: Attachment[]; onRemove: (id: string) => void }) {
   return (
     <ul aria-label="Вложения" className={items.length ? "mb-2 flex flex-wrap gap-1.5" : "hidden"}>
@@ -19,17 +19,17 @@ export function AttachmentChips({ items, onRemove }: { items: Attachment[]; onRe
         const Icon = ICON[fileKind(a.type)];
         const done = a.progress >= 1;
         return (
-          <motion.li key={a.id} layout initial={{ opacity: 0, y: 6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }} transition={{ duration: 0.2 }} className="fx-chamfer flex max-w-60 items-center gap-2 border border-line2 bg-g2 py-1.5 pr-1 pl-2 [--ch:var(--chamfer-sm)]">
+          <motion.li key={a.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4, transition: { duration: 0.12 } }} transition={{ duration: 0.16 }} className="flex max-w-64 items-center gap-2.5 rounded-(--radius-sm) border border-line2 bg-g2 py-1.5 pr-1 pl-2">
             {a.previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- локальное превью blob:
               <img src={a.previewUrl} alt="" className="size-7 shrink-0 border border-line object-cover" />
             ) : (
-              <Icon size={16} strokeWidth={1.5} className="shrink-0 text-acc" aria-hidden="true" />
+              <Icon size={16} strokeWidth={1.5} className="shrink-0 text-ink2" aria-hidden="true" />
             )}
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-[12.5px]">{a.name}</span>
               {done ? (
-                <span className="font-mono text-[10.5px] text-ink3">{formatBytes(a.size)} · ✓</span>
+                <span className="font-mono text-[10.5px] text-ink3">{formatBytes(a.size)} · готов</span>
               ) : (
                 <Segments value={a.progress} count={8} label={`Загрузка ${a.name}`} className="mt-1 w-20" />
               )}

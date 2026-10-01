@@ -23,8 +23,13 @@ export function passwordScore(pw: string): number {
 
 export function passwordError(pw: string): string | null {
   if (!pw) return "Введите пароль";
-  if (pw.length < 8) return "Минимум 8 символов";
+  if (pw.length < 12) return "Минимум 12 символов";
   return null;
+}
+
+/** Existing accounts may predate the current sign-up rule; login only needs a password. */
+export function loginPasswordError(pw: string): string | null {
+  return pw ? null : "Введите пароль";
 }
 
 export const SCORE_LABEL = ["слишком короткий", "слабый", "нормальный", "хороший", "надёжный"] as const;

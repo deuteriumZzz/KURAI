@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChatSummary } from "@/types/api";
-import { formatBytes, formatCredits, groupChats } from "./format";
+import { formatBytes, formatCredits, formatWhen, groupChats, hostOf, webHref } from "./format";
 
 // ru-RU группирует разряды неразрывным пробелом
 const nb = (s: string) => s.replace(/ /g, " ");
@@ -57,5 +57,24 @@ describe("formatBytes", () => {
     expect(formatBytes(180 * 1024 ** 2)).toBe("180 МБ");
     expect(formatBytes(5 * 1024 ** 3)).toBe("5 ГБ");
     expect(formatBytes(512)).toBe("512 Б");
+  });
+});
+
+describe("formatWhen", () => {
+  const now = new Date("2026-09-23T15:00:00Z");
+  it("names today and yesterday, dates older rows", () => {
+    expect(formatWhen("2026-09-23T12:24:00Z", now)).toBe("Сегодня, 12:24");
+    expect(formatWhen("2026-09-22T18:10:00Z", now)).toBe("Вчера, 18:10");
+    expect(formatWhen("2026-09-02T16:20:00Z", now)).toMatch(/^2 сент\.?, 16:20$/);
+  });
+});
+
+describe("hostOf / webHref", () => {
+  it("never throws on a malformed source and only allows http(s) links", () => {
+    expect(hostOf("https://www.habr.com/ru/")).toBe("habr.com");
+    expect(hostOf("не адрес")).toBe("не адрес");
+    expect(webHref("https://vc.ru/x")).toBe("https://vc.ru/x");
+    expect(webHref("javascript:alert(1)")).toBeUndefined();
+    expect(webHref("не адрес")).toBeUndefined();
   });
 });

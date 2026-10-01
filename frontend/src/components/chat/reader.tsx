@@ -1,16 +1,19 @@
 "use client";
 
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { motion } from "motion/react";
 import { tocOf } from "@/lib/quiet";
 import { Label } from "@/components/fx/primitives";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 const LazyMarkdown = lazy(() => import("./markdown").then((m) => ({ default: m.Markdown })));
 
 /** Режим чтения длинного ответа: широкая колонка, крупный текст, оглавление по заголовкам. Esc — закрыть. */
 export function Reader({ text, model, onClose }: { text: string; model: string | null; onClose: () => void }) {
   const toc = tocOf(text);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(true, dialogRef);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", esc);
@@ -23,6 +26,7 @@ export function Reader({ text, model, onClose }: { text: string; model: string |
 
   return (
     <motion.div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Режим чтения"

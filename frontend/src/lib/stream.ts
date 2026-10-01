@@ -42,6 +42,8 @@ export type RunState = {
   scans?: { name: string; labels: string[] }[];
   /** Поток рассуждений («Думать дольше»). */
   thinking?: string;
+  /** Сколько вернул сервер после ошибки — показываем только реальную сумму. */
+  refundedMicro?: number;
   /** Продолжения под готовым ответом. */
   followups?: string[];
   /** Лента действий агента («живое рабочее место»). */
@@ -60,7 +62,7 @@ function appendText(parts: MessagePart[], text: string): MessagePart[] {
 export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg: Message; run: RunState } {
   switch (ev.type) {
     case "route":
-      return { msg: { ...msg, model: ev.model }, run: { ...run, log: [...run.log, { tone: "default", text: `${ev.model} · ${ev.node} · ${ev.latencyMs} мс` }] } };
+      return { msg: { ...msg, model: ev.model }, run: { ...run, log: [...run.log, { tone: "default", text: `${ev.model}${ev.node ? ` · ${ev.node}` : ""}${ev.latencyMs ? ` · ${ev.latencyMs} мс` : ""}` }] } };
     case "fallback":
       return {
         msg: { ...msg, model: ev.to },
@@ -98,7 +100,7 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
       return {
         msg: { ...msg, costMicro: 0 },
         // текст ошибки показывает карточка «Повторить» в сообщении
-        run: { ...run, status: "error" },
+        run: { ...run, status: "error", refundedMicro: ev.refundedMicro },
       };
     case "aborted":
       return { msg: { ...msg, costMicro: ev.costMicro }, run: { ...run, status: "aborted" } };

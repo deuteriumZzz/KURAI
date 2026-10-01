@@ -24,7 +24,7 @@ export function Ledger({ entries }: { entries: LedgerEntry[] }) {
   const rows = entries.filter((e) => filter === "all" || e.kind === filter || (filter === "topup" && (e.kind === "grant" || e.kind === "bonus")));
 
   return (
-    <section aria-labelledby="ledger-title" className="flex flex-col gap-3">
+    <section aria-labelledby="ledger-title" className="kurai-ledger flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="ledger-title" className="text-[15px] font-semibold">
           Операции

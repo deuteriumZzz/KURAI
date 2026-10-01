@@ -1,0 +1,1467 @@
+openapi: 3.0.3
+info:
+  title: KURAI API
+  version: v1
+paths:
+  /api/schema:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/artifacts:
+    get:
+      operationId: v1_artifacts_list
+      description: List and create account-scoped answer snapshots; never accept arbitrary
+        body content.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactListEnvelope'
+          description: ''
+    post:
+      operationId: v1_artifacts_create
+      description: List and create account-scoped answer snapshots; never accept arbitrary
+        body content.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArtifactInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArtifactInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactEnvelope'
+          description: ''
+  /api/v1/artifacts/{artifact_id}:
+    get:
+      operationId: v1_artifacts_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: artifact_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactEnvelope'
+          description: ''
+  /api/v1/auth/csrf:
+    get:
+      operationId: v1_auth_csrf_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberEnvelope'
+          description: ''
+  /api/v1/auth/login:
+    post:
+      operationId: v1_auth_login_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberEnvelope'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: v1_auth_logout_create
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberEnvelope'
+          description: ''
+  /api/v1/auth/sign-up:
+    post:
+      operationId: v1_auth_sign_up_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignUpInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignUpInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberEnvelope'
+          description: ''
+  /api/v1/capabilities:
+    get:
+      operationId: v1_capabilities_retrieve
+      description: Public availability map used to avoid presenting simulated tools
+        as live.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/chats:
+    get:
+      operationId: v1_chats_list
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatListEnvelope'
+          description: ''
+    post:
+      operationId: v1_chats_create
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatEnvelope'
+          description: ''
+  /api/v1/chats/{chat_id}:
+    get:
+      operationId: v1_chats_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: chat_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSnapshotEnvelope'
+          description: ''
+  /api/v1/chats/{chat_id}/share-links:
+    get:
+      operationId: v1_chats_share_links_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: chat_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareEnvelope'
+          description: ''
+    post:
+      operationId: v1_chats_share_links_create
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: chat_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareLinkInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShareLinkInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShareLinkInput'
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareEnvelope'
+          description: ''
+  /api/v1/files:
+    get:
+      operationId: v1_files_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_files_create
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/files/{file_id}/download:
+    get:
+      operationId: v1_files_download_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: file_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/health:
+    get:
+      operationId: v1_health_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ledger:
+    get:
+      operationId: v1_ledger_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEnvelope'
+          description: ''
+  /api/v1/me:
+    get:
+      operationId: v1_me_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberEnvelope'
+          description: ''
+  /api/v1/me/export:
+    get:
+      operationId: v1_me_export_retrieve
+      description: Return a short-lived private download response; no export is stored
+        server-side.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/media:
+    get:
+      operationId: v1_media_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/media/{asset_id}/download:
+    get:
+      operationId: v1_media_download_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: asset_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/messages/{message_id}/exports/slides:
+    post:
+      operationId: v1_messages_exports_slides_create
+      description: Create a private attachment from an existing assistant answer;
+        no public artifact URL is issued.
+      parameters:
+      - in: path
+        name: message_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlideExport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SlideExport'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SlideExport'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/models:
+    get:
+      operationId: v1_models_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelListEnvelope'
+          description: ''
+  /api/v1/projects:
+    get:
+      operationId: v1_projects_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListEnvelope'
+          description: ''
+    post:
+      operationId: v1_projects_create
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectEnvelope'
+          description: ''
+  /api/v1/ready:
+    get:
+      operationId: v1_ready_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/recipes:
+    get:
+      operationId: v1_recipes_retrieve
+      description: Save repeatable routes from an owned completed run and list the
+        member's recipes.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeListEnvelope'
+          description: ''
+    post:
+      operationId: v1_recipes_create
+      description: Save repeatable routes from an owned completed run and list the
+        member's recipes.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecipeInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecipeInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeEnvelope'
+          description: ''
+  /api/v1/runs:
+    post:
+      operationId: v1_runs_create
+      description: Stable public error envelope for authenticated API resources.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RunInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunEnvelope'
+          description: ''
+  /api/v1/runs/{run_id}:
+    get:
+      operationId: v1_runs_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: run_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunEnvelope'
+          description: ''
+  /api/v1/runs/{run_id}/cancel:
+    post:
+      operationId: v1_runs_cancel_create
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: run_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunEnvelope'
+          description: ''
+  /api/v1/runs/{run_id}/events:
+    get:
+      operationId: v1_runs_events_retrieve
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: run_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/runs/compare:
+    post:
+      operationId: v1_runs_compare_create
+      description: Launch 2–3 explicitly chosen text routes from one immutable user
+        prompt.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompareRunInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompareRunInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompareRunInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompareRunEnvelope'
+          description: ''
+  /api/v1/runs/quote:
+    post:
+      operationId: v1_runs_quote_create
+      description: Server-owned preflight quote. It cannot reserve or charge credits.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/share-links/{link_id}/revoke:
+    post:
+      operationId: v1_share_links_revoke_create
+      description: Stable public error envelope for authenticated API resources.
+      parameters:
+      - in: path
+        name: link_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareEnvelope'
+          description: ''
+  /api/v1/shares/{token}:
+    get:
+      operationId: v1_shares_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareEnvelope'
+          description: ''
+  /api/v1/status:
+    get:
+      operationId: v1_status_retrieve
+      description: Public, evidence-based state for the status page; never a fake
+        uptime claim.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AccentEnum:
+      enum:
+      - cyan
+      - magenta
+      - lime
+      - violet
+      type: string
+      description: |-
+        * `cyan` - cyan
+        * `magenta` - magenta
+        * `lime` - lime
+        * `violet` - violet
+    ArtifactEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ArtifactOutput'
+      required:
+      - data
+    ArtifactInput:
+      type: object
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          default: document
+        title:
+          type: string
+          maxLength: 160
+          minLength: 1
+      required:
+      - messageId
+    ArtifactListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactOutput'
+      required:
+      - data
+    ArtifactOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        chatId:
+          type: string
+          format: uuid
+        sourceMessageId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        provenance:
+          type: object
+          additionalProperties: {}
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - body
+      - chatId
+      - createdAt
+      - id
+      - kind
+      - projectId
+      - provenance
+      - sourceMessageId
+      - title
+    ChatEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ChatOutput'
+      required:
+      - data
+    ChatInput:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 160
+          minLength: 1
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - title
+    ChatListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatOutput'
+      required:
+      - data
+    ChatOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        pinned:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - id
+      - pinned
+      - projectId
+      - title
+    ChatSnapshotData:
+      type: object
+      properties:
+        chat:
+          $ref: '#/components/schemas/ChatOutput'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageOutput'
+      required:
+      - chat
+      - messages
+    ChatSnapshotEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ChatSnapshotData'
+      required:
+      - data
+    CompareRoute:
+      type: object
+      properties:
+        modelId:
+          type: string
+          maxLength: 160
+        quoteId:
+          type: string
+          format: uuid
+      required:
+      - modelId
+      - quoteId
+    CompareRunEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+    CompareRunInput:
+      type: object
+      properties:
+        chatId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        mode:
+          $ref: '#/components/schemas/CompareRunInputModeEnum'
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 10
+        text:
+          type: string
+          maxLength: 20000
+          minLength: 1
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareRoute'
+      required:
+      - chatId
+      - mode
+      - routes
+      - text
+    CompareRunInputModeEnum:
+      enum:
+      - text
+      - research
+      type: string
+      description: |-
+        * `text` - text
+        * `research` - research
+    KindEnum:
+      enum:
+      - document
+      - specification
+      - table
+      - recipe
+      - research_packet
+      type: string
+      description: |-
+        * `document` - document
+        * `specification` - specification
+        * `table` - table
+        * `recipe` - recipe
+        * `research_packet` - research_packet
+    LedgerEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+      required:
+      - email
+      - password
+    MemberEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+    MessageOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        chatId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        role:
+          type: string
+        mode:
+          type: string
+        model:
+          type: string
+          nullable: true
+        parts:
+          type: array
+          items: {}
+        costMicro:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - chatId
+      - costMicro
+      - createdAt
+      - id
+      - mode
+      - model
+      - parentId
+      - parts
+      - role
+    ModelListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelOutput'
+      required:
+      - data
+    ModelOutput:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        provider:
+          type: string
+        description:
+          type: string
+        contextLength:
+          type: integer
+        inputModalities:
+          type: array
+          items:
+            type: string
+        outputModalities:
+          type: array
+          items:
+            type: string
+        priceHintMicro:
+          type: integer
+        supportedModes:
+          type: array
+          items:
+            type: string
+      required:
+      - contextLength
+      - description
+      - id
+      - inputModalities
+      - name
+      - outputModalities
+      - priceHintMicro
+      - provider
+      - supportedModes
+    ProjectEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectOutput'
+      required:
+      - data
+    ProjectInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+          minLength: 1
+        accent:
+          allOf:
+          - $ref: '#/components/schemas/AccentEnum'
+          default: cyan
+      required:
+      - name
+    ProjectListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectOutput'
+      required:
+      - data
+    ProjectOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        accent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - accent
+      - createdAt
+      - id
+      - name
+    QuoteRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/RunMode'
+        modelId:
+          type: string
+          default: openrouter/auto
+          maxLength: 160
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 10
+        text:
+          type: string
+          maxLength: 20000
+          minLength: 1
+      required:
+      - mode
+      - text
+    RecipeEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RecipeOutput'
+      required:
+      - data
+    RecipeInput:
+      type: object
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 160
+          minLength: 1
+      required:
+      - messageId
+    RecipeListEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeOutput'
+      required:
+      - data
+    RecipeOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        chatId:
+          type: string
+          format: uuid
+        sourceMessageId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        prompt:
+          type: string
+        mode:
+          type: string
+        model:
+          type: string
+        sourceCostMicro:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - chatId
+      - createdAt
+      - id
+      - mode
+      - model
+      - projectId
+      - prompt
+      - sourceCostMicro
+      - sourceMessageId
+      - title
+    RunEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+    RunInput:
+      type: object
+      properties:
+        chatId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        quoteId:
+          type: string
+          format: uuid
+        mode:
+          $ref: '#/components/schemas/RunMode'
+        modelId:
+          type: string
+          default: openrouter/auto
+          maxLength: 160
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 10
+        text:
+          type: string
+          maxLength: 20000
+          minLength: 1
+      required:
+      - chatId
+      - mode
+      - quoteId
+      - text
+    RunMode:
+      enum:
+      - text
+      - research
+      - slides
+      - image
+      - video
+      - audio
+      type: string
+      description: |-
+        * `text` - text
+        * `research` - research
+        * `slides` - slides
+        * `image` - image
+        * `video` - video
+        * `audio` - audio
+    ShareEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+    ShareLinkInput:
+      type: object
+      properties:
+        expiresInHours:
+          type: integer
+          maximum: 720
+          minimum: 1
+          default: 168
+    SignUpInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+          minLength: 12
+        displayName:
+          type: string
+          maxLength: 80
+      required:
+      - email
+      - password
+    SlideExport:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 120
+          minLength: 1
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

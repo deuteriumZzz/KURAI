@@ -5,15 +5,16 @@ import { RotateCcw } from "lucide-react";
 import { StreamText } from "@/components/fx/decode";
 import { Label, SysLine } from "@/components/fx/primitives";
 import { isCalm } from "@/lib/motion";
-import { placeholderImage } from "@/mocks/media";
 
-const PROMPT = "Сравни GPT-5 и Claude для работы с текстом и нарисуй обложку к выводу";
+const PROMPT = "Собери короткую записку о рисках AI-регулирования для продуктовой команды";
 const ANSWER =
-  "Для длинных текстов и редактуры сильнее Claude, для быстрых черновиков и кода — GPT-5. Обложку сделаю в режиме «Изображение» — это тот же чат, контекст сохранится.";
+  "Сначала выделю требования, которые влияют на продукт в ближайшем квартале. Затем соберу проверяемые источники и оформлю вывод в краткий план действий для команды.";
 
-type Phase = "idle" | "typing" | "route" | "stream" | "image" | "done";
+const SOURCES = ["Регуляторный обзор", "Отраслевая аналитика", "Внутренняя заметка"];
 
-/** Живое демо на лендинге: печать запроса → маршрут → стриминг с расшифровкой → картинка. Запускается при появлении. */
+type Phase = "idle" | "typing" | "route" | "stream" | "sources" | "done";
+
+/** Интерактивный пример: запрос → подготовка маршрута → ответ → опоры. Запускается при появлении. */
 export function LiveDemo() {
   const root = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -48,7 +49,7 @@ export function LiveDemo() {
         await wait(26);
       }
       setStreamed(ANSWER.length);
-      setPhase("image");
+      setPhase("sources");
       await wait(1200);
       if (!cancelled) setPhase("done");
     }
@@ -67,12 +68,12 @@ export function LiveDemo() {
     };
   }, [run]);
 
-  const showAnswer = phase === "stream" || phase === "image" || phase === "done";
+  const showAnswer = phase === "stream" || phase === "sources" || phase === "done";
 
   return (
     <div ref={root} className="border border-line bg-g1">
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-        <Label>Живое демо · единый чат</Label>
+        <Label>Сценарий · research</Label>
         <button
           type="button"
           onClick={() => {
@@ -83,29 +84,32 @@ export function LiveDemo() {
           }}
           className="-my-1 inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2 text-[12px] text-ink3 hover:text-ink pointer-coarse:min-h-11"
         >
-          <RotateCcw size={12} strokeWidth={1.5} /> Повторить
+          <RotateCcw size={12} strokeWidth={1.5} /> Ещё раз
         </button>
       </div>
-      <div className="flex min-h-[420px] flex-col gap-4 bg-bg p-4 sm:p-5">
+      <div className="relative flex min-h-[420px] flex-col gap-4 overflow-hidden bg-bg p-4 sm:p-5">
+        <div aria-hidden="true" className="fx-live-orbit absolute -right-24 -bottom-24 size-64" />
         <div className="ml-auto max-w-[85%] border border-line bg-g2 px-3.5 py-2.5 text-[14px]">
           {PROMPT.slice(0, typed) || <span className="text-ink3">…</span>}
           {phase === "typing" && <span className="fx-caret text-acc">▍</span>}
         </div>
-        {phase !== "idle" && phase !== "typing" && <SysLine decode>Claude Sonnet 5 · EU-01 · 240 мс</SysLine>}
+        {phase !== "idle" && phase !== "typing" && <SysLine decode>Маршрут определён · оценка до запуска</SysLine>}
         {showAnswer && (
           <div className="text-[14px] leading-relaxed">
             <StreamText text={ANSWER.slice(0, streamed)} done={streamed >= ANSWER.length} />
           </div>
         )}
-        {(phase === "image" || phase === "done") && (
+        {(phase === "sources" || phase === "done") && (
           <div className="flex flex-col gap-2">
             <SysLine tone="acc" decode>
-              Nano Banana Pro · 4 варианта · 16 кр
+              Материалы к ответу
             </SysLine>
-            <div className="fx-reveal fx-flicker-border grid max-w-md grid-cols-4 gap-1.5 border border-line p-1.5">
-              {[0, 1, 2, 3].map((i) => (
-                // eslint-disable-next-line @next/next/no-img-element -- локальная SVG-заглушка
-                <img key={i} src={placeholderImage(i + 3, 256, 256, "")} alt="" className="aspect-square w-full" />
+            <div className="fx-reveal grid max-w-md gap-px border border-line bg-line sm:grid-cols-3">
+              {SOURCES.map((source, index) => (
+                <div key={source} className="bg-g1 p-3">
+                  <Label className="text-acc">0{index + 1}</Label>
+                  <p className="mt-4 text-[12px] leading-snug text-ink2">{source}</p>
+                </div>
               ))}
             </div>
           </div>

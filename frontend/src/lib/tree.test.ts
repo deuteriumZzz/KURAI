@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Message } from "@/types/api";
-import { branchOf, leafOf, siblingsOf } from "./tree";
+import { branchOf, forksOf, leafOf, siblingsOf } from "./tree";
 
 let t = 0;
 const msg = (id: string, parentId: string | null, role: Message["role"] = "user"): Message => ({
@@ -34,5 +34,18 @@ describe("leafOf", () => {
     expect(leafOf("b", tree)).toBe("c");
     expect(leafOf("b2", tree)).toBe("d2");
     expect(leafOf("d2", tree)).toBe("d2");
+  });
+});
+
+describe("forksOf", () => {
+  it("lists only real forks on the active branch with the active version marked", () => {
+    const forks = forksOf(branchOf("d2", tree), tree);
+    expect(forks).toHaveLength(1);
+    expect(forks[0]?.activeId).toBe("b2");
+    expect(forks[0]?.versions.map((m) => m.id)).toEqual(["b", "b2"]);
+  });
+  it("is empty for a linear conversation", () => {
+    const linear = [msg("x", null), msg("y", "x", "assistant")];
+    expect(forksOf(branchOf("y", linear), linear)).toEqual([]);
   });
 });

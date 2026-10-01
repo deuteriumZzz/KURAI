@@ -11,6 +11,7 @@ type Item = { id: string; label: string; hint: string; href: string };
 const COMMANDS: Item[] = [
   { id: "new", label: "Новый чат", hint: "N", href: "/app" },
   { id: "media", label: "Медиатека", hint: "—", href: "/app/media" },
+  { id: "artifacts", label: "Артефакты", hint: "—", href: "/app/artifacts" },
   { id: "explore", label: "Тренды и шаблоны", hint: "—", href: "/app/explore" },
   { id: "billing", label: "Баланс и пополнение", hint: "—", href: "/app/billing" },
   { id: "settings", label: "Настройки", hint: "—", href: "/app/settings" },

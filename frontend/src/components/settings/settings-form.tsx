@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { HoldButton } from "@/components/ui/hold-button";
 import { Button } from "@/components/ui/button";
 import { Hatch, Label, SysLine } from "@/components/fx/primitives";
+import { playSignal } from "@/lib/sound";
 import { DEFAULT_PREFS, readPrefs, writePrefs, type Prefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import type { User } from "@/types/api";
-import { Avatar } from "@/components/brand/avatar";
+import { Initials } from "@/components/brand/avatar";
+import { kuraiApi } from "@/lib/kurai-api";
 
 const MODELS = [
   { id: "auto", label: "Авто", note: "подбираем модель под задачу" },
@@ -30,36 +31,47 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function SettingsForm({ user }: { user: User }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
-  const [exported, setExported] = useState(false);
-  const [deleted, setDeleted] = useState<string | null>(null);
-  const [notif, setNotif] = useState({ email: true });
-  const [sessions, setSessions] = useState([
-    { id: "s1", device: "MacBook · Chrome", place: "Москва", at: "сейчас", current: true },
-    { id: "s2", device: "iPhone · Safari", place: "Москва", at: "вчера, 21:40", current: false },
-    { id: "s3", device: "Telegram-бот", place: "—", at: "20.09", current: false },
-  ]);
+  const [exportState, setExportState] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   // localStorage доступен только в браузере — читаем после монтирования
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setPrefs(readPrefs()), []);
   const set = (patch: Partial<Prefs>) => setPrefs(writePrefs(patch));
+  const downloadAccountArchive = async () => {
+    if (!kuraiApi) return;
+    setExportState("loading");
+    try {
+      const archive = await kuraiApi.exportAccountData();
+      const objectUrl = URL.createObjectURL(archive);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "kurai-account-export.zip";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setExportState("done");
+    } catch {
+      setExportState("error");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-10">
       <Section title="Профиль">
-        <div className="flex items-center gap-4 border border-line bg-g1 p-4">
-          <Avatar seed={user.email} className="size-14 p-1.5" />
+        <div className="flex items-center gap-4 bg-s1 p-4">
+          <Initials name={user.name} className="size-14 text-[16px]" />
           <div className="flex flex-col gap-1">
-            <p className="text-[14px]">Аватар создан из вашего email</p>
-            <p className="text-[12.5px] text-ink3">Узор уникален для аккаунта. Загрузка своего фото появится вместе с медиахранилищем.</p>
+            <p className="text-[14px]">Инициалы из имени</p>
+            <p className="text-[12.5px] text-ink3">Загрузка своего фото появится вместе с медиахранилищем.</p>
           </div>
         </div>
-        <div className="grid gap-px border border-line bg-line sm:grid-cols-2">
-          <div className="bg-g1 px-4 py-3">
+        <div className="grid gap-px bg-hair sm:grid-cols-2">
+          <div className="bg-s1 px-4 py-3">
             <Label>Имя</Label>
             <p className="mt-1 text-[14px]">{user.name}</p>
           </div>
-          <div className="bg-g1 px-4 py-3">
+          <div className="bg-s1 px-4 py-3">
             <Label>Email</Label>
             <p className="mt-1 text-[14px]">{user.email}</p>
           </div>
@@ -76,7 +88,7 @@ export function SettingsForm({ user }: { user: User }) {
               aria-checked={prefs.model === m.id}
               data-selected={prefs.model === m.id}
               onClick={() => set({ model: m.id })}
-              className={cn("fx-brackets cursor-pointer border bg-g1 px-4 py-3 text-left", prefs.model === m.id ? "border-acc-line" : "border-line hover:border-line2")}
+              className={cn("fx-brackets cursor-pointer bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast)", prefs.model === m.id ? "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]" : "hover:bg-s2")}
             >
               <span className="block text-[14px]">{m.label}</span>
               <span className="text-[12.5px] text-ink3">{m.note}</span>
@@ -88,7 +100,7 @@ export function SettingsForm({ user }: { user: User }) {
 
       <Section title="Оформление">
         <div role="radiogroup" aria-label="Тема" className="grid gap-2 sm:grid-cols-3">
-          {([["dark", "Тёмная", "фирменная, для долгой работы"], ["light", "Светлая", "мягкая, для дневного света"], ["system", "Как в системе", "следует за настройкой устройства"]] as const).map(([v, l, h]) => (
+          {([["dark", "Night Ops", "тёмный карбон для долгой работы"], ["light", "Paper", "техническая бумага для чтения днём"], ["system", "Как в системе", "следует за настройкой устройства"]] as const).map(([v, l, h]) => (
             <button
               key={v}
               type="button"
@@ -107,23 +119,23 @@ export function SettingsForm({ user }: { user: User }) {
       <Section title="Интерфейс">
         <Switch
           label="Спокойный режим"
-          hint="Отключает расшифровку, мерцание и прочие эффекты. Всё остальное работает как обычно."
+          hint="Убирает анимации интерфейса: переходы становятся мгновенными. Все функции работают как обычно."
           checked={prefs.calm}
           onChange={(calm) => set({ calm })}
         />
-        <div className="flex flex-col gap-2 border border-line bg-g1 px-4 py-3">
+        <div className="flex flex-col gap-2 bg-s1 px-4 py-3">
           <span className="text-[14px]">Размер текста ответов</span>
-          <div role="radiogroup" aria-label="Размер текста ответов" className="flex w-max border border-line">
+          <div role="radiogroup" aria-label="Размер текста ответов" className="flex w-max gap-1 bg-s2 p-1">
             {(["s", "m", "l"] as const).map((v) => (
-              <button key={v} type="button" role="radio" aria-checked={prefs.readSize === v} onClick={() => set({ readSize: v })} className={cn("cursor-pointer border-r border-line px-4 py-1.5 last:border-r-0", prefs.readSize === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink", { s: "text-[13px]", m: "text-[15px]", l: "text-[17px]" }[v])}>
+              <button key={v} type="button" role="radio" aria-checked={prefs.readSize === v} onClick={() => set({ readSize: v })} className={cn("cursor-pointer px-4 py-1.5", prefs.readSize === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink", { s: "text-[13px]", m: "text-[15px]", l: "text-[17px]" }[v])}>
                 Аа
               </button>
             ))}
           </div>
           <span className="mt-2 text-[14px]">Ширина колонки чата</span>
-          <div role="radiogroup" aria-label="Ширина колонки чата" className="flex w-max border border-line">
+          <div role="radiogroup" aria-label="Ширина колонки чата" className="flex w-max gap-1 bg-s2 p-1">
             {([["narrow", "Узкая · удобно читать"], ["wide", "Широкая · таблицы и код"]] as const).map(([v, l]) => (
-              <button key={v} type="button" role="radio" aria-checked={prefs.readWidth === v} onClick={() => set({ readWidth: v })} className={cn("cursor-pointer border-r border-line px-3 py-1.5 text-[13px] last:border-r-0", prefs.readWidth === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
+              <button key={v} type="button" role="radio" aria-checked={prefs.readWidth === v} onClick={() => set({ readWidth: v })} className={cn("cursor-pointer px-3 py-1.5 text-[13px]", prefs.readWidth === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
                 {l}
               </button>
             ))}
@@ -138,11 +150,11 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Язык">
-        <div role="radiogroup" aria-label="Язык интерфейса" className="flex w-max border border-line">
+        <div role="radiogroup" aria-label="Язык интерфейса" className="flex w-max gap-1 bg-s2 p-1">
           <button type="button" role="radio" aria-checked="true" className="bg-acc-soft px-4 py-2 text-[13px] text-acc">
             Русский
           </button>
-          <button type="button" role="radio" aria-checked="false" disabled className="border-l border-line px-4 py-2 text-[13px] text-ink3">
+          <button type="button" role="radio" aria-checked="false" disabled className="px-4 py-2 text-[13px] text-ink3">
             English · скоро
           </button>
         </div>
@@ -161,68 +173,53 @@ export function SettingsForm({ user }: { user: User }) {
             set({ notifyBrowser: v });
           }}
         />
-        <Switch label="Письма о балансе и чеках" checked={notif.email} onChange={(email) => setNotif((n) => ({ ...n, email }))} />
+        <div className="border border-line bg-g1 px-4 py-3">
+          <p className="text-[14px]">Письма о балансе и чеках</p>
+          <p className="mt-0.5 text-[12.5px] text-ink3">Не включены: рассылка и чековый контур появятся вместе с платёжным провайдером.</p>
+        </div>
+        <Switch
+          label="Звук при завершении и ошибке"
+          hint="Короткий тон, когда долгая задача готова или не удалась. Навигация и клики звука не издают."
+          checked={prefs.sound}
+          onChange={(sound) => {
+            set({ sound });
+            if (sound) playSignal("done");
+          }}
+        />
         <Switch label="Тихие часы · 23:00–08:00" hint="Ночью уведомления копятся во «Входящих» без звука и всплывающих окон" checked={prefs.quiet} onChange={(quiet) => set({ quiet })} />
       </Section>
 
       <Section title="Сеансы и устройства">
-        <ul className="flex flex-col gap-px border border-line bg-line">
-          {sessions.map((d) => (
-            <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 bg-g1 px-4 py-3">
-              <span className="flex flex-col">
-                <span className="text-[14px]">
-                  {d.device} {d.current && <Label className="ml-1 text-acc">это устройство</Label>}
-                </span>
-                <span className="font-mono text-[11.5px] text-ink3">
-                  {d.place} · {d.at}
-                </span>
-              </span>
-              {!d.current && (
-                <Button size="sm" variant="ghost" onClick={() => setSessions((ss) => ss.filter((x) => x.id !== d.id))}>
-                  Завершить
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-        {sessions.length > 1 && (
-          <Button variant="secondary" className="w-max" onClick={() => setSessions((ss) => ss.filter((x) => x.current))}>
-            Завершить все, кроме этого
-          </Button>
-        )}
+        <div className="bg-s1 px-4 py-3">
+          <p className="text-[14px]">Текущий веб-сеанс активен</p>
+          <p className="mt-0.5 text-[12.5px] text-ink3">История устройств и удалённое завершение сеансов будут добавлены после отдельной модели device sessions. Сейчас для выхода используйте меню аккаунта.</p>
+        </div>
       </Section>
 
       <Section title="API-ключи">
         <Hatch>
-          API-доступ входит в тариф Ultra: ключи для своих приложений и ботов, тот же баланс и цены.{" "}
-          <a href="/app/billing" className="underline underline-offset-2">
-            Перейти на Ultra
-          </a>
+          Пользовательские API-ключи ещё не выпускаются. Серверный ключ OpenRouter остаётся внутри KURAI и никогда не показывается браузеру.
         </Hatch>
       </Section>
 
       <Section title="Данные">
-        <div className="flex flex-col gap-3 border border-line bg-g1 p-4">
+        <div className="flex flex-col gap-3 bg-s1 p-4">
           <p className="text-[14px]">Экспорт истории</p>
-          <p className="text-[13px] text-ink2">Архив всех чатов и файлов медиатеки. Ссылка на скачивание придёт на почту.</p>
-          {exported ? (
-            <SysLine tone="acc" decode>
-              архив готовится · письмо придёт в течение 15 минут
-            </SysLine>
+          <p className="text-[13px] text-ink2">Скачайте приватный ZIP с профилем, проектами, чатами, сообщениями и историей баланса. Содержимое загруженных файлов и ключи в архив не включаются.</p>
+          {exportState === "done" ? (
+            <SysLine tone="acc">архив скачан на это устройство</SysLine>
+          ) : exportState === "error" ? (
+            <SysLine tone="err">не удалось подготовить архив · попробуйте ещё раз</SysLine>
           ) : (
-            <Button className="w-max" onClick={() => setExported(true)}>
-              Подготовить архив
+            <Button className="w-max" disabled={!kuraiApi || exportState === "loading"} onClick={() => void downloadAccountArchive()}>
+              {exportState === "loading" ? "Собираю архив…" : kuraiApi ? "Скачать архив" : "Подключите API для экспорта"}
             </Button>
           )}
         </div>
         <Hatch tone="err">
           <div className="flex flex-col gap-3">
-            <p>Удаление необратимо. Отменить можно только в течение 10 секунд.</p>
-            <div className="flex flex-wrap gap-3">
-              <HoldButton label="Удерживайте, чтобы удалить историю" doneLabel="История удалена" onConfirm={() => setDeleted("история чатов удалена · отменить в течение 10 с")} />
-              <HoldButton label="Удерживайте, чтобы удалить аккаунт" doneLabel="Запрос на удаление принят" onConfirm={() => setDeleted("аккаунт будет удалён через 30 дней · письмо с отменой отправлено")} duration={2000} />
-            </div>
-            {deleted && <SysLine tone="err">{deleted}</SysLine>}
+            <p>Удаление данных пока не активировано: перед запуском нужна утверждённая политика хранения, срок отмены и юридически корректный процесс подтверждения.</p>
+            <p className="text-[13px] text-ink2">Не показываем кнопку «удалить» для вида — до включения процесса можно скачать архив выше.</p>
           </div>
         </Hatch>
       </Section>

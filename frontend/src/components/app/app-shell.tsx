@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
-import { MOCK_BALANCE, MOCK_NOW, MOCK_USER } from "@/mocks/data";
-import { chatsStore } from "@/lib/app-state";
+import { MOCK_NOW } from "@/mocks/data";
+import { useFocusTrap } from "@/lib/use-focus-trap";
+import { balanceStore, chatsStore, memberStore, projectsStore } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { Sidebar } from "./sidebar";
@@ -12,11 +13,10 @@ import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
 import { OfflineBanner } from "./offline-banner";
 import { Lightbox } from "@/components/media/lightbox";
-import { NavProgress } from "./nav-progress";
 import { Shortcuts } from "./shortcuts";
-import { GridPulse } from "./grid-pulse";
 import { MotionConfig } from "motion/react";
 import { useCalm } from "@/lib/use-calm";
+import { kuraiApi } from "@/lib/kurai-api";
 
 const COLLAPSE_KEY = "kurai:sidebar-collapsed";
 
@@ -33,8 +33,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [help, setHelp] = useState(false);
   const [focus, setFocus] = useState(false);
   const swipe = useRef<{ x: number; y: number } | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const calm = useCalm();
+  useFocusTrap(drawer, drawerRef);
   const chats = useStore(chatsStore);
+  const member = useStore(memberStore);
+  const balance = useStore(balanceStore);
 
   useEffect(() => {
     applyPrefs(readPrefs());
@@ -42,8 +46,29 @@ export function AppShell({ children }: { children: ReactNode }) {
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const on = () => readPrefs().theme === "system" && applyPrefs(readPrefs());
     mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
+    return () => {
+      mq.removeEventListener("change", on);
+      // тема кабинета не переносится на лендинг при клиентском переходе
+      document.documentElement.dataset.theme = "dark";
+    };
   }, []);
+
+  useEffect(() => {
+    if (!kuraiApi) return;
+    let active = true;
+    void Promise.all([kuraiApi.me(), kuraiApi.getWorkspace(), kuraiApi.ledger()])
+      .then(([current, workspace, ledger]) => {
+        if (!active) return;
+        memberStore.set({ id: current.id, email: current.email, name: current.displayName });
+        chatsStore.set(() => workspace.chats);
+        projectsStore.set(() => workspace.projects);
+        balanceStore.set({ micro: ledger.availableMicro, plan: "free", planUntil: null, monthlyGrantMicro: 100_000 });
+      })
+      .catch(() => active && router.replace("/login"));
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   useEffect(() => {
     try {
@@ -74,7 +99,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         root.classList.add("hints");
         return;
       }
-      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      // одиночные клавиши не срабатывают, пока открыт модальный слой (шторка, лист, диалог)
+      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey || document.querySelector('[aria-modal="true"]')) return;
       if (e.key.toLowerCase() === "f" || e.key.toLowerCase() === "а") {
         e.preventDefault();
         setFocus((f) => !f);
@@ -114,16 +140,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       }}
       onNavigate={mobile ? () => setDrawer(false) : undefined}
       chats={chats}
-      balance={MOCK_BALANCE}
-      user={MOCK_USER}
-      now={MOCK_NOW}
+      balance={balance}
+      user={member}
+      now={kuraiApi ? new Date() : MOCK_NOW}
     />
   );
 
   return (
     <MotionConfig reducedMotion={calm ? "always" : "user"}>
     <div
-      className="flex h-dvh overflow-hidden"
+      className="kurai-app flex h-dvh overflow-hidden"
       onTouchStart={(e) => {
         const t = e.touches[0];
         if (t) swipe.current = { x: t.clientX, y: t.clientY };
@@ -143,7 +169,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className={cn("hidden transition-[margin] duration-(--dur-base) md:block", focus && "md:hidden")}>{sidebar(false)}</div>
 
       {/* телефон: шторка */}
-      <div className={cn("fixed inset-0 z-40 md:hidden", drawer ? "" : "pointer-events-none")} inert={!drawer}>
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-label="Навигация"
+        aria-modal={drawer || undefined}
+        onKeyDown={(e) => e.key === "Escape" && setDrawer(false)}
+        className={cn("fixed inset-0 z-40 md:hidden", drawer ? "" : "pointer-events-none")}
+        inert={!drawer}
+      >
         <div
           onClick={() => setDrawer(false)}
           className={cn("absolute inset-0 bg-bg/70 transition-opacity duration-(--dur-base)", drawer ? "opacity-100" : "opacity-0")}
@@ -153,36 +187,26 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <NavProgress />
-      <div
-        className="relative isolate flex min-w-0 flex-1 flex-col"
-        onPointerMove={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
-          e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
-        }}
-      >
-
+      <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
         {focus && (
           <button
             type="button"
             onClick={() => setFocus(false)}
-            className="absolute top-3 right-3 z-20 border border-acc-line bg-g1 px-2.5 py-1 font-mono text-[11px] text-acc hover:bg-acc hover:text-acc-ink"
+            className="absolute top-3 right-3 z-20 inline-flex h-8 items-center gap-2 rounded-(--radius-sm) border border-line bg-g1 px-2.5 text-[12px] text-ink2 hover:text-ink"
           >
-            ФОКУС · F — выйти
+            Фокус <span className="k-kbd">F</span>
           </button>
         )}
-        <GridPulse />
         <button
           type="button"
           onClick={() => setDrawer(true)}
           aria-label="Открыть меню"
-          className="absolute top-3 left-3 z-10 grid size-11 cursor-pointer place-items-center rounded-(--radius-field) bg-s1 text-ink2 md:hidden"
+          className="absolute top-2.5 left-2.5 z-10 grid size-11 cursor-pointer place-items-center rounded-(--radius-sm) text-ink2 hover:bg-s2 hover:text-ink md:hidden"
         >
           <Menu size={18} strokeWidth={1.5} />
         </button>
         <OfflineBanner />
-        {children}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>
 
       <CommandPalette open={palette} onClose={() => setPalette(false)} chats={chats} />

@@ -3,15 +3,13 @@ import { Appear } from "@/components/fx/motion";
 import { Label } from "@/components/fx/primitives";
 
 const WORKS = [
-  { art: "city", mode: "Изображение", model: "Nano Banana Pro", title: "Постер ночного маркета" },
-  { art: "wave", mode: "Видео", model: "Veo 3", title: "Оживлённый товар" },
-  { art: "bars", mode: "Слайды", model: "Авто · агент", title: "Питч-дек за 3 минуты" },
-  { art: "rings", mode: "Research", model: "Авто · агент", title: "Карта рынка доставки" },
-  { art: "sun", mode: "Аудио", model: "TTS · Нова", title: "Озвучка для Reels" },
-  { art: "grid", mode: "Изображение", model: "Flux 2", title: "Логотип кофейни" },
+  { art: "city", mode: "Изображение", title: "Направление для ночного маркета" },
+  { art: "bars", mode: "Слайды", title: "Структура короткого питча" },
+  { art: "rings", mode: "Research", title: "Карта рынка доставки" },
+  { art: "grid", mode: "Изображение", title: "Визуальный язык кофейни" },
 ] as const;
 
-/** «Сделано в KURAI»: витрина работ. Сейчас — процедурные примеры; после запуска — реальные работы с согласия авторов. */
+/** Примеры рабочих сценариев, а не выдаваемые за пользовательские кейсы результаты. */
 export function Gallery() {
   return (
     <section aria-labelledby="gal-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
@@ -19,10 +17,10 @@ export function Gallery() {
         <div>
           <Label className="text-acc">Витрина</Label>
           <h2 id="gal-title" className="mt-2 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
-            Сделано в KURAI
+            Из задачи в результат
           </h2>
         </div>
-        <Label>примеры</Label>
+        <Label>сценарии</Label>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {WORKS.map((w, i) => (
@@ -36,7 +34,7 @@ export function Gallery() {
               <figcaption className="flex flex-col gap-1 p-3">
                 <span className="text-[13.5px]">{w.title}</span>
                 <Label>
-                  {w.mode} · {w.model}
+                  {w.mode} · пример потока
                 </Label>
               </figcaption>
             </figure>

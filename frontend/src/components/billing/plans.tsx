@@ -47,7 +47,7 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
               </p>
               <ul className="flex flex-1 flex-col gap-1.5 text-[13.5px] text-ink2">
                 {p.features.map((f) => (
-                  <li key={f} className="flex gap-2 before:text-acc before:content-['›']">
+                  <li key={f} className="flex gap-2 before:text-ink3 before:content-['–']">
                     {f}
                   </li>
                 ))}

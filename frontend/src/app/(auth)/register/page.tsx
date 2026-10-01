@@ -8,6 +8,7 @@ import { TelegramLogin } from "@/components/auth/telegram-login";
 import { Button } from "@/components/ui/button";
 import { Segments, useFx } from "@/components/fx/primitives";
 import { emailError, passwordError, passwordScore, SCORE_LABEL } from "@/lib/auth-validate";
+import { kuraiApi } from "@/lib/kurai-api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,6 +21,23 @@ export default function RegisterPage() {
   const [formRef, glitch] = useFx<HTMLFormElement>("fx-glitch");
   const score = passwordScore(password);
 
+  if (!kuraiApi) {
+    return (
+      <>
+        <h1 className="font-display text-3xl font-light">Регистрация недоступна</h1>
+        <p className="mt-2 text-[14px] leading-6 text-ink2">
+          В этой локальной сборке не подключён сервер аккаунтов. Мы не принимаем данные формы, пока не можем создать реальный аккаунт.
+        </p>
+        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+          Открыть интерфейсный просмотр
+        </Link>
+        <Link href="/login" className="mt-5 text-[14px] text-ink2 hover:text-ink">
+          ← К экрану входа
+        </Link>
+      </>
+    );
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const next = {
@@ -31,14 +49,22 @@ export default function RegisterPage() {
     setErrors(next);
     if (Object.values(next).some(Boolean)) return glitch();
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-    router.push(`/verify?email=${encodeURIComponent(email.trim())}`);
+    try {
+      if (kuraiApi) await kuraiApi.signUp({ email: email.trim(), password, displayName: name.trim() });
+      else await new Promise((r) => setTimeout(r, 500));
+      router.push("/app");
+    } catch (error) {
+      setErrors({ form: error instanceof Error ? error.message : "Не удалось создать аккаунт." });
+      glitch();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <>
       <h1 className="font-display text-3xl font-light">Регистрация</h1>
-      <p className="mt-2 text-[14px] text-ink2">5 бесплатных запросов сразу после подтверждения почты.</p>
+      <p className="mt-2 text-[14px] text-ink2">Создадим рабочий аккаунт после проверки данных.</p>
       <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-4">
         <Field id="name" label="Имя" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
         <Field id="email" label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
@@ -53,7 +79,7 @@ export default function RegisterPage() {
           hint={
             <span className="flex flex-col gap-1.5">
               <Segments value={score / 4} count={4} tone={score < 2 ? "warn" : "acc"} label="Надёжность пароля" />
-              <span>Надёжность: {SCORE_LABEL[score]} · минимум 8 символов</span>
+              <span>Надёжность: {SCORE_LABEL[score]} · минимум 12 символов</span>
             </span>
           }
         />
@@ -69,21 +95,22 @@ export default function RegisterPage() {
               className="mt-0.5 size-4 shrink-0 accent-(--color-acc)"
             />
             <span>
-              Принимаю{" "}
+              Ознакомился и принимаю{" "}
               <Link href="/offer" className="text-acc hover:underline">
                 оферту
               </Link>{" "}
-              и даю согласие на обработку персональных данных по{" "}
+              и ознакомился с политикой обработки персональных данных{" "}
               <Link href="/privacy" className="text-acc hover:underline">
                 политике
               </Link>
             </span>
           </label>
-          {errors.consent && (
+        {errors.consent && (
             <p id="consent-err" role="alert" className="text-[12.5px] text-err">
               {errors.consent}
             </p>
-          )}
+        )}
+        {errors.form && <p role="alert" className="border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err">{errors.form}</p>}
         </div>
         <Button type="submit" variant="primary" size="lg" disabled={submitting} className="mt-1 w-full">
           {submitting ? "Создаём…" : "Создать аккаунт"}

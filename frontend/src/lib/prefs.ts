@@ -21,10 +21,12 @@ export type Prefs = {
   undoSend: boolean;
   templates: string[];
   theme: "dark" | "light" | "system";
+  /** Звук только на реальное завершение или ошибку; по умолчанию выключен. */
+  sound: boolean;
 };
 
 const KEY = "kurai:prefs";
-export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [], theme: "dark" };
+export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [], theme: "system", sound: false };
 
 export function readPrefs(): Prefs {
   try {
@@ -49,10 +51,17 @@ export function applyPrefs(p: Prefs): void {
   document.documentElement.classList.toggle("calm", p.calm);
   document.documentElement.classList.toggle("nohints", !p.hints);
   document.documentElement.classList.toggle("soft", p.softContrast);
-  document.documentElement.dataset.theme = resolveTheme(p.theme);
+  const theme = resolveTheme(p.theme);
+  const html = document.documentElement;
+  if (html.dataset.theme !== theme) {
+    // смена темы: материал и чернила перетекают на месте, без вспышки и повторных входов
+    html.classList.add("k-theme-shift");
+    window.setTimeout(() => html.classList.remove("k-theme-shift"), 260);
+  }
+  html.dataset.theme = theme;
   const root = document.documentElement.style;
   root.setProperty("--read-size", { s: "14px", m: "15px", l: "17px" }[p.readSize]);
-  root.setProperty("--read-width", p.readWidth === "wide" ? "60rem" : "48rem");
+  root.setProperty("--read-width", p.readWidth === "wide" ? "56rem" : "42rem");
 }
 
 /** Недавние модели: новая — первой, без повторов, не больше 3. */
@@ -73,5 +82,5 @@ export function markStep(id: string): void {
 /** «Как в системе» → светлая или тёмная по настройке ОС. */
 export function resolveTheme(t: Prefs["theme"]): "dark" | "light" {
   if (t !== "system") return t;
-  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }

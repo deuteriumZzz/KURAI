@@ -1,20 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "motion/react";
-import { INSPIRATION, type Inspiration } from "@/mocks/inspiration";
-import { Label } from "@/components/fx/primitives";
+import type { Inspiration } from "@/mocks/inspiration";
 
 /** Процедурная обложка: сетка/солнце/волна/столбцы/кольца/город — линии акцентом на графите. */
-export function Art({ kind, seed }: { kind: Inspiration["art"]; seed: number }) {
-  const acc = "var(--color-acc)";
+export function Art({ kind, seed, tone = "lime" }: { kind: Inspiration["art"]; seed: number; tone?: "lime" | "magenta" | "violet" }) {
+  const acc = tone === "magenta" ? "rgb(var(--kurai-magenta-rgb))" : tone === "violet" ? "rgb(var(--kurai-violet-rgb))" : "var(--color-acc)";
   const line = "var(--color-line2)";
   return (
     <svg viewBox="0 0 160 100" className="h-full w-full" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
       <defs>
         <linearGradient id={`g${seed}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#0d1218" />
-          <stop offset="1" stopColor="#12303a" />
+          <stop offset="0" stopColor="var(--color-g1)" />
+          <stop offset="1" stopColor="var(--color-g2)" />
         </linearGradient>
       </defs>
       <rect width="160" height="100" fill={`url(#g${seed})`} />
@@ -29,43 +26,5 @@ export function Art({ kind, seed }: { kind: Inspiration["art"]; seed: number }) 
       {kind === "city" && Array.from({ length: 9 }, (_, i) => <rect key={i} x={10 + i * 16} y={40 + ((i * 29) % 35)} width={12} height={60} fill="none" stroke={i === 4 ? acc : line} />)}
       {kind === "city" && <line x1={0} x2={160} y1={82} y2={78} stroke={acc} />}
     </svg>
-  );
-}
-
-/** «Вдохновение» под полем ввода: готовые задачи с промптом, клик — поле заполнится и переключит режим. */
-export function InspirationStrip() {
-  return (
-    <section aria-labelledby="insp-title" className="w-full max-w-5xl">
-      <div className="mb-3 flex items-baseline justify-between px-1">
-        <h2 id="insp-title" className="text-[15px] text-ink">
-          Найти вдохновение
-        </h2>
-        <Label>нажмите — поле заполнится</Label>
-      </div>
-      <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-6">
-        {INSPIRATION.map((it, i) => (
-          <motion.li
-            key={it.id}
-            initial={{ y: 12 }}
-            animate={{ y: 0 }}
-            transition={{ delay: 0.45 + i * 0.05, duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
-          >
-            <Link
-              href={`/app?mode=${it.mode}&prompt=${encodeURIComponent(it.prompt)}`}
-              scroll={false}
-              className="fx-hover group flex h-full flex-col overflow-hidden rounded-(--radius-field) bg-s1 hover:bg-s2"
-            >
-              <span className="relative block aspect-[16/10] overflow-hidden">
-                <span className="block h-full w-full transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.04]">
-                  <Art kind={it.art} seed={i} />
-                </span>
-                <Label className="absolute top-2 left-2 bg-bg/80 px-1.5 text-acc">{it.tag}</Label>
-              </span>
-              <span className="p-2.5 text-[13px] leading-snug">{it.title}</span>
-            </Link>
-          </motion.li>
-        ))}
-      </ul>
-    </section>
   );
 }

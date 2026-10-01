@@ -1,5 +1,17 @@
 import type { Micro, Mode } from "@/types/api";
 
+type CatalogRecord = {
+  id: string;
+  name: string;
+  provider: string;
+  description: string;
+  contextLength: number;
+  inputModalities?: string[];
+  outputModalities?: string[];
+  supportedModes: Mode[];
+  priceHintMicro: Micro;
+};
+
 export type ModelGroup = "auto" | "smart" | "fast" | "cheap" | "image" | "video" | "audio";
 
 export type ModelInfo = {
@@ -21,7 +33,7 @@ export type ModelInfo = {
 const TEXT: Mode[] = ["text", "research", "slides"];
 
 export const MODELS: ModelInfo[] = [
-  { id: "auto", name: "Авто", provider: "KURAI", emblem: "K", group: "auto", modes: TEXT, priceHintMicro: 20_000, contextK: 1000, stats: { speed: 8, quality: 9, value: 8, context: 10 }, note: "Подбираем модель под задачу, при сбое — резервная" },
+  { id: "auto", name: "Авто", provider: "KURAI", emblem: "K", group: "auto", modes: TEXT, priceHintMicro: 20_000, contextK: 1000, stats: { speed: 8, quality: 9, value: 8, context: 10 }, note: "Подбираем доступную модель под задачу до запуска" },
   { id: "claude-opus-5-5", name: "Claude Opus 5.5", provider: "Anthropic", emblem: "A", group: "smart", modes: TEXT, priceHintMicro: 90_000, contextK: 1000, stats: { speed: 5, quality: 10, value: 3, context: 10 }, note: "Сложные рассуждения, код, длинные документы" },
   { id: "claude-sonnet-5", name: "Claude Sonnet 5", provider: "Anthropic", emblem: "A", group: "smart", modes: TEXT, priceHintMicro: 20_000, contextK: 1000, stats: { speed: 8, quality: 9, value: 7, context: 10 }, note: "Тексты, редактура, аналитика" },
   { id: "gpt-5", name: "GPT-5", provider: "OpenAI", emblem: "O", group: "smart", modes: TEXT, priceHintMicro: 30_000, contextK: 400, stats: { speed: 7, quality: 9, value: 6, context: 8 }, note: "Универсальная, сильна в коде и логике" },
@@ -71,4 +83,44 @@ export function searchModels(list: ModelInfo[], query: string): ModelInfo[] {
 
 export function modelById(id: string): ModelInfo | undefined {
   return MODELS.find((m) => m.id === id);
+}
+
+/** Модель по имени из сообщения; «Авто · …» — маршрут автоподбора, а не отдельная модель каталога. */
+export function modelByName(name: string): ModelInfo | undefined {
+  return MODELS.find((m) => m.name === name) ?? (name.startsWith("Авто") ? MODELS.find((m) => m.group === "auto") : undefined);
+}
+
+/** Adapt only data declared by the server catalog; presentation scores are intentionally coarse UI hints. */
+export function fromCatalogModel(model: CatalogRecord): ModelInfo {
+  const price = model.priceHintMicro;
+  const group: ModelGroup = model.id === "openrouter/auto"
+    ? "auto"
+    : model.supportedModes.includes("image")
+      ? "image"
+      : model.supportedModes.includes("video")
+        ? "video"
+        : model.supportedModes.includes("audio")
+          ? "audio"
+          : price <= 4_000
+            ? "cheap"
+            : price <= 12_000
+              ? "fast"
+              : "smart";
+  return {
+    id: model.id,
+    name: model.name,
+    provider: model.provider,
+    emblem: model.provider.slice(0, 1).toUpperCase() || "AI",
+    group,
+    modes: model.supportedModes,
+    priceHintMicro: price,
+    contextK: Math.round(model.contextLength / 1000),
+    stats: {
+      speed: group === "fast" || group === "audio" ? 9 : 7,
+      quality: group === "smart" || group === "video" ? 9 : 8,
+      value: group === "cheap" ? 10 : 7,
+      context: model.contextLength >= 1_000_000 ? 10 : model.contextLength >= 128_000 ? 8 : 6,
+    },
+    note: model.description || "Доступна через OpenRouter",
+  };
 }

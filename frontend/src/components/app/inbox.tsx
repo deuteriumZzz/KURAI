@@ -7,11 +7,13 @@ import { AnimatePresence, motion } from "motion/react";
 import { inboxStore } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
+import { useCalm } from "@/lib/use-calm";
 import { Label } from "@/components/fx/primitives";
 import { EmptyState } from "@/components/fx/empty-state";
 
 /** «Входящие» — центр уведомлений о долгих задачах, чтобы ничего не терялось, пока вы в другом чате. */
 export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const calm = useCalm();
   const items = useStore(inboxStore);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -38,19 +40,19 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
         aria-label={`Входящие${unread ? `, непрочитанных: ${unread}` : ""}`}
         title="Входящие"
         className={cn(
-          "relative flex h-9 w-full cursor-pointer items-center gap-2.5 px-2.5 text-[13.5px] text-ink2 hover:bg-g2 hover:text-ink pointer-coarse:h-11",
+          "k-rail-item flex h-9 w-full cursor-pointer items-center gap-3 rounded-(--radius-sm) px-3 text-[14px] text-ink2 hover:bg-s1 hover:text-ink pointer-coarse:h-11 [&>svg]:text-ink3",
           collapsed && "justify-center px-0",
         )}
       >
         <Bell size={16} strokeWidth={1.5} />
-        {!collapsed && "Входящие"}
+        {!collapsed && <span className="k-shift">Входящие</span>}
         {unread > 0 && (
           <motion.span
             key={unread}
-            initial={{ scale: 1.6, opacity: 0.4 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={calm ? { opacity: 0.4 } : { transform: "scale(1.18)", opacity: 0.4 }}
+            animate={{ transform: "scale(1)", opacity: 1 }}
             transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-            className={cn("bg-acc px-1.5 font-mono text-[10px] leading-4 text-acc-ink", collapsed ? "absolute top-1 right-1" : "ml-auto")}
+            className={cn("rounded-(--radius-sm) bg-acc px-1.5 font-mono text-[10.5px] leading-[18px] text-acc-ink", collapsed ? "absolute top-1 right-1" : "ml-auto")}
           >
             {unread}
           </motion.span>
@@ -59,11 +61,11 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -6, transition: { duration: 0.12 } }}
+            initial={calm ? { opacity: 0 } : { opacity: 0, transform: "translateX(-6px) scale(0.99)" }}
+            animate={{ opacity: 1, transform: "translateX(0) scale(1)" }}
+            exit={calm ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, transform: "translateX(-3px) scale(0.995)", transition: { duration: 0.12 } }}
             transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] bg-g1 shadow-(--shadow-float) md:absolute md:top-0 md:left-full md:ml-2"
+            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] origin-top-left bg-g1 shadow-(--shadow-float) md:absolute md:top-0 md:left-full md:ml-2"
           >
             <div className="flex items-center justify-between border-b border-line px-3 py-2">
               <Label className="text-acc">Входящие</Label>

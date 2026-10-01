@@ -2,14 +2,18 @@
 
 import { useSyncExternalStore } from "react";
 
+function prefersReducedMotion(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function subscribe(cb: () => void) {
   const mo = new MutationObserver(cb);
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-  mq.addEventListener("change", cb);
+  const mq = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  mq?.addEventListener("change", cb);
   return () => {
     mo.disconnect();
-    mq.removeEventListener("change", cb);
+    mq?.removeEventListener("change", cb);
   };
 }
 
@@ -17,7 +21,7 @@ function subscribe(cb: () => void) {
 export function useCalm(): boolean {
   return useSyncExternalStore(
     subscribe,
-    () => document.documentElement.classList.contains("calm") || window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => document.documentElement.classList.contains("calm") || prefersReducedMotion(),
     () => false,
   );
 }

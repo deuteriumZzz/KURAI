@@ -1,31 +1,35 @@
 "use client";
 
-import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
-import { KuraiLogo, KuraiMark } from "@/components/brand/mark";
-import { Avatar } from "@/components/brand/avatar";
-import { FlapNumber } from "@/components/fx/flap-number";
 import { usePathname } from "next/navigation";
-import { Check, ChevronsUpDown, Flame, Gift, Images, LayoutGrid, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, UserRound, Wallet, type LucideIcon } from "lucide-react";
-import type { Balance, ChatSummary, Mode, User } from "@/types/api";
-import { modeById } from "@/lib/modes";
-import { ModeIcon } from "@/components/brand/mode-icons";
-import { formatCredits, groupChats } from "@/lib/format";
+import { useEffect, useId, useState } from "react";
+import { Archive, ChevronRight, EllipsisVertical, FolderClosed, Images, LayoutGrid, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, SquarePen, UserRound, Wallet, Flame, type LucideIcon } from "lucide-react";
+import type { Balance, ChatSummary, Project, User } from "@/types/api";
+import { KuraiMark } from "@/components/brand/mark";
+import { Initials } from "@/components/brand/avatar";
+import { formatCredits } from "@/lib/format";
+import { createProject as createOfflineProject, projectChatIds } from "@/lib/projects";
+import { kuraiApi } from "@/lib/kurai-api";
 import { cn } from "@/lib/cn";
-import { Label, Segments } from "@/components/fx/primitives";
+import { Segments } from "@/components/fx/primitives";
+import { chatsStore, projectsStore } from "@/lib/app-state";
+import { useStore } from "@/lib/store";
 import { Hint } from "./hint";
 import { ChatRow } from "./chat-row";
 import { Inbox } from "./inbox";
-import { chatsStore } from "@/lib/app-state";
-import { useEffect, useState } from "react";
+import { LocalPreviewBanner } from "./offline-banner";
 
-const TOOLS: Mode[] = ["image", "video", "research", "slides", "audio"];
+const NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/app/models", label: "Модели", icon: LayoutGrid },
+  { href: "/app/media", label: "Медиатека", icon: Images },
+  { href: "/app/artifacts", label: "Артефакты", icon: Archive },
+  { href: "/app/settings", label: "Настройки", icon: Settings },
+];
 
 const MENU: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/app/profile", label: "Профиль", icon: UserRound },
-  { href: "/app/media", label: "Медиатека", icon: Images },
-  { href: "/app/explore", label: "Тренды и шаблоны", icon: Flame },
   { href: "/app/billing", label: "Баланс и тарифы", icon: Wallet },
+  { href: "/app/explore", label: "Шаблоны и рецепты", icon: Flame },
   { href: "/app/settings", label: "Настройки", icon: Settings },
 ];
 
@@ -37,107 +41,107 @@ type Props = {
   onSearch: () => void;
   onNavigate?: () => void;
   chats: ChatSummary[];
-  balance: Balance;
+  /** null — баланс ещё не получен от сервера. */
+  balance: Balance | null;
   user: User;
   now: Date;
 };
 
+/** Знак KURAI для рейки: разреженный шрифт и тихий подзаголовок, без эффектов при наведении. */
+function Wordmark() {
+  return (
+    <span className="flex items-center gap-3">
+      <span className="text-[19px] font-normal tracking-[0.34em] text-ink">KURAI</span>
+      <span aria-hidden="true" className="h-6 w-px bg-line2" />
+      <span className="font-mono text-[8.5px] leading-[1.35] tracking-[0.22em] text-ink3">DEEP WORK<br />WITH AI</span>
+    </span>
+  );
+}
+
+/** Левая рейка Command Deck: создание, основные разделы, проекты, история и аккаунт. */
 export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, balance, user, now }: Props) {
   const pathname = usePathname();
-  const groups = groupChats(chats, now);
+  // шторка и десктоп рендерят по рейке — у каждой своё меню аккаунта
+  const accountMenu = useId();
+  const projects = useStore(projectsStore);
+  const projectChats = projectChatIds(projects);
+  const history = chats
+    .filter((chat) => !projectChats.has(chat.id))
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   const [removed, setRemoved] = useState<ChatSummary | null>(null);
   useEffect(() => {
     if (!removed) return;
     const t = setTimeout(() => setRemoved(null), 6000);
     return () => clearTimeout(t);
   }, [removed]);
-  const itemCls = (active: boolean) =>
+
+  const item = (active: boolean) =>
     cn(
-      "relative flex h-[38px] items-center gap-3 rounded-(--radius-field) px-2.5 text-[14px] transition-colors duration-(--dur-fast) pointer-coarse:h-11 [&>svg]:text-ink3 hover:[&>svg]:text-ink2",
+      "k-rail-item flex h-9 items-center gap-3 rounded-(--radius-sm) px-3 text-[14px] pointer-coarse:h-11",
       active ? "bg-s2 text-ink" : "text-ink2 hover:bg-s1 hover:text-ink",
       collapsed && "justify-center px-0",
     );
 
   return (
-    <aside
-      aria-label="Навигация"
-      className={cn(
-        "flex h-full flex-col bg-g1 transition-[width] duration-(--dur-base) ease-(--ease-out)",
-        collapsed ? "w-14" : "w-[260px]",
-      )}
-    >
-      <div className={cn("flex h-14 items-center px-3", collapsed ? "justify-center" : "justify-between")}>
-        {collapsed && <KuraiMark className="size-6 max-md:hidden" />}
+    <aside aria-label="Навигация" className={cn("k-rail flex h-full flex-col transition-[width] duration-(--dur-rail) ease-(--ease-out)", collapsed ? "w-16" : "w-[272px]")}>
+      <div className={cn("flex h-16 shrink-0 items-center", collapsed ? "justify-center" : "justify-between pr-2 pl-5")}>
         {!collapsed && (
-          <Link href="/app" onClick={onNavigate} aria-label="KURAI — главная">
-            <KuraiLogo />
+          <Link href="/app" onClick={onNavigate} aria-label="KURAI — новая задача">
+            <Wordmark />
           </Link>
         )}
         <button
           type="button"
           onClick={onToggle}
           aria-label={collapsed ? "Развернуть панель" : "Свернуть панель"}
-          className="grid size-8 cursor-pointer place-items-center text-ink2 hover:text-ink max-md:hidden"
+          className="grid size-8 cursor-pointer place-items-center rounded-(--radius-sm) text-ink3 hover:bg-s2 hover:text-ink max-md:hidden"
         >
           {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.5} /> : <PanelLeftClose size={16} strokeWidth={1.5} />}
         </button>
       </div>
 
-      <div className="isolate flex flex-col gap-0.5 px-2">
-        <Link
-          href="/app"
-          onClick={onNavigate}
-          title="Новый чат"
-          className={cn(
-            "relative mb-3 flex h-[38px] items-center gap-3 rounded-(--radius-field) bg-s2 px-2.5 text-[14px] text-ink hover:bg-s3 pointer-coarse:h-11",
-            collapsed && "justify-center px-0",
-          )}
-        >
-          <Plus size={16} strokeWidth={1.5} />
+      <div className="flex flex-col gap-0.5 px-3">
+        <Link href="/app" onClick={onNavigate} aria-label={collapsed ? "Новый чат" : undefined} className={cn(item(false), "mb-2 bg-s2 text-ink hover:bg-s3")}>
+          <SquarePen size={16} strokeWidth={1.5} className="shrink-0" />
           {!collapsed && (
-            <>
-              Новый чат <Label className="ml-auto text-[11px]">N</Label>
-            </>
+            <span className="k-shift flex flex-1 items-center justify-between">
+              Новый чат <span className="k-kbd">N</span>
+            </span>
           )}
           <Hint k="N" />
         </Link>
-        <button type="button" onClick={onSearch} title="Поиск и команды" className={cn(itemCls(false), "cursor-pointer")}>
-          <Search size={16} strokeWidth={1.5} />
+        <button type="button" onClick={onSearch} aria-label={collapsed ? "Поиск" : undefined} className={cn(item(false), "cursor-pointer")}>
+          <Search size={16} strokeWidth={1.5} className="shrink-0 text-ink3" />
           {!collapsed && (
-            <>
-              Поиск <Label className="ml-auto text-[11px]">⌘K</Label>
-            </>
+            <span className="k-shift flex flex-1 items-center justify-between">
+              Поиск <span className="k-kbd">⌘K</span>
+            </span>
           )}
           <Hint k="⌘K" />
         </button>
         <Inbox collapsed={collapsed} onNavigate={onNavigate} />
-
-        {!collapsed && <Label className="block px-2.5 pt-4 pb-1.5">Инструменты</Label>}
-        {TOOLS.map((m) => (
-          <Link key={m} href={`/app?mode=${m}`} onClick={onNavigate} aria-label={collapsed ? modeById(m).label : undefined} data-tip={collapsed ? modeById(m).label : undefined} className={itemCls(false)}>
-            <ModeIcon mode={m} />
-            {!collapsed && modeById(m).label}
-          </Link>
-        ))}
-        <Link href="/app/models" onClick={onNavigate} aria-current={pathname === "/app/models" ? "page" : undefined} aria-label={collapsed ? "Все модели" : undefined} data-tip={collapsed ? "Все модели" : undefined} className={itemCls(pathname === "/app/models")}>
-          <LayoutGrid size={16} strokeWidth={1.5} />
-          {!collapsed && (
-            <>
-              Все модели <Label className="ml-auto text-[11px]">300+</Label>
-            </>
-          )}
-        </Link>
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href);
+          return (
+            <Link key={href} href={href} onClick={onNavigate} aria-current={active ? "page" : undefined} aria-label={collapsed ? label : undefined} className={item(active)}>
+              <Icon size={16} strokeWidth={1.5} className={cn("shrink-0", active ? "text-ink" : "text-ink3")} />
+              {!collapsed && <span className="k-shift">{label}</span>}
+            </Link>
+          );
+        })}
       </div>
 
-      <nav aria-label="История чатов" className={cn("mt-3 flex-1 overflow-y-auto px-2 pb-3", collapsed && "invisible")}>
-        {groups.length === 0 && <p className="px-2.5 py-4 text-[12.5px] text-ink3">Чатов пока нет — начните с поля ввода на главной.</p>}
-        {groups.map((g) => (
-          <div key={g.label} className="mt-3 first:mt-0">
-            <Label className="block px-2.5 pb-1">{g.label}</Label>
-            {g.chats.map((c, i) => (
-              <Appear key={c.id} index={i} delay={0.1}>
+      <nav aria-label="Проекты и история" className={cn("mt-6 min-h-0 flex-1 overflow-y-auto px-3 pb-4", collapsed && "invisible")}>
+        <Projects projects={projects} chats={chats} pathname={pathname} onNavigate={onNavigate} />
+        <section aria-label="Чаты" className="mt-6">
+          <h2 className="px-3 pb-2 text-[12.5px] text-ink3">Чаты</h2>
+          {history.length === 0 && <p className="px-3 py-2 text-[12.5px] leading-relaxed text-ink3">Здесь появятся ваши диалоги. Начните с поля ввода.</p>}
+          <ul className="flex flex-col">
+            {history.map((c) => (
+              <li key={c.id}>
                 <ChatRow
                   chat={c}
+                  now={now}
                   active={pathname === `/app/c/${c.id}`}
                   onNavigate={onNavigate}
                   onPin={() => chatsStore.set((xs) => xs.map((x) => (x.id === c.id ? { ...x, pinned: !x.pinned } : x)))}
@@ -147,14 +151,14 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
                     chatsStore.set((xs) => xs.filter((x) => x.id !== c.id));
                   }}
                 />
-              </Appear>
+              </li>
             ))}
-          </div>
-        ))}
+          </ul>
+        </section>
       </nav>
 
       {removed && !collapsed && (
-        <div role="status" className="mx-2 mb-2 flex items-center justify-between gap-2 border border-line2 bg-g2 px-2.5 py-2 text-[12.5px]">
+        <div role="status" className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-(--radius-sm) border border-line bg-g2 px-3 py-2 text-[12.5px]">
           <span className="truncate text-ink2">Чат удалён</span>
           <button
             type="button"
@@ -162,44 +166,50 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
               chatsStore.set((xs) => [removed, ...xs]);
               setRemoved(null);
             }}
-            className="shrink-0 cursor-pointer text-acc hover:underline"
+            className="shrink-0 cursor-pointer text-ink underline underline-offset-2 hover:text-acc"
           >
             Вернуть
           </button>
         </div>
       )}
-      {!collapsed && <Invite />}
-      <div className={cn("p-3 pt-2", collapsed && "px-1.5")}>
+
+      <div className={cn("shrink-0 border-t border-line px-3 pt-2 pb-3", collapsed && "px-2")}>
+        {!collapsed && <LocalPreviewBanner />}
         <button
           type="button"
-          popoverTarget="account-menu"
-          className={cn("flex w-full cursor-pointer items-center gap-2.5 rounded-(--radius-field) p-1.5 text-left hover:bg-s2", collapsed && "justify-center")}
+          popoverTarget={accountMenu}
+          aria-label={`Аккаунт: ${user.name}${balance ? `, баланс ${formatCredits(balance.micro)}` : ""}`}
+          className={cn("mt-1 flex w-full cursor-pointer items-center gap-3 rounded-(--radius-sm) p-2 text-left hover:bg-s2", collapsed && "justify-center p-1")}
         >
-          <Avatar seed={user.email} />
+          {collapsed ? <KuraiMark className="size-7" /> : <Initials name={user.name} />}
           {!collapsed && (
-            <span className="min-w-0 flex-1 text-[13px] leading-tight">
-              <span className="block truncate">{user.name}</span>
-              <Label className="text-[11.5px]">{PLAN[balance.plan]}</Label>
-            </span>
+            <>
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block truncate text-[14px] text-ink">{user.name}</span>
+                <span className="k-meta text-[11px]">
+                  {balance ? formatCredits(balance.micro) : "баланс загружается"}
+                  {balance && !kuraiApi && ` · ${PLAN[balance.plan]}`}
+                </span>
+              </span>
+              <EllipsisVertical size={16} strokeWidth={1.5} className="text-ink3" />
+            </>
           )}
-          {!collapsed && <FlapNumber value={formatCredits(balance.micro)} className="font-mono text-[12.5px] text-ink2 tabular-nums" />}
-          {!collapsed && <ChevronsUpDown size={14} strokeWidth={1.5} className="text-ink3" />}
         </button>
         <div
-          id="account-menu"
+          id={accountMenu}
           popover="auto"
           onClick={(e) => (e.target as Element).closest("a") && e.currentTarget.hidePopover()}
-          className="fixed border-0 inset-auto bottom-16 left-2 m-0 w-60 rounded-(--radius-field) bg-g2 p-1.5 text-ink shadow-(--shadow-float)"
+          className="fixed inset-auto bottom-20 left-3 m-0 w-64 rounded-(--radius-md) border border-line2 bg-g1 p-1.5 text-ink shadow-(--shadow-float)"
         >
-          <Link href="/app/billing" onClick={onNavigate} className="mb-1 block rounded-[calc(var(--radius-field)-6px)] bg-s1 px-2.5 py-2">
-            <span className="mb-1.5 flex items-baseline justify-between text-[12.5px] text-ink2">
-              Баланс <span className="font-mono text-[14px] text-ink tabular-nums">{formatCredits(balance.micro)}</span>
+          <Link href="/app/billing" onClick={onNavigate} className="mb-1 block rounded-(--radius-sm) px-3 py-2.5 hover:bg-s2">
+            <span className="mb-2 flex items-baseline justify-between text-[12.5px] text-ink3">
+              Баланс <span className="font-mono text-[14px] text-ink tabular-nums">{balance ? formatCredits(balance.micro) : "—"}</span>
             </span>
-            <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />
+            {balance && !kuraiApi && <Segments value={balance.micro / balance.monthlyGrantMicro} label="Баланс относительно месячного начисления" />}
           </Link>
           {MENU.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} onClick={onNavigate} aria-current={pathname === href ? "page" : undefined} className={cn(itemCls(pathname === href), "rounded-[calc(var(--radius-field)-6px)]")}>
-              <Icon size={16} strokeWidth={1.5} />
+            <Link key={href + label} href={href} onClick={onNavigate} aria-current={pathname === href ? "page" : undefined} className="flex h-9 items-center gap-3 rounded-(--radius-sm) px-3 text-[13.5px] text-ink2 hover:bg-s2 hover:text-ink">
+              <Icon size={16} strokeWidth={1.5} className="text-ink3" />
               {label}
             </Link>
           ))}
@@ -209,28 +219,106 @@ export function Sidebar({ collapsed, onToggle, onSearch, onNavigate, chats, bala
   );
 }
 
-/** «Пригласите друга» — копирует реферальную ссылку. */
-function Invite() {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(t);
-  }, [copied]);
+function Projects({ projects, chats, pathname, onNavigate }: { projects: Project[]; chats: ChatSummary[]; pathname: string; onNavigate?: () => void }) {
+  const [adding, setAdding] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [open, setOpen] = useState<string | null>(() => projects.find((p) => p.chatIds.some((id) => pathname === `/app/c/${id}`))?.id ?? null);
+
+  async function addProject() {
+    const title = name.trim();
+    if (!title || creating) return;
+    setCreating(true);
+    setProjectError(null);
+    try {
+      const project = kuraiApi
+        ? await kuraiApi.createProject(title)
+        : createOfflineProject(title, new Date().toISOString(), projects.map((item) => item.id));
+      projectsStore.set((items) => [project, ...items]);
+      setOpen(project.id);
+      setName("");
+      setAdding(false);
+    } catch (error) {
+      setProjectError(error instanceof Error ? error.message : "Не удалось создать проект.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
-    <button
-      type="button"
-      onClick={() => {
-        navigator.clipboard?.writeText(`${location.origin}/r/u_1`).catch(() => {});
-        setCopied(true);
-      }}
-      className="mx-3 flex cursor-pointer items-center gap-3 rounded-(--radius-field) bg-s1 p-3 text-left text-[13.5px] text-ink hover:bg-s2"
-    >
-      {copied ? <Check size={18} strokeWidth={1.5} className="shrink-0 text-acc" /> : <Gift size={18} strokeWidth={1.5} className="shrink-0 text-acc" />}
-      <span>
-        {copied ? "Ссылка скопирована" : "Пригласите друга"}
-        <span className="block text-[12.5px] text-ink3">+200 кредитов вам и другу</span>
-      </span>
-    </button>
+    <section aria-label="Проекты">
+      <div className="flex items-center justify-between pr-1 pb-2 pl-3">
+        <Link href="/app/projects" onClick={onNavigate} className="text-[12.5px] text-ink3 hover:text-ink">
+          Проекты
+        </Link>
+        <button type="button" onClick={() => { setProjectError(null); setAdding(true); }} aria-label="Новый проект" className="grid size-7 cursor-pointer place-items-center rounded-(--radius-sm) text-ink3 hover:bg-s2 hover:text-ink">
+          <Plus size={15} strokeWidth={1.5} />
+        </button>
+      </div>
+      {adding && (
+        <form onSubmit={(event) => { event.preventDefault(); void addProject(); }} className="mb-1 rounded-(--radius-sm) border border-line2 bg-g2 p-1 focus-within:border-ink3">
+          <label className="fx-sr" htmlFor="project-name">Название проекта</label>
+          <input
+            id="project-name"
+            autoFocus
+            value={name}
+            disabled={creating}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Escape") { setAdding(false); setName(""); } }}
+            placeholder="Название проекта"
+            className="h-8 w-full bg-transparent px-2 text-[13px] text-ink outline-none placeholder:text-ink3"
+          />
+          {projectError && <p role="alert" className="px-2 pt-1 text-[11.5px] text-warn">{projectError}</p>}
+        </form>
+      )}
+      {projects.length === 0 && !adding && <p className="px-3 text-[12.5px] text-ink3">Соберите чаты с общим контекстом в проект.</p>}
+      <ul className="flex flex-col gap-px">
+        {projects.map((project) => {
+          const own = chats.filter((chat) => project.chatIds.includes(chat.id));
+          const expanded = open === project.id;
+          const hasActive = own.some((chat) => pathname === `/app/c/${chat.id}`);
+          return (
+            <li key={project.id}>
+              <button
+                type="button"
+                onClick={() => setOpen((current) => (current === project.id ? null : project.id))}
+                aria-expanded={expanded}
+                data-active={hasActive && !expanded ? "true" : undefined}
+                className="k-rail-item flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-(--radius-sm) px-3 text-left text-[13.5px] text-ink2 hover:bg-s1 hover:text-ink pointer-coarse:h-11"
+              >
+                <ChevronRight size={14} strokeWidth={1.5} className={cn("-ml-1 shrink-0 text-ink3 transition-transform duration-(--dur-rail)", expanded && "rotate-90")} />
+                <FolderClosed size={15} strokeWidth={1.5} className="shrink-0 text-ink3" />
+                <span className="k-shift min-w-0 flex-1 truncate">{project.name}</span>
+                <span className="k-meta text-[10.5px]">{own.length}</span>
+              </button>
+              {expanded && (
+                <ul className="mt-px mb-1 ml-[22px] border-l border-line pl-2">
+                  {own.length > 0 ? (
+                    own.map((chat) => {
+                      const active = pathname === `/app/c/${chat.id}`;
+                      return (
+                        <li key={chat.id}>
+                          <Link
+                            href={`/app/c/${chat.id}`}
+                            onClick={onNavigate}
+                            aria-current={active ? "page" : undefined}
+                            className={cn("k-chat-row block truncate rounded-(--radius-sm) py-1.5 pr-2 pl-3 text-[13px]", active ? "bg-s2 text-ink" : "text-ink2 hover:bg-s1 hover:text-ink")}
+                          >
+                            {chat.title}
+                          </Link>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="py-1.5 pl-3 text-[12.5px] text-ink3">Пока без чатов</li>
+                  )}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

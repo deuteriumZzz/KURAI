@@ -5,30 +5,39 @@ import { useEffect, useRef, useState } from "react";
 import { Ellipsis, PenLine, Pin, PinOff, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ChatSummary } from "@/types/api";
+import { formatWhen } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useCalm } from "@/lib/use-calm";
 
 type Props = {
   chat: ChatSummary;
   active: boolean;
+  /** «Сейчас» для подписи времени; без него строка однострочная. */
+  now?: Date;
   onNavigate?: () => void;
   onPin: () => void;
   onRename: (title: string) => void;
   onDelete: () => void;
 };
 
-/** Строка истории: закрепить, переименовать, удалить — через меню «⋯» (видно при наведении/фокусе). */
-export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }: Props) {
+/** Строка истории: название и время; закрепить, переименовать, удалить — из меню на конце строки. */
+export function ChatRow({ chat, active, now, onNavigate, onPin, onRename, onDelete }: Props) {
+  const calm = useCalm();
   const [menu, setMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(chat.title);
-  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!menu) return;
     const off = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setMenu(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
     window.addEventListener("pointerdown", off);
-    return () => window.removeEventListener("pointerdown", off);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("pointerdown", off);
+      window.removeEventListener("keydown", esc);
+    };
   }, [menu]);
 
   if (renaming) {
@@ -39,7 +48,6 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
           if (draft.trim()) onRename(draft.trim());
           setRenaming(false);
         }}
-        className="px-1"
       >
         <label htmlFor={`rn-${chat.id}`} className="fx-sr">
           Новое название чата
@@ -51,71 +59,49 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => setRenaming(false)}
           onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
-          className="h-8 w-full border border-acc-line bg-g2 px-2 text-[13px] outline-none"
+          className="h-9 w-full rounded-(--radius-sm) border border-line2 bg-g2 px-3 text-[13.5px] outline-none focus:border-ink3"
         />
       </form>
     );
   }
 
-  const item = "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-g2 pointer-coarse:py-3";
+  const item = "flex w-full cursor-pointer items-center gap-2.5 rounded-(--radius-sm) px-2.5 py-2 text-left text-[13px] text-ink2 hover:bg-s2 hover:text-ink pointer-coarse:py-3";
 
   return (
-    <div
-      ref={root}
-      className="group relative"
-      onMouseEnter={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setHover({ x: r.right + 12, y: r.top });
-      }}
-      onMouseLeave={() => setHover(null)}
-    >
+    <div ref={root} className="group relative">
       <Link
         href={`/app/c/${chat.id}`}
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex h-8 items-center gap-2.5 pr-8 pl-2.5 text-[13px] transition-colors duration-(--dur-fast) pointer-coarse:h-11",
-          active ? "bg-g2 text-ink shadow-[inset_2px_0_0_var(--color-acc)]" : "text-ink2 hover:bg-g2 hover:text-ink",
+          "k-chat-row flex flex-col gap-0.5 rounded-(--radius-sm) py-2 pr-9 pl-3 pointer-coarse:py-2.5",
+          active ? "bg-s2" : "hover:bg-s1",
         )}
       >
-        <span className="truncate">{chat.title}</span>
-        {chat.pinned && <Pin size={12} strokeWidth={1.5} className="ml-auto shrink-0 text-ink3" aria-label="Закреплён" />}
+        <span className={cn("flex items-center gap-1.5 truncate text-[13.5px] leading-snug", active ? "text-ink" : "text-ink2 group-hover:text-ink")}>
+          <span className="truncate">{chat.title}</span>
+          {chat.pinned && <Pin size={11} strokeWidth={1.5} className="shrink-0 text-ink3" aria-label="Закреплён" />}
+        </span>
+        {now && <span className="text-[12px] leading-tight text-ink3">{formatWhen(chat.updatedAt, now)}</span>}
       </Link>
       <button
         type="button"
         onClick={() => setMenu((m) => !m)}
         aria-label={`Действия с чатом «${chat.title}»`}
         aria-expanded={menu}
-        className="absolute top-0 right-0 grid h-8 w-8 cursor-pointer place-items-center text-ink3 opacity-0 group-hover:opacity-100 hover:text-ink focus-visible:opacity-100 aria-expanded:opacity-100 pointer-coarse:h-11 pointer-coarse:opacity-100"
+        className="k-row-actions absolute top-1.5 right-1 grid size-7 cursor-pointer place-items-center rounded-(--radius-sm) text-ink3 hover:bg-s2 hover:text-ink pointer-coarse:size-10"
       >
         <Ellipsis size={14} strokeWidth={1.5} />
       </button>
-      {chat.preview && !menu && hover && (
-        <motion.div
-          role="tooltip"
-          initial={{ opacity: 0, x: -4 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.15, delay: 0.35 }}
-          className="pointer-events-none fixed z-50 w-64 bg-g2 p-3 shadow-(--shadow-float) max-md:hidden"
-          style={{ left: hover.x, top: hover.y }}
-        >
-          <p className="truncate text-[13px]">{chat.title}</p>
-          <p className="mt-1 text-[12.5px] leading-snug text-ink2">{chat.preview}</p>
-          <p className="mt-2 font-mono text-[10.5px] text-ink3">
-            #{chat.id.toUpperCase()}
-            {chat.media ? ` · медиа ${chat.media}` : ""}
-          </p>
-        </motion.div>
-      )}
       <AnimatePresence>
         {menu && (
           <motion.div
             role="menu"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={calm ? { opacity: 0 } : { opacity: 0, transform: "translateY(-4px)" }}
+            animate={{ opacity: 1, transform: "translateY(0)" }}
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
             transition={{ duration: 0.14 }}
-            className="absolute top-8 right-0 z-30 w-44 bg-g1 py-1 shadow-(--shadow-float)"
+            className="absolute top-9 right-0 z-(--z-bay) w-48 rounded-(--radius-md) border border-line2 bg-g1 p-1 shadow-(--shadow-float)"
           >
             <button role="menuitem" type="button" className={item} onClick={() => { onPin(); setMenu(false); }}>
               {chat.pinned ? <PinOff size={14} strokeWidth={1.5} /> : <Pin size={14} strokeWidth={1.5} />}
@@ -124,7 +110,8 @@ export function ChatRow({ chat, active, onNavigate, onPin, onRename, onDelete }:
             <button role="menuitem" type="button" className={item} onClick={() => { setDraft(chat.title); setRenaming(true); setMenu(false); }}>
               <PenLine size={14} strokeWidth={1.5} /> Переименовать
             </button>
-            <button role="menuitem" type="button" className={cn(item, "text-err")} onClick={() => { onDelete(); setMenu(false); }}>
+            <span aria-hidden="true" className="k-hatch-line mx-1 my-1 block" />
+            <button role="menuitem" type="button" className={cn(item, "text-err hover:text-err")} onClick={() => { onDelete(); setMenu(false); }}>
               <Trash size={14} strokeWidth={1.5} /> Удалить
             </button>
           </motion.div>

@@ -26,3 +26,13 @@ export function leafOf(id: Id, messages: Message[]): Id {
     current = children.reduce((a, b) => (Date.parse(b.createdAt) > Date.parse(a.createdAt) ? b : a)).id;
   }
 }
+
+export type Fork = { activeId: Id; role: Message["role"]; versions: Message[] };
+
+/** Развилки активной ветки: места, где у реплики или ответа есть другие версии. Только реальные ветки. */
+export function forksOf(branch: Message[], messages: Message[]): Fork[] {
+  return branch.flatMap((m) => {
+    const versions = siblingsOf(m.id, messages);
+    return versions.length > 1 ? [{ activeId: m.id, role: m.role, versions }] : [];
+  });
+}

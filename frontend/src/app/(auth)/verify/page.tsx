@@ -1,28 +1,14 @@
 import Link from "next/link";
-import { Label, SysLine } from "@/components/fx/primitives";
-import { ResendButton } from "@/components/auth/resend-button";
 
 export default async function VerifyPage(props: PageProps<"/verify">) {
-  const sp = await props.searchParams;
-  const email = typeof sp.email === "string" ? sp.email : "вашу почту";
+  await props.searchParams;
   return (
     <>
-      <Label className="text-acc">Шаг 2 из 2</Label>
-      <h1 className="mt-2 font-display text-3xl font-light">Подтвердите почту</h1>
-      <p className="mt-3 text-[14px] text-ink2">
-        Отправили ссылку на <span className="text-ink">{email}</span>. Откройте письмо и нажмите «Подтвердить» — после этого начислим 5
-        бесплатных запросов.
+      <h1 className="font-display text-3xl font-light">Подтверждение почты не настроено</h1>
+      <p className="mt-3 text-[14px] leading-6 text-ink2">
+        Текущий вход использует защищённую сессию после регистрации. Письма с подтверждением и повторная отправка не включены, пока не появится серверный почтовый контур.
       </p>
-      <div className="mt-6 flex flex-col gap-2 border border-line bg-g1 p-4">
-        <SysLine>письмо отправлено · ссылка действует 24 часа</SysLine>
-        <SysLine>не пришло? проверьте «Спам» и «Промоакции»</SysLine>
-      </div>
-      <div className="mt-6 flex flex-col gap-3">
-        <ResendButton />
-        <Link href="/register" className="text-center text-[13px] text-ink2 hover:text-ink">
-          Указать другой email
-        </Link>
-      </div>
+      <Link href="/login" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">К экрану входа</Link>
     </>
   );
 }

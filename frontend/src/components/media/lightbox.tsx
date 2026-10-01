@@ -1,21 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ArrowRight, Download, Play, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, X } from "lucide-react";
 import { lightboxStore } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
-import { Label, Segments } from "@/components/fx/primitives";
+import { Label } from "@/components/fx/primitives";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 /**
  * Полноэкранный просмотр. Картинка «перелетает» из ленты (общий layoutId), ←/→ листают, Esc закрывает.
- * Видео — превью с таймлайном; настоящий плеер подключится с файлами из бэкенда.
+ * Видео — только кадр-превью: воспроизведение без файла не имитируется.
  */
 export function Lightbox() {
   const state = useStore(lightboxStore);
-  const [playing, setPlaying] = useState(false);
-  const [t, setT] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const item = state?.items[state.index];
+
+  useFocusTrap(!!state && !!item, dialogRef);
 
   useEffect(() => {
     if (!state) return;
@@ -28,12 +30,6 @@ export function Lightbox() {
     return () => window.removeEventListener("keydown", onKey);
   }, [state]);
 
-  useEffect(() => {
-    if (!playing || !item?.durationSec) return;
-    const id = setInterval(() => setT((v) => (v >= 1 ? 0 : v + 0.1 / (item.durationSec ?? 8))), 100);
-    return () => clearInterval(id);
-  }, [playing, item]);
-
   const go = (d: number) => lightboxStore.set((s) => (s ? { ...s, index: Math.max(0, Math.min(s.items.length - 1, s.index + d)) } : s));
 
   return (
@@ -41,6 +37,7 @@ export function Lightbox() {
       {state && item && (
         <motion.div
           key="lb"
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label={item.alt}
@@ -56,7 +53,7 @@ export function Lightbox() {
               {state.index + 1} / {state.items.length} · ← → листать · Esc закрыть
             </Label>
             <div className="flex items-center gap-1">
-              <a href={item.src} download={`kurai-${item.id}.${item.kind === "video" ? "mp4" : "svg"}`} aria-label="Скачать" className="grid size-10 place-items-center text-ink2 hover:text-ink">
+              <a href={item.src} download aria-label="Скачать" className="grid size-10 place-items-center text-ink2 hover:text-ink">
                 <Download size={18} strokeWidth={1.5} />
               </a>
               <button type="button" onClick={() => lightboxStore.set(null)} aria-label="Закрыть" autoFocus className="grid size-10 cursor-pointer place-items-center text-ink2 hover:text-ink">
@@ -70,19 +67,9 @@ export function Lightbox() {
               layoutId={`media-${item.id}`}
               src={item.src}
               alt={item.alt}
-              className="max-h-full max-w-full border border-line2 object-contain"
+              className="max-h-full max-w-full rounded-(--radius-sm) border border-line2 object-contain"
               transition={{ type: "tween", duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
             />
-            {item.kind === "video" && (
-              <button
-                type="button"
-                onClick={() => setPlaying((p) => !p)}
-                aria-label={playing ? "Пауза" : "Смотреть превью"}
-                className="absolute grid size-16 cursor-pointer place-items-center border border-acc bg-bg/60 text-acc"
-              >
-                <Play size={24} strokeWidth={1.5} />
-              </button>
-            )}
             {state.index > 0 && (
               <button type="button" onClick={() => go(-1)} aria-label="Предыдущее" className="absolute left-2 grid size-11 cursor-pointer place-items-center border border-line bg-g1/80 text-ink2 hover:text-ink sm:left-4">
                 <ArrowLeft size={18} strokeWidth={1.5} />
@@ -95,7 +82,7 @@ export function Lightbox() {
             )}
           </div>
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4 py-4">
-            {item.kind === "video" && <Segments value={t} count={40} label="Позиция просмотра" />}
+            {item.kind === "video" && <p className="text-center text-[12.5px] text-ink3">Кадр-превью. Видео воспроизводится в карточке ответа, когда файл загружен в хранилище.</p>}
             {item.caption && <p className="text-center text-[13.5px] text-ink2">{item.caption}</p>}
           </div>
         </motion.div>

@@ -1,4 +1,4 @@
-import type { Balance, ChatSummary, MediaItem, Message, Storage, SystemStatus, User } from "@/types/api";
+import type { Balance, ChatSummary, MediaItem, Message, Project, Storage, SystemStatus, User } from "@/types/api";
 import { placeholderImage } from "./media";
 
 // Тестовые данные в форме API. Заменяются ответами бэкенда без изменения экранов.
@@ -15,6 +15,7 @@ export const MOCK_BALANCE: Balance = {
 export const MOCK_STATUS: SystemStatus = { node: "EU-01", latencyMs: 240, modelsOnline: 312, state: "ok" };
 
 export const MOCK_CHATS: ChatSummary[] = [
+  { id: "r4k2", preview: "Собрать позиционирование, ключевые сообщения и отличия основных игроков на рынке.", media: 0, title: "Исследование конкурентов", updatedAt: "2026-09-23T12:26:00Z", pinned: false, headId: "r2" },
   { id: "7f3a", preview: "Видео «Оживи вторую» · генерация 44%", media: 3, title: "Сравнение тарифов конкурентов", updatedAt: "2026-09-23T14:32:00Z", pinned: true, headId: "m6" },
   { id: "b21c", preview: "Сценарий на 30 секунд: хук, проблема, решение", media: 2, title: "Сценарий ролика для Reels", updatedAt: "2026-09-23T11:05:00Z", pinned: false, headId: "b-h" },
   { id: "c9e4", preview: "4 варианта логотипа, лучший — №2", media: 4, title: "Логотип кофейни «Нейрон», 4 варианта", updatedAt: "2026-09-22T18:40:00Z", pinned: false, headId: "c-h" },
@@ -22,9 +23,28 @@ export const MOCK_CHATS: ChatSummary[] = [
   { id: "e5f1", preview: "План на 4 недели, 12 постов и 3 Reels", media: 1, title: "План контента на октябрь", updatedAt: "2026-09-02T16:20:00Z", pinned: false, headId: "e-h" },
 ];
 
+/** Проекты Kimi-подобного уровня: держат общий контекст и свои чаты. */
+export const MOCK_PROJECTS: Project[] = [
+  { id: "p_market", name: "Выход KURAI", chatIds: ["7f3a", "e5f1"], createdAt: "2026-09-18T09:00:00Z" },
+  { id: "p_neuron", name: "Кофейня «Нейрон»", chatIds: ["b21c", "c9e4"], createdAt: "2026-09-16T12:00:00Z" },
+];
+
 export const MOCK_MESSAGES: Message[] = [
+  { id: "r1", chatId: "r4k2", parentId: null, role: "user", mode: "research", model: null, costMicro: 0, createdAt: "2026-09-23T12:24:00Z",
+    parts: [{ type: "text", text: "Собрать позиционирование топ-3 конкурентов в нашем сегменте (AI-ассистенты для работы с текстом). Нужны ключевые сообщения, целевая аудитория, сильные и слабые стороны. В конце — краткие выводы и возможности для дифференциации." }] },
+  { id: "r2", chatId: "r4k2", parentId: "r1", role: "assistant", mode: "research", model: "Claude Sonnet 5", costMicro: 384_000, createdAt: "2026-09-23T12:26:00Z",
+    parts: [
+      { type: "text", text: "Я проанализировал позиционирование трёх ключевых игроков в сегменте AI-ассистентов для работы с текстом. Ниже — структурированный обзор и выводы.\n\n## 1. ChatGPT\nУниверсальный ассистент для широкого круга задач, включая работу с текстом [1].\n\n### Ключевые сообщения\n- Помогает думать, писать, учиться и решать задачи\n- Один инструмент для работы и жизни\n- Постоянно развивается и становится полезнее\n\n### Целевая аудитория\nШирокая: от студентов до профессионалов и компаний любого масштаба.\n\n### Сильные и слабые стороны\n- Сильный бренд и узнаваемость; большая экосистема\n- Мало специализации под профессиональные задачи; ограниченный контроль над источниками\n\n## 2. Claude\nАкцент на надёжность, длинный контекст и работу с документами [2].\n\n- Сильные стороны: аккуратный тон, анализ больших файлов\n- Слабые стороны: меньше встроенных медиа-инструментов\n\n## 3. Gemini\nИнтеграция с экосистемой Google и мультимодальность [3].\n\n- Сильные стороны: поиск, документы, почта в одном месте\n- Слабые стороны: позиционирование размыто между продуктами\n\n## Выводы\nНи один игрок не делает главным **прозрачный выбор модели и цену до запуска**. Это и есть пространство для дифференциации KURAI: один рабочий стол, честный маршрут и проверяемые источники." },
+      { type: "sources", items: [
+        { url: "https://openai.com/chatgpt/overview/", title: "ChatGPT — возможности и сценарии" },
+        { url: "https://www.anthropic.com/claude", title: "Claude — ключевые сообщения и сценарии" },
+        { url: "https://deepmind.google/models/gemini/", title: "Gemini — обзор возможностей" },
+      ] },
+    ] },
   { id: "m1", chatId: "7f3a", parentId: null, role: "user", mode: "text", model: null, costMicro: 0, createdAt: "2026-09-23T14:20:00Z",
     parts: [{ type: "text", text: "Сравни тарифы Syntx, ChatGPT Plus и GetImg: цена, лимиты, что входит." }] },
+  { id: "m2a", chatId: "7f3a", parentId: "m1", role: "assistant", mode: "text", model: "GPT-5", costMicro: 30_000, createdAt: "2026-09-23T14:19:40Z",
+    parts: [{ type: "text", text: "Если коротко: для текста хватит одной подписки, для медиа — отдельные сервисы. Сравнение по лимитам ниже в следующей версии ответа." }] },
   { id: "m2", chatId: "7f3a", parentId: "m1", role: "assistant", mode: "text", model: "Claude Sonnet 5", costMicro: 78_000, createdAt: "2026-09-23T14:20:07Z",
     parts: [{ type: "text", text: "Коротко: Syntx сильнее в медиа (видео, музыка, аватары), ChatGPT Plus — в тексте и рассуждениях, GetImg — в изображениях. Если нужны все три сценария, выгоднее платить за запросы в одном месте, чем за три подписки." }] },
   { id: "m3", chatId: "7f3a", parentId: "m2", role: "user", mode: "image", model: null, costMicro: 0, createdAt: "2026-09-23T14:25:00Z",

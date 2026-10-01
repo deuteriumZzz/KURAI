@@ -11,12 +11,14 @@ export type Micro = number;
 
 export type Mode = "text" | "image" | "video" | "audio" | "research" | "slides";
 
-export type JobStatus = "queued" | "running" | "done" | "failed";
+export type JobStatus = "queued" | "running" | "done" | "failed" | "canceled";
 
 export type MessagePart =
   | { type: "text"; text: string }
   | { type: "image"; url: string; alt: string; width: number; height: number }
   | { type: "video"; url: string; poster?: string; durationSec: number }
+  | { type: "audio"; url: string }
+  | { type: "sources"; items: { url: string; title: string }[] }
   | { type: "file"; name: string; sizeBytes: number; mime: string }
   | { type: "job"; jobId: Id; kind: Exclude<Mode, "text">; status: JobStatus; progress: number };
 
@@ -43,6 +45,14 @@ export type ChatSummary = {
   /** Короткий предпросмотр для сайдбара. */
   preview?: string;
   media?: number;
+};
+
+/** Постоянное рабочее пространство: общий контекст и связанные чаты. */
+export type Project = {
+  id: Id;
+  name: string;
+  chatIds: Id[];
+  createdAt: IsoDate;
 };
 
 export type Plan = "free" | "pro" | "ultra";
@@ -84,7 +94,7 @@ export type MediaItem = {
 
 export type Storage = { usedBytes: number; quotaBytes: number };
 
-export type LedgerKind = "topup" | "charge" | "refund" | "grant" | "bonus";
+export type LedgerKind = "topup" | "charge" | "refund" | "grant" | "bonus" | "adjustment";
 
 /** Строка журнала: только дописывается; сумма со знаком, целые micro. */
 export type LedgerEntry = {

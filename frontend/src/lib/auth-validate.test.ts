@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emailError, passwordError, passwordScore } from "./auth-validate";
+import { emailError, loginPasswordError, passwordError, passwordScore } from "./auth-validate";
 
 describe("emailError", () => {
   it("accepts normal addresses", () => {
@@ -22,9 +22,14 @@ describe("passwordScore", () => {
     expect(passwordScore("Abcdefghijkl")).toBe(3);
     expect(passwordScore("Abcdefghijk1!")).toBe(4);
   });
-  it("passwordError requires 8+ chars", () => {
+  it("passwordError mirrors the backend's 12-character minimum", () => {
     expect(passwordError("")).toBe("Введите пароль");
-    expect(passwordError("1234567")).toBe("Минимум 8 символов");
-    expect(passwordError("12345678")).toBeNull();
+    expect(passwordError("12345678901")).toBe("Минимум 12 символов");
+    expect(passwordError("123456789012")).toBeNull();
+  });
+
+  it("keeps login compatible with accounts created before the current sign-up minimum", () => {
+    expect(loginPasswordError("")).toBe("Введите пароль");
+    expect(loginPasswordError("eight888")).toBeNull();
   });
 });
