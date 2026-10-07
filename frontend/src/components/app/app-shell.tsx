@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { Sidebar } from "./sidebar";
 import { applyPrefs, readPrefs } from "@/lib/prefs";
 import { CommandPalette } from "./command-palette";
-import { OfflineBanner } from "./offline-banner";
+import { OfflineBanner, VerifyBanner } from "./offline-banner";
 import { Lightbox } from "@/components/media/lightbox";
 import { Shortcuts } from "./shortcuts";
 import { useCalm } from "@/lib/use-calm";
@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     void Promise.all([kuraiApi.me(), kuraiApi.getWorkspace(), kuraiApi.ledger()])
       .then(([current, workspace, ledger]) => {
         if (!active) return;
-        memberStore.set({ id: current.id, email: current.email, name: current.displayName });
+        memberStore.set({ id: current.id, email: current.email, name: current.displayName, emailVerified: current.emailVerified });
         chatsStore.set(() => workspace.chats);
         projectsStore.set(() => workspace.projects);
         balanceStore.set({ micro: ledger.availableMicro, plan: "free", planUntil: null, monthlyGrantMicro: 100_000 });
@@ -353,6 +353,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu size={18} strokeWidth={1.5} />
           </button>
           <OfflineBanner />
+          <VerifyBanner />
           <motion.div
             key={section}
             initial={mounted ? { opacity: 0 } : false}

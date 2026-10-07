@@ -1,7 +1,10 @@
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView
 from .api import EstimateView, HealthView, QuoteView, ReadinessView, ServiceStatusView
-from accounts.api import AccountExportView, CsrfView, LoginView, LogoutView, MeView, SignUpView
+from accounts.api import (
+    AccountExportView, CsrfView, EmailVerifyResendView, EmailVerifyView, LoginView, LogoutView, MeView,
+    PasswordResetConfirmView, PasswordResetRequestView, SignUpView,
+)
 from ledger.api import LedgerView
 from sharing.api import ChatShareLinkView, ShareLinkRevokeView, SharedChatView
 from files.api import FileCollectionView, FileDownloadView
@@ -19,6 +22,10 @@ urlpatterns = [
     path("api/v1/auth/sign-up", SignUpView.as_view(), name="sign-up"),
     path("api/v1/auth/login", LoginView.as_view(), name="login"),
     path("api/v1/auth/logout", LogoutView.as_view(), name="logout"),
+    path("api/v1/auth/password-reset", PasswordResetRequestView.as_view(), name="password-reset"),
+    path("api/v1/auth/password-reset/confirm", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path("api/v1/auth/verify-email", EmailVerifyView.as_view(), name="verify-email"),
+    path("api/v1/auth/verify-email/resend", EmailVerifyResendView.as_view(), name="verify-email-resend"),
     path("api/v1/me/export", AccountExportView.as_view(), name="account-export"),
     path("api/v1/me", MeView.as_view(), name="me"),
     path("api/v1/ledger", LedgerView.as_view(), name="ledger"),

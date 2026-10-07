@@ -33,6 +33,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    # set once the member opens the confirmation link; sign-in does not depend on it
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 

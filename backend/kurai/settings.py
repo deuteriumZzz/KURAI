@@ -159,6 +159,20 @@ if KURAI_WEB_MAX_USES <= 0 or KURAI_RESEARCH_DEEP_MAX_USES < KURAI_RESEARCH_MAX_
     raise RuntimeError("KURAI web, research depth or reasoning limits are invalid")
 if not DEBUG and not OPENROUTER_API_KEY:
     raise RuntimeError("OPENROUTER_API_KEY must be configured outside development")
+# Mail: real delivery needs an SMTP host; in development letters print to the server log.
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
+    "django.core.mail.backends.console.EmailBackend" if DEBUG and not EMAIL_HOST else "django.core.mail.backends.smtp.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "KURAI <no-reply@kurai.local>")
+# links in letters lead to the web app; the first allowed origin is the default
+KURAI_FRONTEND_URL = (os.getenv("KURAI_FRONTEND_URL") or (CORS_ALLOWED_ORIGINS[0] if CORS_ALLOWED_ORIGINS else "http://localhost:3000")).rstrip("/")
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT_SECONDS", str(2 * 3600)))
+KURAI_EMAIL_VERIFY_MAX_AGE_SECONDS = int(os.getenv("KURAI_EMAIL_VERIFY_MAX_AGE_SECONDS", str(3 * 86400)))
 AUTH_RATE_LIMIT_COUNT = int(os.getenv("AUTH_RATE_LIMIT_COUNT", "20"))
 AUTH_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("AUTH_RATE_LIMIT_WINDOW_SECONDS", "60"))
 if DEBUG:

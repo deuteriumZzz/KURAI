@@ -79,7 +79,7 @@ export type SystemStatus = {
   state: "ok" | "degraded" | "down";
 };
 
-export type User = { id: Id; name: string; email: string };
+export type User = { id: Id; name: string; email: string; /** С сервером: подтверждён ли адрес. */ emailVerified?: boolean };
 
 export type MediaKind = "image" | "video" | "audio";
 

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, X } from "lucide-react";
+import { ActionButton } from "@/components/ui/action-button";
+import { memberStore } from "@/lib/app-state";
+import { useStore } from "@/lib/store";
 import { AnimatePresence, motion } from "motion/react";
 import { kuraiApi } from "@/lib/kurai-api";
 
@@ -55,6 +58,47 @@ export function OfflineBanner() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * Адрес не подтверждён: одна тихая строка над рабочей областью. Вход от этого не зависит —
+ * подтверждение нужно, чтобы на почту можно было восстановить пароль. Скрытие — до конца сеанса.
+ */
+export function VerifyBanner() {
+  const member = useStore(memberStore);
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return sessionStorage.getItem("kurai:verify-hidden") === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (!kuraiApi || member.emailVerified !== false || hidden) return null;
+  return (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-g1 px-4 py-2 text-[13px] text-ink2">
+      <span>
+        Подтвердите адрес <span className="text-ink">{member.email}</span> — ссылка в письме.
+      </span>
+      <span className="flex items-center gap-1">
+        <ActionButton size="sm" variant="ghost" done="Отправлено" busy="Отправляем…" onAction={() => kuraiApi!.resendVerification()}>
+          Отправить ещё раз
+        </ActionButton>
+        <button
+          type="button"
+          aria-label="Скрыть до конца сеанса"
+          onClick={() => {
+            try {
+              sessionStorage.setItem("kurai:verify-hidden", "1");
+            } catch {}
+            setHidden(true);
+          }}
+          className="k-act size-8"
+        >
+          <X size={14} strokeWidth={1.5} />
+        </button>
+      </span>
+    </div>
   );
 }
 

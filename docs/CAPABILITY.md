@@ -192,12 +192,22 @@ durable output deltas and refreshes an authoritative chat snapshot after a
 terminal event or temporary network failure.
 
 The authenticated MVP uses server-backed email/password sign-up and sign-in.
-Telegram OAuth and email password recovery are not represented as working
-options until their signed server callbacks and mail-delivery flows exist. A
-frontend build without an API origin presents an explicitly local interface
-preview instead of accepting credentials or creating a pretend account.
-Email confirmation links are likewise deferred; sign-up creates a session
-directly until a verified mail-delivery lifecycle is introduced.
+Password recovery and email confirmation work through member letters. A reset
+request always returns the same response, so it never reveals whether an
+address is registered; the link is single-use (bound to the current password
+hash), expires after `PASSWORD_RESET_TIMEOUT_SECONDS` (2 h by default) and
+closes other sessions once the password changes. Sign-up sends a signed
+confirmation link (3 days by default) that works without a session; sign-in
+does not depend on confirmation, and a quiet in-app line offers a resend.
+Letters need an SMTP host in production: without it the reset request answers
+`mail_unavailable`, the reset page says so instead of accepting an email, and
+`/api/v1/status` reports `mail_unconfigured`. In development letters print to
+the server log.
+
+Telegram OAuth is not represented as a working option until its signed server
+callback exists. A frontend build without an API origin presents an explicitly
+local interface preview instead of accepting credentials or creating a pretend
+account.
 
 The deployed API also exposes anonymous liveness and database-readiness probes
 at `/api/v1/health` and `/api/v1/ready`. Diagnostic responses intentionally do

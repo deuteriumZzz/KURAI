@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import DatabaseError, connection
 
+from accounts.mail import mail_ready
 from model_catalog.models import CatalogModel
 from model_catalog.capabilities import capability_payloads
 from files.models import FileAsset
@@ -80,6 +81,8 @@ class ServiceStatusView(APIView):
             reasons.append("catalog_stale")
         if not settings.OPENROUTER_API_KEY:
             reasons.append("provider_not_configured")
+        if not mail_ready():
+            reasons.append("mail_unconfigured")
         return Response(
             {
                 "data": {

@@ -15,7 +15,7 @@ type ApiProject = {
 type ApiEnvelope<T> = { data: T };
 type ApiFailure = { error?: { code?: string; message?: string } };
 
-export type KuraiMember = { id: string; email: string; displayName: string };
+export type KuraiMember = { id: string; email: string; displayName: string; emailVerified?: boolean };
 export type KuraiFile = { id: string; name: string; contentType: string; sizeBytes: number; sha256: string; createdAt: string };
 export type KuraiMedia = {
   id: string; kind: "image" | "video" | "audio"; url: string; contentType: string; sizeBytes: number; prompt: string;
@@ -263,6 +263,19 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
       csrfToken = null;
     },
     me: async (): Promise<KuraiMember> => request<KuraiMember>("/api/v1/me", { method: "GET" }),
+    /** Письмо со ссылкой сброса. Ответ одинаковый для любого адреса — сервер не раскрывает, кто зарегистрирован. */
+    requestPasswordReset: async (email: string): Promise<void> => {
+      await request("/api/v1/auth/password-reset", { method: "POST", body: JSON.stringify({ email }) });
+    },
+    confirmPasswordReset: async (params: { uid: string; token: string; password: string }): Promise<void> => {
+      await request("/api/v1/auth/password-reset/confirm", { method: "POST", body: JSON.stringify(params) });
+    },
+    verifyEmail: async (token: string): Promise<void> => {
+      await request("/api/v1/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });
+    },
+    resendVerification: async (): Promise<void> => {
+      await request("/api/v1/auth/verify-email/resend", { method: "POST" });
+    },
     ledger: (): Promise<KuraiLedger> => request<KuraiLedger>("/api/v1/ledger", { method: "GET" }),
     media: async (): Promise<KuraiMedia[]> => {
       const assets = await request<KuraiMedia[]>("/api/v1/media", { method: "GET" });
