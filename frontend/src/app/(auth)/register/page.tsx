@@ -52,6 +52,10 @@ export default function RegisterPage() {
     try {
       if (kuraiApi) await kuraiApi.signUp({ email: email.trim(), password, displayName: name.trim() });
       else await new Promise((r) => setTimeout(r, 500));
+      try {
+        // К3 — после входа кабинет один раз показывает короткую загрузку сеанса
+        sessionStorage.setItem("kurai:boot", "1");
+      } catch {}
       router.push("/app");
     } catch (error) {
       setErrors({ form: error instanceof Error ? error.message : "Не удалось создать аккаунт." });

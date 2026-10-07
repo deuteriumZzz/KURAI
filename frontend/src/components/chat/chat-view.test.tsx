@@ -31,4 +31,17 @@ describe("ChatView — send, stream, cancel, recover", () => {
     expect(screen.getByRole("button", { name: /Запустить заново/ })).toBeTruthy();
     expect(screen.getByText("Ответ остановлен")).toBeTruthy();
   });
+
+  it("never simulates a server-side generation from history: the job keeps its real state", { timeout: 10_000 }, async () => {
+    const at = "2026-09-23T12:00:00Z";
+    const initial = [
+      { id: "q", chatId: "t", parentId: null, role: "user" as const, mode: "image" as const, model: null, costMicro: 0, createdAt: at, parts: [{ type: "text" as const, text: "Обложка" }] },
+      { id: "a", chatId: "t", parentId: "q", role: "assistant" as const, mode: "image" as const, model: "m", costMicro: 0, createdAt: at, parts: [{ type: "job" as const, jobId: "run-1", kind: "image" as const, status: "running" as const, progress: 0.3 }] },
+    ];
+    render(<ChatView chat={{ ...chat, headId: "a" }} initial={initial} balanceMicro={10_000_000} live />);
+
+    await new Promise((r) => setTimeout(r, 2500));
+    expect(screen.getByText(/Изображение · генерация · 30%/)).toBeTruthy();
+    expect(screen.queryAllByRole("img", { name: /Открыть/ })).toHaveLength(0);
+  });
 });

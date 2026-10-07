@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode } from "react";
+import { retrigger } from "@/lib/motion";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -13,12 +14,17 @@ export function Field({ id, label, error, hint, className, type, ...rest }: Prop
   const [shown, setShown] = useState(false);
   const [caps, setCaps] = useState(false);
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => isPassword && setCaps(e.getModifierState("CapsLock"));
+  // 65 — новая ошибка: поле коротко качается, рамка краснеет, причина — под полем
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) retrigger(box.current, "k-shake");
+  }, [error]);
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-[13px] text-ink2">
         {label}
       </label>
-      <div className="fx-brackets">
+      <div ref={box} className="fx-brackets">
         <input
           id={id}
           type={isPassword && shown ? "text" : type}
@@ -27,7 +33,7 @@ export function Field({ id, label, error, hint, className, type, ...rest }: Prop
           aria-invalid={!!error}
           aria-describedby={describedBy}
           className={cn(
-            cn(isPassword && "pr-11"), "h-11 w-full border bg-g1 px-3 text-[15px] text-ink outline-none placeholder:text-ink3 focus:border-acc-line focus:shadow-[0_0_0_3px_var(--color-acc-soft)]",
+            cn(isPassword && "pr-11"), "h-11 w-full border bg-g1 px-3 text-[15px] text-ink outline-none placeholder:text-ink3 focus:border-ink3 focus:shadow-[0_0_0_3px_var(--color-s2)]",
             error ? "border-err" : "border-line",
             className,
           )}

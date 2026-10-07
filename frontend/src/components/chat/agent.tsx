@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Check, FileText, Square } from "lucide-react";
 import type { AgentTask, RunState } from "@/lib/stream";
 import { cn } from "@/lib/cn";
 import { formatCredits, hostOf, webHref } from "@/lib/format";
+import { routeLabel } from "@/lib/models";
 
 
 /** Уточнение перед запуском: план не стартует, пока человек не выбрал вариант (клик или клавиша 1–3). */
@@ -44,6 +46,9 @@ export function AgentChoice({ ask, onAnswer }: { ask: NonNullable<RunState["ask"
  */
 export function WorkPlan({ tasks, live = false, onStop }: { tasks: AgentTask[]; live?: boolean; onStop?: () => void }) {
   const done = tasks.filter((t) => t.status === "done").length;
+  const doing = tasks.some((t) => t.status === "doing");
+  // 29 — линия между шагами заполняется по мере работы: половина отрезка — на текущий шаг
+  const fill = tasks.length > 1 ? Math.min(1, (done + (doing ? 0.5 : 0)) / (tasks.length - 1)) : 0;
   return (
     <section aria-label="План работы" className="max-w-xl rounded-(--radius-md) border border-line bg-g1">
       <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
@@ -57,16 +62,21 @@ export function WorkPlan({ tasks, live = false, onStop }: { tasks: AgentTask[]; 
           )}
         </span>
       </header>
-      <ol className="flex flex-col py-1.5">
+      <ol className="relative flex flex-col py-1.5">
+        {tasks.length > 1 && (
+          <i aria-hidden="true" className="absolute top-[22px] bottom-[22px] left-[24.5px] w-px bg-line">
+            <i className="block h-full w-full origin-top bg-acc transition-transform duration-500 ease-(--ease-out) motion-reduce:transition-none" style={{ transform: `scaleY(${fill})` }} />
+          </i>
+        )}
         {tasks.map((t, i) => (
           <li key={t.title} aria-current={t.status === "doing" ? "step" : undefined} className={cn("flex items-center gap-3 px-4 py-2 text-[13.5px]", t.status === "todo" ? "text-ink3" : t.status === "doing" ? "text-ink" : "text-ink2")}>
             <span
               aria-hidden="true"
               className={cn(
-                "grid size-[18px] shrink-0 place-items-center rounded-(--radius-xs) border font-mono text-[10px]",
+                "relative grid size-[18px] shrink-0 place-items-center rounded-(--radius-xs) border font-mono text-[10px]",
                 t.status === "done" && "k-seal border-acc bg-acc text-acc-ink",
-                t.status === "doing" && cn("border-acc-line text-acc", live && "k-live"),
-                t.status === "todo" && "border-line text-ink3",
+                t.status === "doing" && cn("border-acc-line bg-g1 text-acc", live && "k-live"),
+                t.status === "todo" && "border-line bg-g1 text-ink3",
               )}
             >
               {t.status === "done" ? <Check size={11} strokeWidth={2.5} /> : String(i + 1)}
@@ -139,12 +149,65 @@ export function AgentSummary({ run, costMicro, onOpenArtifact, onSavePacket }: {
 }
 
 /** Квитанция ответа: модель, цена, время и источники — только то, что реально вернул запуск. */
-export function RunReceipt({ run, costMicro, model }: { run?: RunState; costMicro: number; model?: string | null }) {
+const secs = (ms: number) => `${(ms / 1000).toLocaleString("ru-RU", { maximumFractionDigits: ms < 10_000 ? 1 : 0 })} с`;
+
+/**
+ * К17 — хронометраж как таймлайн: очередь, размышление, поиск, печать.
+ * Отрезки строятся только из отметок событий этого запуска; для истории отметок нет — полосы нет.
+ */
+function Chrono({ run }: { run: RunState }) {
+  const { startedAt, routedAt, thinkingAt, searchAt, firstTokenAt, doneAt } = run;
+  if (!startedAt || !doneAt || doneAt <= startedAt) return null;
+  const marks = [
+    { label: routedAt ? "очередь" : "ожидание", at: startedAt, cls: "bg-line2" },
+    ...(routedAt ? [{ label: "ожидание", at: routedAt, cls: "bg-ink3/50" }] : []),
+    ...(thinkingAt ? [{ label: "размышление", at: thinkingAt, cls: "bg-violet" }] : []),
+    ...(searchAt ? [{ label: "поиск", at: searchAt, cls: "bg-signal" }] : []),
+    ...(firstTokenAt ? [{ label: "печать", at: firstTokenAt, cls: "bg-acc" }] : []),
+  ].sort((a, b) => a.at - b.at);
+  const total = doneAt - startedAt;
+  const segs = marks.map((mark, i) => ({ ...mark, to: marks[i + 1]?.at ?? doneAt })).filter((seg) => seg.to > seg.at);
+  const label = segs.map((seg) => `${seg.label} ${secs(seg.to - seg.at)}`).join(" · ");
+  return (
+    <span role="img" aria-label={`Хронометраж: ${label}`} className="group/chrono relative inline-flex h-1.5 w-24 overflow-visible rounded-full bg-s2">
+      {segs.map((seg) => (
+        <i key={seg.label + seg.at} title={`${seg.label} · ${secs(seg.to - seg.at)}`} className={cn("h-full first:rounded-l-full last:rounded-r-full hover:brightness-125", seg.cls)} style={{ width: `${((seg.to - seg.at) / total) * 100}%` }} />
+      ))}
+      <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 hidden w-max rounded-(--radius-sm) border border-line2 bg-g1 px-2 py-1 text-[11px] text-ink2 shadow-(--shadow-float) group-hover/chrono:block">{label}</span>
+    </span>
+  );
+}
+
+/** К18 — короткий код ответа: его достаточно назвать поддержке; ноль перечёркнут, клик копирует. */
+function ObjectCode({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+  const hex = id.replace(/[^0-9a-f]/gi, "").slice(0, 8).toUpperCase();
+  if (hex.length < 8) return null;
+  const code = `MSG·${hex.slice(0, 4)}-${hex.slice(4)}`;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void navigator.clipboard?.writeText(code).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1400);
+        }, () => undefined);
+      }}
+      aria-label={copied ? "Код ответа скопирован" : `Скопировать код ответа ${code}`}
+      className="k-code cursor-pointer rounded-(--radius-xs) px-1 hover:bg-s2 hover:text-ink"
+    >
+      {copied ? "скопировано" : code}
+    </button>
+  );
+}
+
+export function RunReceipt({ run, costMicro, model, code }: { run?: RunState; costMicro: number; model?: string | null; code?: string }) {
   const sec = run?.durationMs ? Math.max(1, Math.round(run.durationMs / 1000)) : 0;
   const sources = run?.sources?.length ?? 0;
   return (
     <p className="k-meta flex flex-wrap items-center gap-x-2" aria-label="Квитанция ответа">
-      <span>{model ?? "Автомаршрут"}</span>
+      {code && <ObjectCode id={code} />}
+      <span>{model ? routeLabel(model) : "Автомаршрут"}</span>
       {costMicro > 0 && (
         <>
           <span aria-hidden="true">·</span>
@@ -155,6 +218,7 @@ export function RunReceipt({ run, costMicro, model }: { run?: RunState; costMicr
         <>
           <span aria-hidden="true">·</span>
           <span>{sec} с</span>
+          {run && <Chrono run={run} />}
         </>
       )}
       {sources > 0 && (

@@ -2,7 +2,10 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Star, X } from "lucide-react";
+import { X } from "lucide-react";
+import { motion } from "motion/react";
+import { StarBounce } from "./model-picker";
+import { flyTo, SPRING } from "@/lib/motion";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
 import { cn } from "@/lib/cn";
 import { formatCredits } from "@/lib/format";
@@ -49,7 +52,9 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
 
   const list = useMemo(() => {
     const filtered = models.filter((model) => fitsFilter(model, filter));
-    return [...filtered].sort((left, right) => Number(favorites.includes(right.id)) - Number(favorites.includes(left.id)));
+    // избранное, затем группы в постоянном порядке (живой каталог приходит по алфавиту — заголовки групп не повторяются)
+    const order = Object.keys(GROUP_LABEL);
+    return [...filtered].sort((left, right) => Number(favorites.includes(right.id)) - Number(favorites.includes(left.id)) || order.indexOf(left.group) - order.indexOf(right.group));
   }, [favorites, filter, models]);
   const comparedModels = useMemo(
     () => compareIds.map((modelId) => models.find((model) => model.id === modelId)).filter((model): model is ModelInfo => Boolean(model)),
@@ -64,7 +69,14 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
     writePrefs({ favorites: next });
   }
 
-  function updateComparison(modelId: string) {
+  function updateComparison(modelId: string, glyph?: Element | null) {
+    // 62 — знак модели улетает в счётчик сравнения (счётчик появляется в том же кадре, что и новый id)
+    if (glyph && !compareIds.includes(modelId) && compareIds.length < 3) {
+      requestAnimationFrame(() => {
+        const counter = document.querySelector("[data-compare-count]");
+        if (counter) void flyTo(glyph, counter, { arc: 40, endScale: 0.4 });
+      });
+    }
     setCompareIds((current) => {
       if (current.includes(modelId)) return current.filter((id) => id !== modelId);
       return current.length < 3 ? [...current, modelId] : current;
@@ -85,7 +97,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
         {favorites.length > 0 && " Избранные закреплены первыми."}
       </p>
       {comparedModels.length > 0 && (
-        <section aria-label="Сравнение маршрутов" className="overflow-x-auto rounded-(--radius-md) border border-violet-line bg-g1">
+        <section id="compare" aria-label="Сравнение маршрутов" className="scroll-mt-4 overflow-x-auto rounded-(--radius-md) border border-violet-line bg-g1">
           <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <h2 className="text-[14px] text-violet">Сравнение маршрутов · {comparedModels.length}/3</h2>
             <div className="flex max-w-md flex-wrap items-center justify-end gap-2 text-right">
@@ -178,11 +190,11 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
                             aria-label={fav ? `Убрать ${model.name} из избранного` : `Добавить ${model.name} в избранное`}
                             className={cn("k-act", fav && "text-acc")}
                           >
-                            <Star aria-hidden="true" size={15} strokeWidth={1.5} fill={fav ? "currentColor" : "none"} />
+                            <StarBounce on={fav} size={15} />
                           </button>
                           <button
                             type="button"
-                            onClick={() => updateComparison(model.id)}
+                            onClick={(e) => updateComparison(model.id, e.currentTarget.closest("tr")?.querySelector("svg"))}
                             disabled={!compared && compareIds.length >= 3}
                             aria-pressed={compared}
                             aria-label={compared ? `Убрать ${model.name} из сравнения` : `Добавить ${model.name} в сравнение`}
@@ -202,6 +214,15 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
             </tbody>
           </table>
         </div>
+      )}
+      {compareIds.length > 0 && (
+        // счётчик сравнения всегда под рукой: модели собираются в него, клик ведёт к таблице сравнения
+        <a href="#compare" data-compare-count className="sticky bottom-4 z-10 mx-auto flex h-9 w-fit items-center gap-2 rounded-full border border-violet-line bg-g1 px-4 text-[12.5px] text-violet shadow-(--shadow-float)">
+          Compare ·{" "}
+          <motion.span key={compareIds.length} initial={{ scale: 1.5 }} animate={{ scale: 1 }} transition={SPRING.bouncy} className="inline-block font-mono tabular-nums">
+            {compareIds.length}/3
+          </motion.span>
+        </a>
       )}
     </>
   );

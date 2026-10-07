@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { HomeComposer, RecentWork } from "@/components/app/home-composer";
+import { FirstSteps, HomeComposer, RecentWork } from "@/components/app/home-composer";
 import { WorkspaceSignal } from "@/components/app/workspace-signal";
 import { SavedRecipes } from "@/components/app/saved-recipes";
 import { SignalField } from "@/components/app/signal-field";
+import { Decode } from "@/components/fx/decode";
 import { MODES } from "@/lib/modes";
 import type { Mode } from "@/types/api";
 
@@ -28,7 +29,10 @@ export default async function AppHome(props: PageProps<"/app">) {
       <div className="relative mx-auto flex w-full max-w-[60rem] flex-col px-4 pt-[clamp(4.5rem,14vh,9rem)] pb-16 md:px-8">
         <header className="mb-8">
           <p className="k-index mb-5">K/00 · Новая задача</p>
-          <h1 className="k-display text-[clamp(3.1rem,7.2vw,6rem)] text-ink">Что хотите сделать?</h1>
+          {/* К2 — заголовок собирается из кодов один раз за полсекунды */}
+          <h1 className="k-display text-[clamp(3.1rem,7.2vw,6rem)] text-ink">
+            <Decode text="Что хотите сделать?" duration={520} />
+          </h1>
           <p className="mt-5 max-w-[34rem] text-[15.5px] leading-relaxed text-ink2">
             Опишите задачу своими словами. KURAI подберёт маршрут и покажет цену ещё до запуска.
           </p>
@@ -36,6 +40,9 @@ export default async function AppHome(props: PageProps<"/app">) {
         </header>
 
         <HomeComposer mode={mode} model={model} compare={compare} prompt={prompt} />
+        <div className="mt-10">
+          <FirstSteps />
+        </div>
 
         <div className="mt-16 grid gap-x-12 gap-y-10 md:grid-cols-2">
           <section aria-labelledby="recent-title">

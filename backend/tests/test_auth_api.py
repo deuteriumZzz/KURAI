@@ -57,6 +57,7 @@ def test_ledger_returns_an_account_scoped_append_only_history(db):
         "title": "Начисление кредитов",
         "model": None,
         "chatId": None,
+        "mode": None,
         "amountMicro": 25_000,
     }
 

@@ -12,6 +12,36 @@
       ],
       "port": 3100,
       "autoPort": true
+    },
+    {
+      "name": "kurai-backend",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DJANGO_DEBUG=1",
+        "KURAI_LOCAL_EXECUTE_RUNS=1",
+        "CORS_ALLOWED_ORIGINS=http://localhost:3200,http://127.0.0.1:3200",
+        "backend/.venv/bin/python",
+        "backend/manage.py",
+        "runserver",
+        "8000"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "kurai-frontend-live",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "NEXT_PUBLIC_KURAI_API_BASE_URL=http://localhost:8000",
+        "npm",
+        "--prefix",
+        "frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3200"
+      ],
+      "port": 3200
     }
   ]
 }

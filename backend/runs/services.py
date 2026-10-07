@@ -12,29 +12,42 @@ def as_decimal(value) -> Decimal:
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
-def estimate_cost_micro(*, model, text: str, mode: str = "text", options: dict | None = None) -> int:
-    """Reserve a bounded maximum based on the catalog snapshot and normalized run options, never a client hint."""
+def estimate_parts_usd(*, model, text: str, mode: str = "text", options: dict | None = None) -> dict[str, Decimal]:
+    """The reserve formula split into the parts the composer shows as cells; the reserve itself sums them."""
     options = options or {}
     if mode == "image":
-        amount_usd = as_decimal(model.image_price_usd_per_generation) * options.get("count", 1)
-        micro = int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
-        return max(settings.KURAI_MIN_RUN_COST_MICRO, micro)
+        return {"generation": as_decimal(model.image_price_usd_per_generation) * options.get("count", 1)}
     if mode == "video":
-        amount_usd = as_decimal(model.video_price_usd_per_second) * options.get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS)
-        micro = int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
-        return max(settings.KURAI_MIN_RUN_COST_MICRO, micro)
+        return {"generation": as_decimal(model.video_price_usd_per_second) * options.get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS)}
     if mode == "audio":
-        amount_usd = as_decimal(model.audio_price_usd_per_character) * len(text)
-        micro = int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
-        return max(settings.KURAI_MIN_RUN_COST_MICRO, micro)
+        return {"generation": as_decimal(model.audio_price_usd_per_character) * len(text)}
     input_tokens = max(1, (len(text) + 3) // 4)
-    amount_usd = (as_decimal(model.prompt_price_usd_per_token) * input_tokens) + (
-        as_decimal(model.completion_price_usd_per_token) * completion_tokens(options)
-    )
+    prompt_price = as_decimal(model.prompt_price_usd_per_token)
+    completion_price = as_decimal(model.completion_price_usd_per_token)
+    if model.is_router or prompt_price < 0 or completion_price < 0:
+        # A router's price is only known after it picks a model: reserve the configured ceiling, not the minimum.
+        prompt_price = settings.KURAI_VARIABLE_PROMPT_USD_PER_TOKEN
+        completion_price = settings.KURAI_VARIABLE_COMPLETION_USD_PER_TOKEN
+    base_tokens = completion_tokens({**options, "think": False})
+    parts = {"input": prompt_price * input_tokens, "output": completion_price * base_tokens}
+    # «Думать дольше» — отдельная ячейка: тот же потолок ответа, только сверх обычного
+    if options.get("think"):
+        parts["think"] = completion_price * (completion_tokens(options) - base_tokens)
     # The provider may use fewer searches, but the hold must cover the hard cap for this run.
-    amount_usd += as_decimal(settings.KURAI_RESEARCH_SEARCH_COST_USD_PER_USE) * search_uses(mode, options)
-    micro = int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
-    return max(settings.KURAI_MIN_RUN_COST_MICRO, micro)
+    search = as_decimal(settings.KURAI_RESEARCH_SEARCH_COST_USD_PER_USE) * search_uses(mode, options)
+    if search:
+        parts["search"] = search
+    return parts
+
+
+def usd_to_micro(amount_usd: Decimal) -> int:
+    return int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
+
+
+def estimate_cost_micro(*, model, text: str, mode: str = "text", options: dict | None = None) -> int:
+    """Reserve a bounded maximum based on the catalog snapshot and normalized run options, never a client hint."""
+    amount_usd = sum(estimate_parts_usd(model=model, text=text, mode=mode, options=options).values(), Decimal(0))
+    return max(settings.KURAI_MIN_RUN_COST_MICRO, usd_to_micro(amount_usd))
 
 
 def canonical_attachment_ids(attachment_ids) -> list[str]:

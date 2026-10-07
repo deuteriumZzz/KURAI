@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Sofia_Sans_Extra_Condensed } from "next/font/google";
 import "./globals.css";
 
@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 
+// панель браузера на телефоне — цвета материала кабинета; в кабинете applyPrefs уточняет по выбранной теме
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#151515" },
+    { media: "(prefers-color-scheme: light)", color: "#f1f0ec" },
+  ],
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ru" data-theme="dark" suppressHydrationWarning className={`${sans.variable} ${cond.variable} ${mono.variable} h-full`}>
@@ -21,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* тема кабинета до первой отрисовки — без вспышки; при первом входе следует системе */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(location.pathname.startsWith("/app")){var t=(JSON.parse(localStorage.getItem("kurai:prefs")||"{}").theme)||"system";if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t}}catch(e){}`,
+            __html: `try{if(location.pathname.startsWith("/app")){var p=JSON.parse(localStorage.getItem("kurai:prefs")||"{}"),t=p.theme||"system";if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;if(p.accent&&p.accent!=="lime")document.documentElement.dataset.accent=p.accent;if(p.density==="compact")document.documentElement.dataset.density="compact"}}catch(e){}`,
           }}
         />
       </head>

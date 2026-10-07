@@ -5,47 +5,107 @@ import { useRouter } from "next/navigation";
 import type { ChatSummary } from "@/types/api";
 import { cn } from "@/lib/cn";
 import { KeyHint, Label } from "@/components/fx/primitives";
+import { readPrefs, writePrefs, type Prefs } from "@/lib/prefs";
+import { isCalm, revealFrom } from "@/lib/motion";
+import { kuraiApi } from "@/lib/kurai-api";
 
-type Item = { id: string; label: string; hint: string; href: string };
+type Item = { id: string; label: string; hint: string; href?: string; run?: () => void };
 
-const COMMANDS: Item[] = [
+const SECTIONS: Item[] = [
   { id: "new", label: "Новый чат", hint: "N", href: "/app" },
-  { id: "media", label: "Медиатека", hint: "—", href: "/app/media" },
-  { id: "artifacts", label: "Артефакты", hint: "—", href: "/app/artifacts" },
-  { id: "explore", label: "Тренды и шаблоны", hint: "—", href: "/app/explore" },
-  { id: "billing", label: "Баланс и пополнение", hint: "—", href: "/app/billing" },
-  { id: "settings", label: "Настройки", hint: "—", href: "/app/settings" },
-  { id: "profile", label: "Профиль и статистика", hint: "—", href: "/app/profile" },
-  { id: "pricing", label: "Тарифы и калькулятор", hint: "—", href: "/pricing" },
+  { id: "media", label: "Медиатека", hint: "раздел", href: "/app/media" },
+  { id: "artifacts", label: "Артефакты", hint: "раздел", href: "/app/artifacts" },
+  { id: "explore", label: "Тренды и шаблоны", hint: "раздел", href: "/app/explore" },
+  { id: "billing", label: "Баланс и пополнение", hint: "раздел", href: "/app/billing" },
+  { id: "settings", label: "Настройки", hint: "раздел", href: "/app/settings" },
+  { id: "profile", label: "Профиль и статистика", hint: "раздел", href: "/app/profile" },
+  { id: "pricing", label: "Тарифы и калькулятор", hint: "раздел", href: "/pricing" },
 ];
 
-/** ⌘K в стиле терминала: команды и чаты, стрелки + Enter. Нативный <dialog> даёт фокус-ловушку и Esc. */
-export function CommandPalette({ open, onClose, chats }: { open: boolean; onClose: () => void; chats: ChatSummary[] }) {
+/** 100 — действия прямо из поиска: всё, что меняет кабинет, доступно с клавиатуры. */
+function actions(p: Prefs, hasComposer: boolean): Item[] {
+  const centre = () => ({ x: innerWidth / 2, y: innerHeight * 0.3 });
+  const theme = (theme: Prefs["theme"]) => () => revealFrom(() => writePrefs({ theme }), centre());
+  return [
+    ...(hasComposer ? [{ id: "a-model", label: "Сменить модель…", hint: "действие", run: () => window.dispatchEvent(new CustomEvent("kurai:open-bay")) }] : []),
+    { id: "a-web", label: p.web ? "Поиск в интернете по умолчанию: выключить" : "Поиск в интернете по умолчанию: включить", hint: "действие", run: () => writePrefs({ web: !p.web }) },
+    { id: "a-calm", label: p.calm ? "Спокойный режим: выключить" : "Спокойный режим: включить", hint: "действие", run: () => writePrefs({ calm: !p.calm }) },
+    { id: "a-dark", label: "Тема: Night Ops", hint: "действие", run: theme("dark") },
+    { id: "a-light", label: "Тема: Paper", hint: "действие", run: theme("light") },
+    { id: "a-system", label: "Тема: как в системе", hint: "действие", run: theme("system") },
+    { id: "a-lime", label: "Акцент: лайм", hint: "действие", run: () => writePrefs({ accent: "lime" }) },
+    { id: "a-yellow", label: "Акцент: Night City", hint: "действие", run: () => writePrefs({ accent: "yellow" }) },
+    { id: "a-cyan", label: "Акцент: циан", hint: "действие", run: () => writePrefs({ accent: "cyan" }) },
+    { id: "a-rail", label: "Свернуть или развернуть левую панель", hint: "[", run: () => window.dispatchEvent(new CustomEvent("kurai:toggle-rail")) },
+    ...(kuraiApi
+      ? [{
+          id: "a-export",
+          label: "Экспорт: скачать архив аккаунта",
+          hint: "действие",
+          run: () => {
+            const api = kuraiApi;
+            if (!api) return;
+            void api.exportAccountData().then((zip) => {
+              const url = URL.createObjectURL(zip);
+              const a = Object.assign(document.createElement("a"), { href: url, download: "kurai-account-export.zip" });
+              document.body.append(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            }, () => undefined);
+          },
+        }]
+      : []),
+  ];
+}
+
+/** ⌘K в стиле терминала: действия, разделы и чаты, стрелки + Enter. Нативный <dialog> даёт фокус-ловушку и Esc. */
+export function CommandPalette({ open, onClose, chats, origin }: { open: boolean; onClose: () => void; chats: ChatSummary[]; origin?: DOMRect | null }) {
   const ref = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
+  const [prefs, setPrefs] = useState<Prefs | null>(null);
+  const [hasComposer, setHasComposer] = useState(false);
 
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    if (open && !d.open) {
+      // действия зависят от текущих настроек и от того, есть ли на экране поле ввода
+      setPrefs(readPrefs());
+      setHasComposer(Boolean(document.getElementById("composer-input")));
+      d.showModal();
+      // 37 — окно вырастает из кнопки «Поиск», откуда его открыли
+      if (origin && !isCalm()) {
+        const b = d.getBoundingClientRect();
+        d.animate(
+          [
+            { transformOrigin: "0 0", transform: `translate(${origin.left - b.left}px, ${origin.top - b.top}px) scale(${origin.width / b.width}, ${origin.height / b.height})`, opacity: 0.3 },
+            { transformOrigin: "0 0", transform: "none", opacity: 1 },
+          ],
+          { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" },
+        );
+      }
+    }
     if (!open && d.open) d.close();
-  }, [open]);
+  }, [open, origin]);
 
   const items = useMemo(() => {
     const all: Item[] = [
-      ...COMMANDS,
-      ...chats.map((c) => ({ id: c.id, label: `Чат #${c.id.toUpperCase()} · ${c.title}`, hint: "↵", href: `/app/c/${c.id}` })),
+      ...(prefs ? actions(prefs, hasComposer) : []),
+      ...SECTIONS,
+      ...chats.map((c) => ({ id: c.id, label: `Чат · ${c.title}`, hint: "↵", href: `/app/c/${c.id}` })),
     ];
     const s = q.trim().toLowerCase();
     return s ? all.filter((i) => i.label.toLowerCase().includes(s)) : all;
-  }, [q, chats]);
+  }, [q, chats, prefs, hasComposer]);
 
   function go(item: Item | undefined) {
     if (!item) return;
     onClose();
-    router.push(item.href);
+    if (item.run) item.run();
+    else if (item.href) router.push(item.href);
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -71,7 +131,7 @@ export function CommandPalette({ open, onClose, chats }: { open: boolean; onClos
       }}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-label="Поиск и команды"
-      className="fx-dialog m-auto mt-[12vh] w-[min(640px,calc(100vw-32px))] border border-line2 bg-g1 p-0 text-ink"
+      className="fx-dialog m-auto mt-[12vh] w-[min(640px,calc(100vw-32px))] rounded-(--radius-md) border border-line2 bg-g1 p-0 text-ink"
     >
       <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[14px]">
         <span className="text-acc" aria-hidden="true">›</span>
@@ -88,12 +148,12 @@ export function CommandPalette({ open, onClose, chats }: { open: boolean; onClos
           aria-expanded="true"
           aria-controls="palette-list"
           aria-activedescendant={items[active] ? `pi-${items[active].id}` : undefined}
-          placeholder="найти чат или команду…"
+          placeholder="найти чат, раздел или действие…"
           className="flex-1 bg-transparent text-ink outline-none placeholder:text-ink3"
         />
         <KeyHint>Esc</KeyHint>
       </div>
-      <ul id="palette-list" role="listbox" className="max-h-[50vh] overflow-y-auto py-1.5 font-mono text-[13px]">
+      <ul id="palette-list" role="listbox" className="k-stagger max-h-[50vh] overflow-y-auto py-1.5 font-mono text-[13px]">
         {items.length === 0 && <li className="px-4 py-3 text-ink3">Ничего не найдено — Enter в чате спросит модель</li>}
         {items.map((item, i) => (
           <li

@@ -14,7 +14,7 @@ from files.models import FileAsset
 from runs.models import Quote
 from runs.rate_limits import allow_member_request
 from runs.options import RunOptionsError, normalize_options
-from runs.services import canonical_attachment_ids, estimate_cost_micro, request_hash
+from runs.services import canonical_attachment_ids, estimate_cost_micro, estimate_parts_usd, request_hash, usd_to_micro
 
 
 SUPPORTED_RUN_MODES = ("text", "research", "slides", "image", "video", "audio")
@@ -159,6 +159,49 @@ class QuoteView(KuraiAPIView):
                     "estimatedCostMicro": quote.estimated_cost_micro,
                     "options": quote.options,
                     "expiresInSeconds": expires_in_seconds,
+                }
+            }
+        )
+
+
+class EstimateRequestSerializer(serializers.Serializer):
+    mode = serializers.ChoiceField(choices=SUPPORTED_RUN_MODES)
+    modelId = serializers.CharField(max_length=160)
+    chars = serializers.IntegerField(min_value=0, max_value=20_000, default=0)
+    options = serializers.DictField(required=False, default=dict)
+
+
+class EstimateView(KuraiAPIView):
+    """Live price hint by the quote's own formula. It stores nothing, so the composer never spends the quote limit."""
+
+    @extend_schema(request=EstimateRequestSerializer, responses=None)
+    def post(self, request):
+        serializer = EstimateRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"error": {"code": "validation_error", "message": "Проверьте параметры запроса.", "details": serializer.errors}},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        data = serializer.validated_data
+        try:
+            options = normalize_options(data["mode"], data.get("options"))
+        except RunOptionsError as error:
+            return Response({"error": {"code": "invalid_options", "message": str(error)}}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        model = CatalogModel.objects.filter(id=data["modelId"], active=True).first()
+        if model is None or data["mode"] not in model.supported_modes():
+            return Response(
+                {"error": {"code": "model_unavailable", "message": "Эта модель сейчас недоступна для выбранного режима."}},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        # only the draft's length matters to the price, so the draft itself stays in the browser
+        text = " " * max(1, data["chars"])
+        parts = estimate_parts_usd(model=model, text=text, mode=data["mode"], options=options)
+        return Response(
+            {
+                "data": {
+                    "estimatedCostMicro": estimate_cost_micro(model=model, text=text, mode=data["mode"], options=options),
+                    # each part rounded up on its own, so the cells may add up a micro-credit above the total
+                    "parts": {name: usd_to_micro(amount) for name, amount in parts.items()},
                 }
             }
         )

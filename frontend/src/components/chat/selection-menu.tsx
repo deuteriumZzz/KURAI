@@ -4,13 +4,14 @@ import { useEffect, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 type Sel = { text: string; x: number; y: number };
-export type SelectionAction = "ask" | "explain" | "translate" | "quote";
+export type SelectionAction = "ask" | "explain" | "translate" | "quote" | "bookmark";
 
 const ACTIONS: [SelectionAction, string][] = [
   ["ask", "Спросить про это"],
   ["explain", "Объяснить"],
   ["translate", "Перевести"],
   ["quote", "Цитировать"],
+  ["bookmark", "В закладки"],
 ];
 
 /** Выделил текст в ответе — появляется меню действий над фрагментом (как у Kimi). */

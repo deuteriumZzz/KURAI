@@ -9,11 +9,26 @@ from kurai.api import KuraiAPIView
 from runs.models import Run, RunAttempt
 from workspace.models import Artifact, Chat, Message, Project, Recipe
 from workspace.presentation import build_presentation
+from workspace.document import build_document
+from model_catalog.models import CatalogModel
 
 
 class ProjectInputSerializer(serializers.Serializer):
     name = serializers.CharField(trim_whitespace=True, min_length=1, max_length=120)
     accent = serializers.ChoiceField(choices=Project.Accent.values, default=Project.Accent.CYAN, required=False)
+    instructions = serializers.CharField(required=False, allow_blank=True, max_length=4000, trim_whitespace=True)
+
+
+class ProjectUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField(required=False, trim_whitespace=True, min_length=1, max_length=120)
+    instructions = serializers.CharField(required=False, allow_blank=True, max_length=4000, trim_whitespace=True)
+    defaultModel = serializers.CharField(required=False, allow_blank=True, max_length=160, source="default_model")
+
+    def validate_defaultModel(self, value):
+        # only a route the catalog actually serves can become the project default
+        if value and not CatalogModel.objects.filter(id=value, active=True).exists():
+            raise serializers.ValidationError("Такой модели нет в каталоге.")
+        return value
 
 
 class ChatInputSerializer(serializers.Serializer):
@@ -22,11 +37,13 @@ class ChatInputSerializer(serializers.Serializer):
 
 
 class ChatUpdateSerializer(serializers.Serializer):
-    """Rename, pin, or move a chat to the archive. Archive is reversible and keeps runs and ledger records."""
+    """Rename, pin, move into a project, or move a chat to the archive. Archive is reversible and keeps runs and ledger records."""
 
     title = serializers.CharField(trim_whitespace=True, min_length=1, max_length=160, required=False)
     pinned = serializers.BooleanField(required=False)
     archived = serializers.BooleanField(required=False)
+    # null takes the chat out of its project
+    projectId = serializers.UUIDField(required=False, allow_null=True, source="project_id")
 
     def validate(self, attrs):
         if not attrs:
@@ -38,6 +55,8 @@ class ProjectOutputSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     accent = serializers.CharField()
+    instructions = serializers.CharField()
+    defaultModel = serializers.CharField()
     createdAt = serializers.DateTimeField()
 
 
@@ -47,6 +66,7 @@ class ChatOutputSerializer(serializers.Serializer):
     projectId = serializers.UUIDField(allow_null=True)
     pinned = serializers.BooleanField()
     createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
 
 
 class ProjectListEnvelopeSerializer(serializers.Serializer):
@@ -143,7 +163,7 @@ class RecipeListEnvelopeSerializer(serializers.Serializer):
 
 
 def project_payload(project: Project) -> dict:
-    return {"id": str(project.id), "name": project.name, "accent": project.accent, "createdAt": project.created_at.isoformat()}
+    return {"id": str(project.id), "name": project.name, "accent": project.accent, "instructions": project.instructions, "defaultModel": project.default_model, "createdAt": project.created_at.isoformat()}
 
 
 def chat_payload(chat: Chat) -> dict:
@@ -153,6 +173,8 @@ def chat_payload(chat: Chat) -> dict:
         "projectId": str(chat.project_id) if chat.project_id else None,
         "pinned": chat.pinned,
         "createdAt": chat.created_at.isoformat(),
+        # the history list sorts and labels chats by their last activity, not by creation
+        "updatedAt": chat.updated_at.isoformat(),
     }
 
 
@@ -209,7 +231,7 @@ def validation_error(serializer: serializers.Serializer) -> Response:
 class ProjectCollectionView(KuraiAPIView):
     @extend_schema(responses=ProjectListEnvelopeSerializer)
     def get(self, request):
-        projects = Project.objects.filter(owner=request.user).only("id", "name", "accent", "created_at")
+        projects = Project.objects.filter(owner=request.user).only("id", "name", "accent", "instructions", "default_model", "created_at")
         return Response({"data": [project_payload(project) for project in projects]})
 
     @extend_schema(request=ProjectInputSerializer, responses={201: ProjectEnvelopeSerializer})
@@ -221,10 +243,27 @@ class ProjectCollectionView(KuraiAPIView):
         return Response({"data": project_payload(project)}, status=status.HTTP_201_CREATED)
 
 
+class ProjectDetailView(KuraiAPIView):
+    @extend_schema(request=ProjectUpdateSerializer, responses=ProjectEnvelopeSerializer)
+    def patch(self, request, project_id):
+        project = Project.objects.filter(id=project_id, owner=request.user).first()
+        if project is None:
+            return Response({"error": {"code": "not_found", "message": "Проект не найден."}}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProjectUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return validation_error(serializer)
+        fields = list(serializer.validated_data)
+        for field, value in serializer.validated_data.items():
+            setattr(project, field, value)
+        if fields:
+            project.save(update_fields=(*fields, "updated_at"))
+        return Response({"data": project_payload(project)})
+
+
 class ChatCollectionView(KuraiAPIView):
     @extend_schema(operation_id="v1_chats_list", responses=ChatListEnvelopeSerializer)
     def get(self, request):
-        chats = Chat.objects.filter(owner=request.user, archived_at__isnull=True).only("id", "title", "project_id", "pinned", "created_at")
+        chats = Chat.objects.filter(owner=request.user, archived_at__isnull=True).only("id", "title", "project_id", "pinned", "created_at", "updated_at")
         return Response({"data": [chat_payload(chat) for chat in chats]})
 
     @extend_schema(request=ChatInputSerializer, responses={201: ChatEnvelopeSerializer})
@@ -283,6 +322,14 @@ class ChatDetailView(KuraiAPIView):
         if "archived" in data:
             chat.archived_at = timezone.now() if data["archived"] else None
             fields.append("archived_at")
+        if "project_id" in data:
+            project = None
+            if data["project_id"]:
+                project = Project.objects.filter(id=data["project_id"], owner=request.user).first()
+                if project is None:
+                    return Response({"error": {"code": "not_found", "message": "Проект не найден."}}, status=status.HTTP_404_NOT_FOUND)
+            chat.project = project
+            fields.append("project")
         chat.save(update_fields=(*fields, "updated_at"))
         return Response({"data": chat_payload(chat)})
 
@@ -438,5 +485,37 @@ class MessageSlideExportView(KuraiAPIView):
         payload = build_presentation(title=title, text=text[:40_000], sources=message.research_sources.all())
         response = HttpResponse(payload, content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation")
         response["Content-Disposition"] = 'attachment; filename="kurai-slides.pptx"'
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+class MessageDocumentExportView(KuraiAPIView):
+    """92 — the answer as a private .docx: cover with code, the text, sources page and run timing."""
+
+    def get(self, request, message_id):
+        message = (
+            Message.objects.filter(id=message_id, chat__owner=request.user, role=Message.Role.ASSISTANT)
+            .select_related("chat")
+            .prefetch_related("research_sources")
+            .first()
+        )
+        if message is None:
+            return Response({"error": {"code": "not_found", "message": "Ответ не найден."}}, status=status.HTTP_404_NOT_FOUND)
+        text = message.text.strip()
+        if not text:
+            return Response({"error": {"code": "empty_export", "message": "В этом ответе нет текста."}}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        run = Run.objects.filter(output_message=message).only("created_at", "updated_at").first()
+        meta = [message.created_at.strftime("%d.%m.%Y %H:%M UTC"), message.resolved_model or "Автомаршрут"]
+        if run and run.updated_at and run.created_at:
+            meta.append(f"{max(1, round((run.updated_at - run.created_at).total_seconds()))} с")
+        payload = build_document(
+            title=message.chat.title,
+            code="DOC·" + message.id.hex[:4].upper() + "-" + message.id.hex[4:8].upper(),
+            meta=" · ".join(meta),
+            text=text[:60_000],
+            sources=[(source.title, source.url) for source in message.research_sources.all()],
+        )
+        response = HttpResponse(payload, content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response["Content-Disposition"] = 'attachment; filename="kurai-research.docx"'
         response["Cache-Control"] = "no-store"
         return response

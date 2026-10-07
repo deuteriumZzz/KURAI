@@ -19,4 +19,12 @@ describe("Markdown — сноски и безопасность", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(screen.getByRole("link", { name: /Изображение: график/ }).getAttribute("href")).toBe("https://tracker.example/pixel.png");
   });
+
+  it("marks how many citations back each claim, and claims without any", () => {
+    const text = "Спрос на кофе навынос в спальных районах растёт третий год подряд [1].\n\nКонкуренты почти не работают по утрам, поэтому окно с семи до девяти свободно.";
+    const { container } = render(<Markdown text={text} sources={sources} />);
+    const [first, second] = [...container.querySelectorAll(".k-doc > p")];
+    expect(first?.getAttribute("data-cover")).toBe("1 источник");
+    expect(second?.getAttribute("data-cover")).toBe("без подтверждения");
+  });
 });

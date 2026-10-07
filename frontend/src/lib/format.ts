@@ -28,8 +28,9 @@ export function webHref(url: string): string | undefined {
 export function formatCredits(micro: Micro, opts: { approx?: boolean; unit?: boolean } = {}): string {
   const value = micro / MICRO_PER_CREDIT;
   const num = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: Math.abs(value) < 100 ? 1 : 0 }).format(value);
-  const unit = opts.unit === false ? "" : " кр";
-  return `${opts.approx ? "≈ " : ""}${num}${unit}`;
+  // неразрывный пробел: «кр» никогда не отрывается от числа при переносе
+  const unit = opts.unit === false ? "" : "\u00a0кр";
+  return `${opts.approx ? "≈\u00a0" : ""}${num}${unit}`;
 }
 
 export type ChatGroup = { label: string; chats: ChatSummary[] };

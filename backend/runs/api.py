@@ -171,6 +171,8 @@ class RunCollectionView(KuraiAPIView):
                     if data["mode"] in {"image", "video", "audio"} else []
                 ),
             )
+            # a new turn is activity: the chat rises in the history list
+            chat.save(update_fields=("updated_at",))
             run = Run.objects.create(
                 user=request.user,
                 chat=chat,
@@ -301,6 +303,7 @@ class CompareRunCollectionView(KuraiAPIView):
                 ],
                 text=data["text"],
             )
+            chat.save(update_fields=("updated_at",))
             compare_run = CompareRun.objects.create(
                 user=request.user,
                 chat=chat,
@@ -397,6 +400,10 @@ class RunCancelView(KuraiAPIView):
 
 
 class RunEventStreamView(KuraiAPIView):
+    def perform_content_negotiation(self, request, force=False):
+        # EventSource always sends `Accept: text/event-stream`; the stream bypasses renderers and errors stay JSON.
+        return super().perform_content_negotiation(request, force=True)
+
     @extend_schema(responses=None)
     def get(self, request, run_id):
         run = owned_run_or_not_found(request.user, run_id)
@@ -452,6 +459,6 @@ class RunEventStreamView(KuraiAPIView):
 
         response = StreamingHttpResponse(stream_events(), content_type="text/event-stream; charset=utf-8")
         response["Cache-Control"] = "no-cache"
+        # no `Connection` header: it is hop-by-hop, WSGI servers reject it (500) and HTTP/1.1 keeps the stream open anyway
         response["X-Accel-Buffering"] = "no"
-        response["Connection"] = "keep-alive"
         return response

@@ -18,7 +18,7 @@ export type MessagePart =
   | { type: "image"; url: string; alt: string; width: number; height: number }
   | { type: "video"; url: string; poster?: string; durationSec: number }
   | { type: "audio"; url: string }
-  | { type: "sources"; items: { url: string; title: string }[] }
+  | { type: "sources"; items: Source[] }
   | { type: "file"; name: string; sizeBytes: number; mime: string }
   | { type: "job"; jobId: Id; kind: Exclude<Mode, "text">; status: JobStatus; progress: number };
 
@@ -48,11 +48,18 @@ export type ChatSummary = {
 };
 
 /** Постоянное рабочее пространство: общий контекст и связанные чаты. */
+/** Источник ответа: адрес, заголовок, короткая цитата провайдера (как текст) и когда он прочитан. */
+export type Source = { url: string; title: string; quote?: string; readAt?: IsoDate };
+
 export type Project = {
   id: Id;
   name: string;
   chatIds: Id[];
   createdAt: IsoDate;
+  /** Общие правила для всех чатов проекта (уходят модели системным сообщением). */
+  instructions?: string;
+  /** Маршрут, с которого начинаются запросы в чатах проекта. */
+  defaultModel?: string;
 };
 
 export type Plan = "free" | "pro" | "ultra";
@@ -104,5 +111,7 @@ export type LedgerEntry = {
   title: string;
   model?: string;
   chatId?: Id;
+  /** Режим запуска, к которому относится списание (для прогноза похожих задач). */
+  mode?: Mode;
   amountMicro: Micro;
 };

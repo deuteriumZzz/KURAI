@@ -156,7 +156,7 @@ body {
 
 input,
 textarea {
-  caret-color: var(--color-acc);
+  caret-color: var(--color-acc-text, var(--color-acc));
 }
 
 * {
@@ -188,37 +188,53 @@ textarea {
    ═══════════════════════════════════════════════════════════════ */
 .kurai-app {
   color-scheme: dark;
-  /* Night Ops: void carbon → graphite → bone */
-  --color-bg: #0d1110;
-  --color-g1: #111513;
-  --color-g2: #171b19;
-  --color-g3: #1f2421;
-  --color-line: #252c28;
-  --color-line2: #39433d;
-  --color-ink: #e7e4da;
-  --color-prose: #d2d1c7;
-  --color-ink2: #b2b3aa;
-  --color-ink3: #90938c;
-  --color-acc: #d7ff2f;
-  --color-acc-ink: #11160b;
-  --color-acc-text: #d7ff2f;
-  --color-acc-soft: rgb(215 255 47 / 0.07);
-  --color-acc-line: rgb(215 255 47 / 0.42);
+  /* высота «до естественной» анимируется без замеров в JS (раскрытия, пункт 56) */
+  interpolate-size: allow-keywords;
+  /* 88 — кавычки и тире в начале строки выносятся за край колонки (где браузер умеет) */
+  hanging-punctuation: first last;
+  /* Night Ops: чистый графит без оттенка (R=G=B) → пастельный лайм. Зелень — только в акценте;
+     полупрозрачный лайм ниже ~50% на графите превращается в хаки, поэтому линия акцента яркая. */
+  --color-bg: #151515;
+  --color-g1: #191919;
+  --color-g2: #1f1f1f;
+  --color-g3: #272727;
+  --color-line: #282828;
+  --color-line2: #3a3a3a;
+  --color-ink: #f2f2f2;
+  --color-prose: #d6d6d6;
+  --color-ink2: #b4b4b4;
+  --color-ink3: #8e8e8e;
+  --color-acc: #d8ec98;
+  --color-acc-ink: #141414;
+  --color-acc-text: #d8ec98;
+  --color-acc-soft: rgb(216 236 152 / 0.08);
+  --color-acc-line: rgb(216 236 152 / 0.6);
+  --color-violet: #9d8de2;
+  --color-violet-soft: rgb(157 141 226 / 0.12);
+  --color-violet-line: rgb(157 141 226 / 0.4);
+  --color-signal: #e8467e;
+  --color-signal-soft: rgb(232 70 126 / 0.12);
+  --color-signal-line: rgb(232 70 126 / 0.42);
   --color-ok: #9de26b;
   --color-warn: #f6bd5a;
   --color-err: #ef5b69;
   --color-warn-soft: rgb(246 189 90 / 0.12);
   --color-err-soft: rgb(239 91 105 / 0.12);
-  --color-s1: rgb(231 228 218 / 0.03);
-  --color-s2: rgb(231 228 218 / 0.055);
-  --color-s3: rgb(231 228 218 / 0.09);
-  --color-hair: rgb(231 228 218 / 0.07);
-  --color-rail: #0f1312;
-  --kurai-signal-rgb: 215 255 47;
-  --kurai-magenta-rgb: 227 58 115;
-  --kurai-violet-rgb: 141 114 232;
+  --color-s1: rgb(255 255 255 / 0.03);
+  --color-s2: rgb(255 255 255 / 0.05);
+  --color-s3: rgb(255 255 255 / 0.08);
+  --color-hair: rgb(255 255 255 / 0.07);
+  --color-rail: #131313;
+  --kurai-signal-rgb: 216 236 152;
+  --kurai-magenta-rgb: 232 70 126;
+  --kurai-violet-rgb: 157 141 226;
   --grain-opacity: 0.045;
-  --shadow-float: 0 28px 64px -32px rgb(0 0 0 / 0.85), 0 0 0 1px rgb(231 228 218 / 0.08);
+  --shadow-float: 0 28px 64px -32px rgb(0 0 0 / 0.85), 0 0 0 1px rgb(255 255 255 / 0.07);
+  /* мягкая геометрия кабинета: строки и кнопки 6px, панели 8px, поле ввода 12px (лендинг остаётся прямоугольным) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   position: relative;
   background: var(--color-bg);
 }
@@ -230,14 +246,14 @@ textarea {
   --color-g1: #f7f6f1;
   --color-g2: #e9e8e2;
   --color-g3: #d9d8d1;
-  --color-line: #d4d3ca;
-  --color-line2: #a9aba1;
-  --color-ink: #111311;
-  --color-prose: #232622;
-  --color-ink2: #3e453e;
-  --color-ink3: #656a62;
+  --color-line: #d5d4cf;
+  --color-line2: #aaaaa5;
+  --color-ink: #141414;
+  --color-prose: #252525;
+  --color-ink2: #424242;
+  --color-ink3: #666664;
   --color-acc: #b9e600;
-  --color-acc-ink: #111311;
+  --color-acc-ink: #141414;
   --color-acc-text: #4c6100;
   --color-acc-soft: rgb(185 230 0 / 0.16);
   --color-acc-line: rgb(96 122 0 / 0.62);
@@ -248,22 +264,52 @@ textarea {
   --color-err: #b72b44;
   --color-warn-soft: rgb(138 88 0 / 0.1);
   --color-err-soft: rgb(183 43 68 / 0.09);
-  --color-s1: rgb(17 19 17 / 0.03);
-  --color-s2: rgb(17 19 17 / 0.055);
-  --color-s3: rgb(17 19 17 / 0.09);
-  --color-hair: rgb(17 19 17 / 0.08);
+  --color-s1: rgb(20 20 20 / 0.03);
+  --color-s2: rgb(20 20 20 / 0.055);
+  --color-s3: rgb(20 20 20 / 0.09);
+  --color-hair: rgb(20 20 20 / 0.08);
   --color-rail: #ebeae4;
   --kurai-signal-rgb: 96 122 0;
   --kurai-magenta-rgb: 199 47 98;
   --kurai-violet-rgb: 115 86 212;
   --grain-opacity: 0.07;
-  --shadow-float: 0 22px 44px -26px rgb(17 19 17 / 0.3), 0 0 0 1px rgb(17 19 17 / 0.12);
+  --shadow-float: 0 22px 44px -26px rgb(20 20 20 / 0.3), 0 0 0 1px rgb(20 20 20 / 0.12);
+}
+/* К11 — акцент кабинета на выбор: жёлтый Night City или циан (лайм — по умолчанию) */
+:root[data-accent="yellow"] .kurai-app {
+  --color-acc: #fcee0a;
+  --color-acc-text: #fcee0a;
+  --color-acc-soft: rgb(252 238 10 / 0.08);
+  --color-acc-line: rgb(252 238 10 / 0.55);
+  --kurai-signal-rgb: 252 238 10;
+}
+:root[data-accent="cyan"] .kurai-app {
+  --color-acc: #5ee6f0;
+  --color-acc-text: #5ee6f0;
+  --color-acc-soft: rgb(94 230 240 / 0.08);
+  --color-acc-line: rgb(94 230 240 / 0.55);
+  --kurai-signal-rgb: 94 230 240;
+}
+:root[data-theme="light"][data-accent="yellow"] .kurai-app {
+  --color-acc: #f2dc00;
+  --color-acc-text: #6b5f00;
+  --color-acc-soft: rgb(242 220 0 / 0.18);
+  --color-acc-line: rgb(107 95 0 / 0.6);
+  --kurai-signal-rgb: 150 135 0;
+}
+:root[data-theme="light"][data-accent="cyan"] .kurai-app {
+  --color-acc: #22c7d3;
+  --color-acc-text: #006a72;
+  --color-acc-soft: rgb(34 199 211 / 0.16);
+  --color-acc-line: rgb(0 106 114 / 0.6);
+  --kurai-signal-rgb: 0 140 150;
 }
 :root[data-theme="light"] .kurai-app :focus-visible {
   outline-color: var(--color-ink);
 }
-:root[data-theme="light"] .kurai-app ::selection {
-  background: rgb(185 230 0 / 0.45);
+.kurai-app ::selection {
+  background: rgb(var(--kurai-signal-rgb) / 0.3);
+  color: var(--color-ink);
 }
 
 /* Material grain: статичная печатная фактура обеих тем. Никогда не движется. */
@@ -318,9 +364,11 @@ textarea {
 .k-rail-item {
   position: relative;
   isolation: isolate;
+  /* height — 90: плотность «Компактно» сжимает пункты плавно */
   transition:
     color var(--dur-rail) var(--ease-out),
-    background-color var(--dur-rail) var(--ease-out);
+    background-color var(--dur-rail) var(--ease-out),
+    height var(--dur-base) var(--ease-out);
 }
 .k-rail-item > .k-shift {
   transition: transform var(--dur-rail) var(--ease-out);
@@ -351,12 +399,26 @@ textarea {
   .k-rail-item:hover > .k-shift {
     transform: translateX(3px);
   }
+  /* наведение — превью рейки: короткая метка, у активного она уже полная */
+  .k-rail-item:not([aria-current="page"], [data-active="true"]):hover::before,
+  .k-chat-row:not([aria-current="page"], [aria-current="true"]):hover::before {
+    opacity: 0.55;
+    transform: scaleY(0.45);
+  }
+  .k-rail-item:hover > svg {
+    color: var(--color-ink);
+  }
+}
+.k-rail-item > svg {
+  transition: color var(--dur-rail) var(--ease-out);
 }
 
 /* Строка истории: двухстрочная, активная — с рейкой; действия раскрываются с конца строки */
 .k-chat-row {
   position: relative;
-  transition: background-color var(--dur-rail) var(--ease-out);
+  transition:
+    background-color var(--dur-rail) var(--ease-out),
+    padding var(--dur-base) var(--ease-out);
 }
 .k-chat-row::before {
   content: "";
@@ -405,7 +467,7 @@ textarea {
   position: relative;
   border: 1px solid var(--color-line);
   background: var(--color-g1);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   transition:
     border-color var(--dur-base) var(--ease-out),
     background-color var(--dur-base) var(--ease-out);
@@ -424,8 +486,9 @@ textarea {
   content: "";
   position: absolute;
   top: -1px;
-  left: 0;
-  right: 0;
+  /* волна идёт по прямому участку грани, не заходя на скругления */
+  left: var(--radius-lg, 0px);
+  right: var(--radius-lg, 0px);
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-acc) 40%, var(--color-acc) 60%, transparent);
   opacity: 0;
@@ -519,7 +582,7 @@ textarea {
 }
 .k-bay-row[aria-selected="true"] {
   border-color: var(--color-acc-line);
-  background: linear-gradient(90deg, var(--color-acc-soft), transparent 75%);
+  background: var(--color-acc-soft);
 }
 :root[data-theme="light"] .k-bay-row[aria-selected="true"] {
   border-color: var(--color-ink);
@@ -1002,11 +1065,11 @@ dialog.fx-dialog[open] {
   }
 }
 dialog.fx-dialog::backdrop {
-  background: rgb(7 10 9 / 0.66);
+  background: rgb(8 8 8 / 0.66);
   transition: background-color var(--dur-base) var(--ease-out), overlay var(--dur-base) allow-discrete, display var(--dur-base) allow-discrete;
 }
 :root[data-theme="light"] dialog.fx-dialog::backdrop {
-  background: rgb(17 19 17 / 0.28);
+  background: rgb(20 20 20 / 0.28);
 }
 
 /* Тултип: data-tip на кнопке-иконке; с задержкой, не мешает нажатию */
@@ -1235,4 +1298,774 @@ dialog.fx-dialog::backdrop {
   .fx-faq[open]::details-content {
     height: auto;
   }
+}
+
+/* ════════ Фаза 1 движения (docs/MOTION_PLAN.md) ════════ */
+
+/* 88 — коды объектов: моноширинные, табличные цифры, перечёркнутый ноль (не спутать с «O») */
+.k-code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+  letter-spacing: 0.02em;
+}
+
+/* 72 — скелетоны в одной фазе: один блик на весь экран, у всех заглушек общий (фон закреплён за окном) */
+.k-shimmer {
+  background: linear-gradient(90deg, var(--color-g2) 0%, var(--color-g3) 50%, var(--color-g2) 100%) 0 0 / 200vw 100% fixed;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-shimmer {
+    animation: k-shimmer 1.6s linear infinite;
+  }
+}
+@keyframes k-shimmer {
+  from { background-position: 100vw 0; }
+  to { background-position: -100vw 0; }
+}
+
+/* 5 — смена темы кругом из точки нажатия: старый вид стоит, новый раскрывается (revealFrom) */
+:root.k-reveal::view-transition-old(root),
+:root.k-reveal::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+
+/* ════════ Фаза 2 движения — левое меню и оболочка ════════ */
+
+/* 34 — метка активного пункта одна на меню и переезжает между пунктами (motion layoutId) */
+.k-rail-mark {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-acc);
+  pointer-events: none;
+}
+:root[data-theme="light"] .k-rail-mark {
+  background: var(--color-ink);
+}
+.k-mark-moving[aria-current="page"]::before,
+.k-mark-moving[aria-current="true"]::before {
+  opacity: 0 !important;
+}
+
+/* 35 — при сворачивании подписи гаснут, иконки остаются на своих местах */
+.k-label {
+  white-space: nowrap;
+  transition: opacity var(--dur-rail) var(--ease-out);
+}
+.k-rail-collapsed .k-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* К5 — моно-индекс пункта проявляется при наведении, как в меню игры */
+.k-rail-idx {
+  margin-left: auto;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--color-acc-text);
+  opacity: 0;
+  transform: translateX(4px);
+  transition:
+    opacity var(--dur-rail) var(--ease-out),
+    transform var(--dur-rail) var(--ease-out);
+}
+@media (hover: hover) {
+  .k-rail-item:hover .k-rail-idx,
+  .k-rail-item:focus-visible .k-rail-idx {
+    opacity: 1;
+    transform: none;
+  }
+}
+.k-rail-collapsed .k-rail-idx {
+  display: none;
+}
+
+/* 64 — нажатая горячая клавиша коротко вспыхивает на своей кнопке */
+.k-kbd-flash {
+  animation: k-kbd-flash 420ms var(--ease-out);
+}
+@keyframes k-kbd-flash {
+  0% {
+    background: var(--color-acc);
+    color: var(--color-acc-ink);
+    border-color: var(--color-acc);
+    transform: scale(1.12);
+  }
+}
+
+/* 58 — пункты меню проявляются лесенкой (до шести, дальше сразу) */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-stagger > * {
+    animation: k-item-in 160ms var(--ease-out) both;
+  }
+  :root:not(.calm) .k-stagger > :nth-child(2) { animation-delay: 25ms; }
+  :root:not(.calm) .k-stagger > :nth-child(3) { animation-delay: 50ms; }
+  :root:not(.calm) .k-stagger > :nth-child(4) { animation-delay: 75ms; }
+  :root:not(.calm) .k-stagger > :nth-child(5) { animation-delay: 100ms; }
+  :root:not(.calm) .k-stagger > :nth-child(n + 6) { animation-delay: 125ms; }
+}
+@keyframes k-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+/* 60 — папка проекта подсвечивается как цель, пока над ней держат чат */
+.k-drop {
+  background: var(--color-acc-soft) !important;
+  box-shadow: inset 0 0 0 1px var(--color-acc-line);
+  color: var(--color-ink) !important;
+}
+
+/* К12 — отслеживаемая задача: тихая полоса активности, пока запуск реально идёт */
+.k-tracked-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background: var(--color-g3);
+}
+.k-tracked-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--color-acc);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-tracked-bar::after {
+    animation: k-tracked 1.6s var(--ease-in-out) infinite;
+  }
+}
+@keyframes k-tracked {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+:root.calm .k-kbd-flash {
+  animation: none;
+}
+
+/* ════════ Фаза 3 движения — поле ввода и выбор модели ════════ */
+/* 1 — переезд поля главная → чат: сама пара без собственного кроссфейда страницы */
+::view-transition-group(.k-morph) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* 14 — высоту поля задаёт код по содержимому, переход делает её плавной */
+.k-grow {
+  transition: height 140ms var(--ease-out);
+}
+/* 17 — над окном несут файл: рамка поля загорается акцентом */
+.k-composer[data-dragging] {
+  border-color: var(--color-acc-line);
+  background: var(--color-g2);
+}
+/* 63 — «Отправить» загорается: лаймовая заливка проходит по кнопке слева направо, один раз */
+.k-ignite {
+  isolation: isolate;
+}
+.k-ignite::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-g2);
+  transform-origin: right;
+  animation: k-ignite 420ms var(--ease-out) 1 forwards;
+  pointer-events: none;
+}
+@keyframes k-ignite {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+/* 17 — зона сброса «дышит» пунктиром, пока файл несут над окном */
+.k-breathe {
+  animation: k-breathe 1.4s ease-in-out infinite;
+}
+@keyframes k-breathe {
+  0%, 100% { border-color: var(--color-acc-line); transform: scale(1); }
+  50% { border-color: var(--color-acc); transform: scale(1.008); }
+}
+/* К4 — срезанный угол у главной кнопки: деталь Night City, только у залитой кнопки */
+.k-chamfer {
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+}
+/* К14 — полоса фиксации цены истекает вместе с котировкой */
+.k-fix-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--color-acc);
+  transform-origin: left;
+  animation: k-fix linear 1 forwards;
+}
+@keyframes k-fix {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+/* 10 — затухания по краям прокручиваемых списков: край видно, только если там есть что листать */
+.k-fade-y {
+  --fade-top: 0px;
+  --fade-bottom: 18px;
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+}
+@supports (animation-timeline: scroll()) {
+  /* список не листается — таймлайн неактивен, краёв нет */
+  .k-fade-y {
+    --fade-bottom: 0px;
+    animation: k-fade-y linear both;
+    animation-timeline: scroll(self);
+  }
+  @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 18px; }
+  @keyframes k-fade-y {
+    0% { --fade-top: 0px; --fade-bottom: 18px; }
+    8%, 92% { --fade-top: 18px; --fade-bottom: 18px; }
+    100% { --fade-top: 18px; --fade-bottom: 0px; }
+  }
+}
+/* 11 — липкий заголовок группы; тень появляется, только когда он реально прилип */
+.k-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-g1);
+  container-type: scroll-state;
+}
+.k-sticky-head > span {
+  display: block;
+  transition: box-shadow var(--dur-base) var(--ease-out);
+}
+@container scroll-state(stuck: top) {
+  .k-sticky-head > span {
+    box-shadow: 0 10px 12px -10px rgb(0 0 0 / 0.45);
+  }
+}
+/* 94 — разница цены относительно текущей модели */
+.k-delta-up { color: var(--color-warn); }
+.k-delta-down { color: var(--color-ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .k-grow { transition: none; }
+  .k-ignite::before, .k-fix-bar, .k-breathe { animation: none; }
+  .k-ignite::before { display: none; }
+}
+:root.calm .k-grow { transition: none; }
+:root.calm .k-ignite::before { display: none; }
+:root.calm .k-fix-bar,
+:root.calm .k-breathe { animation: none; }
+
+/* ════════ Фаза 4 движения — документ чата ════════ */
+/* 6/52 — шапка документа: плоская наверху, после прокрутки — ниже, с границей и тенью */
+.k-doc-head {
+  transition:
+    height var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+  border-bottom: 1px solid transparent;
+}
+.k-doc-head[data-scrolled] {
+  height: 3rem;
+  border-bottom-color: var(--color-line);
+  box-shadow: 0 10px 18px -16px rgb(0 0 0 / 0.55);
+}
+/* 2 — название в шапке появляется, когда крупный заголовок документа ушёл под неё */
+.k-head-title {
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.k-head-title-hidden {
+  position: absolute;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
+/* 7 — линия прогресса чтения: ширина следует за прокруткой ленты */
+.k-read-progress {
+  display: none;
+}
+@supports (animation-timeline: scroll()) {
+  .k-read-progress {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    height: 2px;
+    margin-bottom: -2px;
+    background: var(--color-acc);
+    transform-origin: left;
+    /* лента не листается — таймлайн неактивен, линии нет */
+    transform: scaleX(0);
+    animation: k-read linear both;
+    animation-timeline: scroll(nearest block);
+  }
+  @keyframes k-read {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  /* 12 — входящие в экран блоки длинной истории чуть поднимаются; текст не прячется */
+  .k-feed > * {
+    animation: k-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+  @keyframes k-rise {
+    from { translate: 0 14px; }
+    to { translate: 0 0; }
+  }
+}
+/* 21 — новая порция текста проявляется за 160 мс */
+.k-fresh {
+  animation: k-fresh 160ms var(--ease-out) both;
+}
+@keyframes k-fresh {
+  from { opacity: 0.15; }
+  to { opacity: 1; }
+}
+/* 51 — цель перехода на секунду подсвечивается */
+.k-flash {
+  animation: k-flash 1100ms var(--ease-out) 1;
+  border-radius: var(--radius-md);
+}
+@keyframes k-flash {
+  0%, 25% { background-color: var(--color-acc-soft); box-shadow: 0 0 0 6px var(--color-acc-soft); }
+  100% { background-color: transparent; box-shadow: 0 0 0 6px transparent; }
+}
+/* 91 — абзац с закладкой: тонкая метка на полях */
+[data-bookmark] {
+  position: relative;
+}
+[data-bookmark]::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 0.35em;
+  bottom: 0.35em;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-acc);
+}
+/* у пункта списка номер стоит в поле отступа — метка уходит левее номера */
+li[data-bookmark]::before {
+  left: calc(-1.25rem - 12px);
+}
+/* 8 — источник того абзаца, который вы сейчас читаете */
+.k-src[data-reading] {
+  border-color: var(--color-violet-line);
+  background: var(--color-violet-soft);
+}
+/* 24 — «Ветка»: от кнопки тянется линия ответвления к новой версии */
+.k-branch-draw::after {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 22px;
+  height: 1px;
+  background: var(--color-acc);
+  transform-origin: left;
+  animation: k-branch 560ms var(--ease-out) 1 forwards;
+  pointer-events: none;
+}
+@keyframes k-branch {
+  0% { transform: scaleX(0) rotate(-24deg); opacity: 1; }
+  60% { transform: scaleX(1) rotate(-24deg); opacity: 1; }
+  100% { transform: scaleX(1) rotate(-24deg); opacity: 0; }
+}
+/* 55 — тени по краям широкой таблицы: видны только с той стороны, куда ещё можно листать */
+.k-table-scroll {
+  background:
+    linear-gradient(to right, var(--color-bg) 30%, transparent) left center / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--color-bg) 30%, transparent) right center / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.4), transparent) left center / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.4), transparent) right center / 10px 100% no-repeat scroll;
+}
+/* 56 — всё сворачиваемое раскрывается до естественной высоты */
+.kurai-app details::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    block-size var(--dur-slow, 280ms) var(--ease-out),
+    content-visibility var(--dur-slow, 280ms) allow-discrete;
+}
+.kurai-app details[open]::details-content {
+  block-size: auto;
+}
+/* 50 — мини-карта: тихая, пока к ней не подошли */
+.k-minimap {
+  opacity: 0.55;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.k-minimap:hover {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* линия прогресса остаётся: она следует за прокруткой самого человека */
+  .k-fresh, .k-flash, .k-branch-draw::after, .k-feed > * { animation: none; }
+  .k-doc-head, .k-head-title { transition: none; }
+  .kurai-app details::details-content { transition: none; }
+}
+:root.calm .k-fresh,
+:root.calm .k-flash,
+:root.calm .k-branch-draw::after,
+:root.calm .k-feed > * { animation: none; }
+:root.calm .k-doc-head,
+:root.calm .k-head-title,
+:root.calm .kurai-app details::details-content { transition: none; }
+
+/* ════════ Фаза 5 движения — исследование, агенты, доверие ════════ */
+/* К1 — прицел Kiroshi: угловые скобки и один проход скан-линии по наведённому объекту */
+.k-scan {
+  position: relative;
+}
+.k-scan::before,
+.k-scan::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+}
+.k-scan::before {
+  inset: -1px;
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(var(--color-acc), var(--color-acc)) left top / 8px 1px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) left top / 1px 8px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) right top / 8px 1px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) right top / 1px 8px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) left bottom / 8px 1px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) left bottom / 1px 8px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) right bottom / 8px 1px no-repeat,
+    linear-gradient(var(--color-acc), var(--color-acc)) right bottom / 1px 8px no-repeat;
+  transition: opacity var(--dur-fast) var(--ease-out), inset var(--dur-base) var(--ease-out);
+}
+.k-scan::after {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-acc), transparent);
+}
+.k-scan:hover::before,
+.k-scan[data-active="true"]::before {
+  opacity: 1;
+  inset: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-scan:hover::after {
+    animation: k-scanline 520ms var(--ease-out) 1;
+  }
+}
+@keyframes k-scanline {
+  0% { top: 0; opacity: 0.9; }
+  100% { top: 100%; opacity: 0; }
+}
+:root[data-theme="light"] .k-scan::after { display: none; }
+/* 28 — источники нанизаны на общую линию */
+.k-src-tree {
+  position: relative;
+}
+.k-src-tree::before {
+  content: "";
+  position: absolute;
+  left: 1.75rem;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  width: 1px;
+  background: var(--color-violet-line);
+}
+/* 104 — отметка покрытия вывода источниками */
+.k-doc [data-cover]::after {
+  content: attr(data-cover);
+  margin-left: 0.5em;
+  padding: 0 0.35em;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  color: var(--color-violet);
+  opacity: 0.7;
+}
+.k-doc [data-uncovered]::after {
+  color: var(--color-ink3);
+  border: 1px dashed var(--color-line2);
+}
+/* 103 — место в чате, на которое наведён пункт «Что видела модель» */
+[data-peek] {
+  outline: 1px dashed var(--color-violet-line);
+  outline-offset: 8px;
+  border-radius: var(--radius-md);
+}
+
+/* ════════ Фаза 6 движения — медиа ════════ */
+/* К7 — пурпурная скан-линия по заготовке, пока картинка реально генерируется */
+.k-gen-scan::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-signal), transparent);
+  box-shadow: 0 0 12px var(--color-signal);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-gen-scan::after {
+    animation: k-gen-scan 1.6s linear infinite;
+    animation-delay: inherit;
+  }
+}
+@keyframes k-gen-scan {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 0.9; }
+  90% { opacity: 0.9; }
+  100% { top: 100%; opacity: 0; }
+}
+/* 79 — текущая карточка ленты чуть крупнее соседних */
+@supports (animation-timeline: view()) {
+  .k-snap-card {
+    animation: k-snap-card linear both;
+    animation-timeline: view();
+  }
+  @keyframes k-snap-card {
+    0%, 100% { scale: 0.96; opacity: 0.7; }
+    40%, 60% { scale: 1; opacity: 1; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-snap-card { animation: none; }
+}
+
+/* ════════ Фаза 7 движения — деньги, настройки, артефакты ════════ */
+/* 83 — превью колонки чтения в настройках: ширина и размер меняются плавно */
+.k-read-preview {
+  max-width: min(100%, calc(var(--read-width, 42rem) * 0.55));
+  font-size: var(--read-size, 15px);
+  transition:
+    max-width var(--dur-slow) var(--ease-out),
+    font-size var(--dur-base) var(--ease-out);
+}
+/* 90 — плотность «Компактно»: строки и лента сжимаются, на экран помещается больше */
+/* у пунктов меню уже свои переходы цвета — плавным делаем только промежутки ленты */
+.k-feed {
+  transition: gap var(--dur-base) var(--ease-out);
+}
+:root[data-density="compact"] .kurai-app .k-rail-item {
+  height: 2rem;
+}
+:root[data-density="compact"] .kurai-app [data-chat-row] a {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+:root[data-density="compact"] .kurai-app .k-feed {
+  gap: 1.75rem;
+}
+:root[data-density="compact"] .kurai-app .k-module {
+  padding: 0.9rem 1rem;
+}
+/* 48 — новая строка журнала подсвечивается и гаснет */
+.k-row-new {
+  animation: k-row-new 2200ms var(--ease-out) 1;
+}
+@keyframes k-row-new {
+  0%, 30% { background-color: var(--color-acc-soft); }
+  100% { background-color: transparent; }
+}
+/* К8 — предупреждающая лента: жёлто-чёрная штриховка едет, пока решение не принято */
+.k-hazard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background: repeating-linear-gradient(-45deg, #fcee0a 0 10px, #111 10px 20px);
+  background-size: 28.28px 28.28px;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-hazard::before {
+    animation: k-hazard 900ms linear infinite;
+  }
+}
+@keyframes k-hazard {
+  to { background-position: 28.28px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-row-new { animation: none; }
+  .k-read-preview, .k-feed { transition: none; }
+}
+:root.calm .k-row-new { animation: none; }
+/* 46/47 — чип суммы, летящий в баланс */
+.k-money-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line2);
+  background: var(--color-g2);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-float);
+}
+.k-money-chip[data-tone="ok"] {
+  border-color: var(--color-ok);
+  color: var(--color-ok);
+}
+/* К20 — срезанный ярлык осколка-артефакта */
+.k-shard-tag {
+  padding: 2px 10px 2px 6px;
+  border: 1px solid var(--color-violet-line);
+  background: var(--color-violet-soft);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+/* 92 — печать исследования: только выбранный ответ, светлая типографика, обложка и источники */
+.k-print-only {
+  display: none;
+}
+@media print {
+  html.k-printing body * {
+    visibility: hidden;
+  }
+  html.k-printing [data-printing],
+  html.k-printing [data-printing] * {
+    visibility: visible;
+    color: #111 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html.k-printing [data-printing] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    display: block;
+  }
+  html.k-printing [data-printing] .k-print-only {
+    display: block;
+  }
+  html.k-printing [data-printing] button,
+  html.k-printing [data-printing] .k-answer-actions {
+    display: none !important;
+  }
+}
+
+/* ════════ Фаза 8 движения — сеть, формы, пустые экраны ════════ */
+/* 75 — кольцо обратного отсчёта Retry-After тает до нуля */
+.k-cooldown {
+  stroke-dashoffset: 0;
+  animation: k-cooldown linear 1 forwards;
+}
+@keyframes k-cooldown {
+  to { stroke-dashoffset: 100; }
+}
+/* 65 — ошибка в поле: три коротких покачивания за 250 мс */
+.k-shake {
+  animation: k-shake 250ms ease-in-out 1;
+}
+@keyframes k-shake {
+  0%, 100% { translate: 0 0; }
+  16%, 50%, 83% { translate: -4px 0; }
+  33%, 66% { translate: 4px 0; }
+}
+/* 68 — кольцо фокуса раскрывается из 0 в полную толщину за 120 мс */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) :focus-visible {
+    animation: k-ring 120ms var(--ease-out) 1;
+  }
+}
+@keyframes k-ring {
+  from { outline-width: 0; outline-offset: 0; }
+}
+:root.calm .k-shake { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .k-shake, .k-cooldown { animation: none; }
+}
+/* 85 — иллюстрация пустого экрана прорисовывается линией, подсказка и действие появляются следом */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-draw svg path,
+  :root:not(.calm) .k-draw svg circle {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: k-draw 900ms var(--ease-out) forwards;
+  }
+  :root:not(.calm) .k-draw .k-draw-after {
+    animation: k-draw-after 300ms var(--ease-out) 700ms both;
+  }
+}
+@keyframes k-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes k-draw-after {
+  from { opacity: 0; translate: 0 4px; }
+}
+
+/* ════════ Фаза 9 движения — лендинг ════════ */
+/* 45 — вторая строка заголовка утолщается от тонкой к плотной по мере прокрутки */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    :root:not(.calm) .k-weight-scroll {
+      animation: k-weight-scroll linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 60vh;
+    }
+  }
+}
+@keyframes k-weight-scroll {
+  from { font-weight: 200; color: var(--color-ink3); }
+  to { font-weight: 600; color: var(--color-ink); }
+}
+/* 95 — тихое кольцо предзагрузки у строки чата */
+.k-prefetch {
+  animation: k-prefetch 700ms linear infinite;
+}
+@keyframes k-prefetch {
+  to { rotate: 360deg; }
+}
+
+/* ════════ Доводка под демо ════════ */
+/* 109 — слово под голосом подсвечено прямо в тексте ответа */
+::highlight(k-speak) {
+  background-color: var(--color-acc-soft);
+  color: var(--color-ink);
+}
+/* 107 — длинный ответ из истории: три строки сути, полный текст раскрывается до естественной высоты */
+.k-collapsible {
+  overflow: hidden;
+  transition: height 450ms var(--ease-out);
+  height: auto;
+}
+.k-collapsible.k-collapsed {
+  height: 8.5em;
+  mask-image: linear-gradient(#000 45%, transparent);
+}
+/* 104 — отметки покрытия появляются по очереди, как будто проверка идёт сейчас */
+.k-doc [data-cover]::after {
+  animation: k-cover-in 320ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes k-cover-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .k-collapsible { transition: none; }
+  .k-doc [data-cover]::after { animation: none; }
+}
+:root.calm .k-collapsible { transition: none; }
+:root.calm .k-doc [data-cover]::after { animation: none; }
+/* 83 — ползунки настроек в тон кабинета */
+.k-range {
+  accent-color: var(--color-acc);
+  width: 100%;
+  max-width: 24rem;
+  cursor: pointer;
 }

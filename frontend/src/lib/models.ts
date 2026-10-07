@@ -81,6 +81,9 @@ export function searchModels(list: ModelInfo[], query: string): ModelInfo[] {
   return list.filter((m) => `${m.name} ${m.provider} ${m.note}`.toLowerCase().includes(q));
 }
 
+/** Имя маршрута для людей: служебный id автоподбора показываем как «Авто», остальное — как вернул сервер. */
+export const routeLabel = (model: string) => (model === "openrouter/auto" ? "Авто" : model);
+
 export function modelById(id: string): ModelInfo | undefined {
   return MODELS.find((m) => m.id === id);
 }
@@ -108,7 +111,7 @@ export function fromCatalogModel(model: CatalogRecord): ModelInfo {
               : "smart";
   return {
     id: model.id,
-    name: model.name,
+    name: group === "auto" ? routeLabel(model.id) : model.name,
     provider: model.provider,
     emblem: model.provider.slice(0, 1).toUpperCase() || "AI",
     group,
@@ -121,6 +124,6 @@ export function fromCatalogModel(model: CatalogRecord): ModelInfo {
       value: group === "cheap" ? 10 : 7,
       context: model.contextLength >= 1_000_000 ? 10 : model.contextLength >= 128_000 ? 8 : 6,
     },
-    note: model.description || "Доступна через OpenRouter",
+    note: group === "auto" ? "Один запрос — KURAI подбирает подходящую модель под задачу" : model.description || "Доступна через OpenRouter",
   };
 }

@@ -347,3 +347,47 @@ def test_recipe_requires_an_owned_answer_with_a_real_input_route(db):
     assert foreign.status_code == 404
     assert orphan.status_code == 422
     assert Recipe.objects.count() == 0
+
+
+def test_answer_exports_as_a_private_docx_with_cover_text_and_sources(db):
+    import io
+    import zipfile
+
+    from runs.models import RunSource
+
+    member = create_member("docx@example.test")
+    other = create_member("docx-other@example.test")
+    chat = Chat.objects.create(owner=member, title="Рынок кофеен")
+    answer = Message.objects.create(chat=chat, role=Message.Role.ASSISTANT, resolved_model="acme/precise", parts=[], text="# Вывод\n\n- спрос **растёт**\n\nИтог & план")
+    quoted = Quote.objects.create(user=member, mode="research", request_hash="h", resolved_model="acme/precise", estimated_cost_micro=1, expires_at=timezone.now())
+    question = Message.objects.create(chat=chat, role=Message.Role.USER, parts=[], text="?")
+    run = Run.objects.create(user=member, chat=chat, quote=quoted, input_message=question, output_message=answer, mode="research", idempotency_key="docx", payload_hash="p", estimated_cost_micro=1)
+    RunSource.objects.create(run=run, message=answer, position=0, url="https://example.com/report", title="Отчёт")
+    client = Client()
+    client.force_login(member)
+    stranger = Client()
+    stranger.force_login(other)
+
+    response = client.get(f"/api/v1/messages/{answer.id}/exports/document")
+
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith("application/vnd.openxmlformats-officedocument.wordprocessingml")
+    document = zipfile.ZipFile(io.BytesIO(response.content)).read("word/document.xml").decode()
+    assert "Рынок кофеен" in document and "Итог &amp; план" in document and "https://example.com/report" in document
+    assert stranger.get(f"/api/v1/messages/{answer.id}/exports/document").status_code == 404
+
+
+def test_project_default_model_must_be_a_catalog_route(db):
+    from model_catalog.models import CatalogModel
+
+    member = create_member("default-model@example.test")
+    CatalogModel.objects.create(id="acme/fast", name="Fast", provider="Acme", input_modalities=["text"], output_modalities=["text"], prompt_price_usd_per_token="0.000001", completion_price_usd_per_token="0.000001")
+    client = Client()
+    client.force_login(member)
+    project = client.post("/api/v1/projects", data={"name": "Запуск"}, content_type="application/json").json()["data"]
+
+    saved = client.patch(f"/api/v1/projects/{project['id']}", data={"defaultModel": "acme/fast"}, content_type="application/json")
+    rejected = client.patch(f"/api/v1/projects/{project['id']}", data={"defaultModel": "nobody/ghost"}, content_type="application/json")
+
+    assert saved.status_code == 200 and saved.json()["data"]["defaultModel"] == "acme/fast"
+    assert rejected.status_code == 422

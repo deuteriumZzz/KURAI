@@ -111,13 +111,13 @@ def sanitise_citations(citations) -> tuple[ResearchCitation, ...]:
 
 def stream_openrouter_completion(
     *, model_id: str, prompt: str, user_id: str, session_id: str, research: bool = False,
-    search_uses: int | None = None, reasoning: bool = False, max_tokens: int | None = None,
+    search_uses: int | None = None, reasoning: bool = False, max_tokens: int | None = None, system: str | None = None,
 ) -> Iterator[CompletionChunk]:
     if not settings.OPENROUTER_API_KEY:
         raise OpenRouterProviderError("OpenRouter is not configured")
     body = {
         "model": model_id,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens or settings.KURAI_MAX_COMPLETION_TOKENS,
         "stream": True,
         "stream_options": {"include_usage": True},

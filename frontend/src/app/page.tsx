@@ -9,6 +9,7 @@ import { Compare, Faq, Scenarios } from "@/components/landing/sections";
 import { ModeTabs } from "@/components/landing/mode-tabs";
 import { Gallery } from "@/components/landing/gallery";
 import { Magnetic } from "@/components/landing/magnetic";
+import { ScrollStory } from "@/components/landing/scroll-story";
 import { LANDING_CAPABILITIES, LANDING_MODES } from "@/lib/landing-content";
 
 const FUTURE_CAPABILITIES = LANDING_CAPABILITIES.filter((capability) => !capability.available);
@@ -36,7 +37,8 @@ export default function Landing() {
             </Label>
             <h1 className="fx-weight-in max-w-[46rem] font-display text-[clamp(2.65rem,5.7vw,4.8rem)] leading-[0.98] font-normal tracking-[-0.03em] text-balance">
               Меньше шума.<br />
-              <span className="text-ink3">Больше ясной работы.</span>
+              {/* 45 — строка набирает вес по мере прокрутки (переменный шрифт, без картинок) */}
+              <span className="k-weight-scroll text-ink3">Больше ясной работы.</span>
             </h1>
             <p className="max-w-[53ch] text-[17px] leading-relaxed text-ink2">
               KURAI объединяет выбор модели, живой контекст и понятный путь от вопроса к результату. Точно, спокойно, с вниманием к настоящей работе.
@@ -87,6 +89,8 @@ export default function Landing() {
           </div>
           <LiveDemo />
         </section>
+
+        <ScrollStory />
 
         {/* features */}
         <section aria-label="Возможности" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">

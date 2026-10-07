@@ -64,7 +64,8 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
           <X size={16} strokeWidth={1.5} />
         </button>
       </header>
-      <div className="kurai-artifact-workspace__body flex-1 overflow-y-auto p-4">
+      {/* 79 — слайды листаются с примагничиванием: останавливаются ровно по карточке */}
+      <div className="kurai-artifact-workspace__body flex-1 snap-y snap-mandatory overflow-y-auto scroll-p-4 p-4">
         <ol className="flex flex-col gap-3">
           {artifact.slides.map((s, i) => (
             <motion.li
@@ -72,7 +73,7 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
               animate={{ opacity: 1, transform: "translateY(0)" }}
               transition={{ delay: 0.12 + i * 0.05, duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
               key={`${s.title}-${i}`}
-              className="kurai-artifact-slide relative flex aspect-video flex-col justify-between border border-line bg-bg p-5"
+              className="kurai-artifact-slide k-snap-card relative flex aspect-video snap-start flex-col justify-between rounded-(--radius-md) border border-line bg-bg p-5"
             >
               <span className="k-index">{String(i + 1).padStart(2, "0")} / {String(artifact.slides.length).padStart(2, "0")}</span>
               <div>

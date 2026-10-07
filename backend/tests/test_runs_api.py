@@ -146,6 +146,7 @@ def test_funded_run_creates_immutable_messages_hold_and_durable_event(db):
     member, client = signed_in_client()
     grant_credits(member, 50_000, correlation_id="test-grant")
     chat = Chat.objects.create(owner=member, title="Новый диалог")
+    before = chat.updated_at
     run_quote = quote(client)
 
     response = client.post(
@@ -163,6 +164,9 @@ def test_funded_run_creates_immutable_messages_hold_and_durable_event(db):
     assert run.hold.reserved_micro == run_quote["estimatedCostMicro"]
     assert RunEvent.objects.get(run=run, seq=1).type == RunEvent.Type.QUEUED
     assert Message.objects.filter(chat=chat).count() == 2
+    # a new turn lifts the chat in the history list
+    chat.refresh_from_db()
+    assert chat.updated_at > before
 
 
 def test_same_idempotency_key_replays_without_a_second_hold_or_run(db):
@@ -273,11 +277,14 @@ def test_sse_closes_after_replaying_a_terminal_run(db):
     ).json()["data"]
     process_run(created["runId"])
 
-    response = client.get(f"/api/v1/runs/{created['runId']}/events")
+    # the browser's EventSource always asks for text/event-stream — a JSON-only negotiation used to answer 406
+    response = client.get(f"/api/v1/runs/{created['runId']}/events", headers={"Accept": "text/event-stream"})
     stream = b"".join(response.streaming_content).decode("utf-8")
 
     assert response.status_code == 200
     assert "event: done" in stream
+    # hop-by-hop headers make WSGI servers answer 500 before the first event
+    assert not response.has_header("Connection")
 
 
 def test_cancel_releases_active_hold_and_hides_foreign_run(db):

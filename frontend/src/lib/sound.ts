@@ -4,14 +4,15 @@ import { isQuietHour } from "./quiet";
 let ctx: AudioContext | null = null;
 
 /**
- * Звуковой сигнал реального события: «готово» — два восходящих тона, «ошибка» — один низкий.
- * Звучит только если пользователь включил звук и сейчас не тихие часы.
+ * Звуковой сигнал реального события: «отправлено» — тихий цифровой тик, «готово» — два восходящих тона,
+ * «ошибка» — один низкий. Звучит только если пользователь включил звук и сейчас не тихие часы.
  */
-export function playSignal(kind: "done" | "error"): void {
+export function playSignal(kind: "send" | "done" | "error"): void {
   const prefs = readPrefs();
   if (!prefs.sound || (prefs.quiet && isQuietHour()) || typeof window === "undefined" || !("AudioContext" in window)) return;
   ctx ??= new AudioContext();
-  const notes = kind === "done" ? [660, 990] : [220];
+  const notes = kind === "done" ? [660, 990] : kind === "send" ? [1320] : [220];
+  const len = kind === "send" ? 0.05 : 0.16;
   notes.forEach((freq, i) => {
     const osc = ctx!.createOscillator();
     const gain = ctx!.createGain();
@@ -19,10 +20,10 @@ export function playSignal(kind: "done" | "error"): void {
     osc.type = "sine";
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.0001, at);
-    gain.gain.exponentialRampToValueAtTime(0.06, at + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+    gain.gain.exponentialRampToValueAtTime(kind === "send" ? 0.03 : 0.06, at + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + len);
     osc.connect(gain).connect(ctx!.destination);
     osc.start(at);
-    osc.stop(at + 0.18);
+    osc.stop(at + len + 0.02);
   });
 }

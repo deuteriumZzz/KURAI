@@ -7,6 +7,7 @@ import { Hatch, Label, SysLine } from "@/components/fx/primitives";
 import { playSignal } from "@/lib/sound";
 import { DEFAULT_PREFS, readPrefs, writePrefs, type Prefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
+import { revealFrom } from "@/lib/motion";
 import type { User } from "@/types/api";
 import { Initials } from "@/components/brand/avatar";
 import { kuraiApi } from "@/lib/kurai-api";
@@ -32,6 +33,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function SettingsForm({ user }: { user: User }) {
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [exportState, setExportState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  // 84 — тема, на которую навели: превью перекрашивается до выбора
+  const [hoverTheme, setHoverTheme] = useState<"dark" | "light" | null>(null);
 
   // localStorage доступен только в браузере — читаем после монтирования
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,6 +102,7 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Оформление">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_15rem]">
         <div role="radiogroup" aria-label="Тема" className="grid gap-2 sm:grid-cols-3">
           {([["dark", "Night Ops", "тёмный карбон для долгой работы"], ["light", "Paper", "техническая бумага для чтения днём"], ["system", "Как в системе", "следует за настройкой устройства"]] as const).map(([v, l, h]) => (
             <button
@@ -106,11 +110,33 @@ export function SettingsForm({ user }: { user: User }) {
               type="button"
               role="radio"
               aria-checked={prefs.theme === v}
-              onClick={() => set({ theme: v })}
+              onMouseEnter={() => setHoverTheme(v === "system" ? null : v)}
+              onMouseLeave={() => setHoverTheme(null)}
+              onFocus={() => setHoverTheme(v === "system" ? null : v)}
+              onBlur={() => setHoverTheme(null)}
+              onClick={(e) => revealFrom(() => set({ theme: v }), { x: e.clientX, y: e.clientY })}
               className={cn("cursor-pointer bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast) hover:bg-s2", prefs.theme === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
             >
               <span className="block text-[14px]">{l}</span>
               <span className="text-[12.5px] text-ink3">{h}</span>
+            </button>
+          ))}
+        </div>
+        <ThemePreview theme={hoverTheme ?? (prefs.theme === "light" ? "light" : prefs.theme === "dark" ? "dark" : null)} />
+        </div>
+        <div role="radiogroup" aria-label="Акцент" className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-[13px] text-ink2">Акцент</span>
+          {([["lime", "Лайм", "#d8ec98"], ["yellow", "Night City", "#fcee0a"], ["cyan", "Циан", "#5ee6f0"]] as const).map(([v, l, c]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={prefs.accent === v}
+              onClick={() => set({ accent: v })}
+              className={cn("flex cursor-pointer items-center gap-2 rounded-(--radius-sm) bg-s1 px-3 py-2 text-[13px] transition-colors duration-(--dur-fast) hover:bg-s2", prefs.accent === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
+            >
+              <span aria-hidden="true" className="size-3 rounded-full" style={{ background: c }} />
+              {l}
             </button>
           ))}
         </div>
@@ -124,18 +150,29 @@ export function SettingsForm({ user }: { user: User }) {
           onChange={(calm) => set({ calm })}
         />
         <div className="flex flex-col gap-2 bg-s1 px-4 py-3">
-          <span className="text-[14px]">Размер текста ответов</span>
-          <div role="radiogroup" aria-label="Размер текста ответов" className="flex w-max gap-1 bg-s2 p-1">
-            {(["s", "m", "l"] as const).map((v) => (
-              <button key={v} type="button" role="radio" aria-checked={prefs.readSize === v} onClick={() => set({ readSize: v })} className={cn("cursor-pointer px-4 py-1.5", prefs.readSize === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink", { s: "text-[13px]", m: "text-[15px]", l: "text-[17px]" }[v])}>
-                Аа
-              </button>
-            ))}
+          {/* 83 — ползунки: колонка плавно меняет ширину, текст — размер, видно до сохранения */}
+          <label className="flex flex-col gap-1.5">
+            <span className="flex items-center justify-between text-[14px]">
+              Размер текста ответов <span className="font-mono text-[12px] text-ink3">{prefs.readSizePx || { s: 14, m: 15, l: 17 }[prefs.readSize]} px</span>
+            </span>
+            <input type="range" min={13} max={20} step={0.5} value={prefs.readSizePx || { s: 14, m: 15, l: 17 }[prefs.readSize]} onChange={(e) => set({ readSizePx: Number(e.target.value) })} className="k-range" />
+          </label>
+          <label className="mt-2 flex flex-col gap-1.5">
+            <span className="flex items-center justify-between text-[14px]">
+              Ширина колонки чата <span className="font-mono text-[12px] text-ink3">{prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)} rem · {(prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)) < 48 ? "удобно читать" : "таблицы и код"}</span>
+            </span>
+            <input type="range" min={34} max={64} step={1} value={prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)} onChange={(e) => set({ readWidthRem: Number(e.target.value) })} className="k-range" />
+          </label>
+          {/* 83 — колонка и текст меняются вживую: видно результат сразу */}
+          <div aria-hidden="true" className="mt-3 overflow-hidden rounded-(--radius-sm) border border-line bg-bg p-3">
+            <p className="k-read-preview text-prose leading-[1.7]">
+              Колонка ответа плавно меняет ширину, а текст — размер. Так будет выглядеть каждый ответ в чате.
+            </p>
           </div>
-          <span className="mt-2 text-[14px]">Ширина колонки чата</span>
-          <div role="radiogroup" aria-label="Ширина колонки чата" className="flex w-max gap-1 bg-s2 p-1">
-            {([["narrow", "Узкая · удобно читать"], ["wide", "Широкая · таблицы и код"]] as const).map(([v, l]) => (
-              <button key={v} type="button" role="radio" aria-checked={prefs.readWidth === v} onClick={() => set({ readWidth: v })} className={cn("cursor-pointer px-3 py-1.5 text-[13px]", prefs.readWidth === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
+          <span className="mt-2 text-[14px]">Плотность</span>
+          <div role="radiogroup" aria-label="Плотность интерфейса" className="flex w-max gap-1 bg-s2 p-1">
+            {([["comfortable", "Свободно"], ["compact", "Компактно"]] as const).map(([v, l]) => (
+              <button key={v} type="button" role="radio" aria-checked={prefs.density === v} onClick={() => set({ density: v })} className={cn("cursor-pointer px-3 py-1.5 text-[13px]", prefs.density === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
                 {l}
               </button>
             ))}
@@ -147,6 +184,28 @@ export function SettingsForm({ user }: { user: User }) {
         <Button variant="ghost" className="w-max" onClick={() => set({ onboarded: false })}>
           Показать знакомство с KURAI ещё раз
         </Button>
+      </Section>
+
+      <Section title="Расходы">
+        <label className="flex flex-wrap items-center justify-between gap-3 bg-s1 px-4 py-3">
+          <span className="flex flex-col">
+            <span className="text-[14px]">Лимит расходов в месяц</span>
+            <span className="text-[12.5px] text-ink3">На 80% — тихое предупреждение, сверх лимита запуск спросит подтверждение. Хранится в этом браузере; 0 — без лимита.</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              step={50}
+              inputMode="numeric"
+              value={prefs.spendLimit || ""}
+              placeholder="0"
+              onChange={(e) => set({ spendLimit: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
+              className="h-9 w-28 rounded-(--radius-sm) border border-line2 bg-g1 px-3 text-right font-mono text-[13px] text-ink outline-none focus:border-ink3"
+            />
+            <span className="text-[13px] text-ink3">кр</span>
+          </span>
+        </label>
       </Section>
 
       <Section title="Язык">
@@ -178,8 +237,8 @@ export function SettingsForm({ user }: { user: User }) {
           <p className="mt-0.5 text-[12.5px] text-ink3">Не включены: рассылка и чековый контур появятся вместе с платёжным провайдером.</p>
         </div>
         <Switch
-          label="Звук при завершении и ошибке"
-          hint="Короткий тон, когда долгая задача готова или не удалась. Навигация и клики звука не издают."
+          label="Звуки интерфейса"
+          hint="Тихий тик на отправку, два тона на готовность, низкий — на ошибку. Навигация и клики звука не издают."
           checked={prefs.sound}
           onChange={(sound) => {
             set({ sound });
@@ -223,6 +282,33 @@ export function SettingsForm({ user }: { user: User }) {
           </div>
         </Hatch>
       </Section>
+    </div>
+  );
+}
+
+/** 84 — превью темы: мини-экран кабинета в цветах выбранной (или наведённой) темы, перекрашивается плавно. */
+function ThemePreview({ theme }: { theme: "dark" | "light" | null }) {
+  const t = theme ?? "dark";
+  const c = t === "light" ? { bg: "#f1f0ec", g1: "#fbfaf6", line: "#d9d6cc", ink: "#1b1b1b", ink3: "#77736a", acc: "#b9e600" } : { bg: "#151515", g1: "#1f1f1f", line: "#2b2b2b", ink: "#f2f2f2", ink3: "#8e8e8e", acc: "#d8ec98" };
+  const tr = "background-color 320ms var(--ease-out), color 320ms var(--ease-out), border-color 320ms var(--ease-out)";
+  return (
+    <div aria-hidden="true" className="hidden overflow-hidden rounded-(--radius-md) border lg:block" style={{ background: c.bg, borderColor: c.line, transition: tr }}>
+      <div className="flex h-full">
+        <div className="flex w-14 flex-col gap-1.5 border-r p-2" style={{ borderColor: c.line, transition: tr }}>
+          {[0, 1, 2, 3].map((i) => (
+            <i key={i} className="h-1.5 rounded-full" style={{ background: i === 0 ? c.acc : c.line, transition: tr }} />
+          ))}
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5 p-3">
+          <i className="h-2.5 w-3/4 rounded-full" style={{ background: c.ink, transition: tr }} />
+          <i className="h-1.5 w-1/2 rounded-full" style={{ background: c.ink3, transition: tr }} />
+          <i className="mt-2 h-1.5 w-full rounded-full" style={{ background: c.line, transition: tr }} />
+          <i className="h-1.5 w-5/6 rounded-full" style={{ background: c.line, transition: tr }} />
+          <span className="mt-auto flex h-6 items-center justify-end rounded-[5px] border px-1" style={{ background: c.g1, borderColor: c.line, transition: tr }}>
+            <i className="h-3.5 w-6 rounded-[3px]" style={{ background: c.acc, transition: tr }} />
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

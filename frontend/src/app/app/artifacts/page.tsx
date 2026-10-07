@@ -6,6 +6,14 @@ import { ArrowUpRight, FileText, LoaderCircle } from "lucide-react";
 import { Label } from "@/components/fx/primitives";
 import { PageTitle } from "@/components/fx/page-title";
 import { formatCredits } from "@/lib/format";
+import { motion } from "motion/react";
+import { SPRING } from "@/lib/motion";
+
+const nowMs = () => Date.now();
+const codeOf = (id: string) => {
+  const hex = id.replace(/[^0-9a-f]/gi, "").slice(0, 8).toUpperCase();
+  return `ART·${hex.slice(0, 4)}-${hex.slice(4)}`;
+};
 import { kuraiApi, type KuraiArtifact } from "@/lib/kurai-api";
 
 const KIND: Record<KuraiArtifact["kind"], string> = {
@@ -16,6 +24,7 @@ const KIND: Record<KuraiArtifact["kind"], string> = {
 export default function ArtifactsPage() {
   const [state, setState] = useState<"loading" | "ready" | "offline" | "error">(kuraiApi ? "loading" : "offline");
   const [artifacts, setArtifacts] = useState<KuraiArtifact[]>([]);
+  const [openedAt] = useState(nowMs);
 
   useEffect(() => {
     if (!kuraiApi) return;
@@ -45,10 +54,23 @@ export default function ArtifactsPage() {
         {state === "ready" && artifacts.length > 0 && (
           <ol className="divide-y divide-line border-y border-line">
             {artifacts.map((artifact, index) => (
-              <li key={artifact.id} className="group grid gap-4 py-5 md:grid-cols-[42px_minmax(0,1fr)_auto] md:items-start">
+              // К20 — артефакт как осколок данных: код, срезанный ярлык, ссылка на ответ-источник; свежий «выпадает» в список
+              <motion.li
+                key={artifact.id}
+                initial={openedAt - Date.parse(artifact.createdAt) < 120_000 ? { opacity: 0, y: -18, rotate: -1.5 } : false}
+                animate={{ opacity: 1, y: 0, rotate: 0 }}
+                transition={SPRING.bouncy}
+                className="group grid gap-4 py-5 md:grid-cols-[42px_minmax(0,1fr)_auto] md:items-start"
+              >
                 <span aria-hidden="true" className="grid size-9 place-items-center bg-s2 font-mono text-[11px] text-ink3">{String(index + 1).padStart(2, "0")}</span>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><h2 className="truncate text-[16px] text-ink">{artifact.title}</h2><Label className="text-violet">{KIND[artifact.kind]}</Label></div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <h2 className="truncate text-[16px] text-ink">{artifact.title}</h2>
+                    <span className="k-shard-tag font-mono text-[10.5px] tracking-[0.06em] text-violet uppercase">{KIND[artifact.kind]}</span>
+                    <button type="button" onClick={() => void navigator.clipboard?.writeText(codeOf(artifact.id)).catch(() => undefined)} aria-label={`Скопировать код ${codeOf(artifact.id)}`} className="k-code cursor-pointer rounded-(--radius-xs) px-1 text-[11px] text-ink3 hover:bg-s2 hover:text-ink">
+                      {codeOf(artifact.id)}
+                    </button>
+                  </div>
                   <p className="mt-2 line-clamp-3 max-w-2xl whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink2">{artifact.body}</p>
                   <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-ink3"><span>{artifact.provenance.model ?? "модель не указана"}</span><span>{formatCredits(artifact.provenance.costMicro)}</span>{artifact.provenance.sources.length > 0 && <span className="text-violet">источники: {artifact.provenance.sources.length}</span>}</div>
                 </div>
@@ -56,7 +78,7 @@ export default function ArtifactsPage() {
                   <Link href={`/app/c/${artifact.chatId}`} className="inline-flex h-9 items-center gap-1.5 bg-s2 px-2.5 text-[12px] text-ink2 transition-colors duration-(--dur-fast) hover:bg-s3 hover:text-ink"><FileText size={14} strokeWidth={1.5} /> Чат</Link>
                   <Link href={`/app?prompt=${encodeURIComponent(`Продолжи работу с артефактом «${artifact.title}»:\n${artifact.body.slice(0, 1400)}`)}`} className="inline-flex h-9 items-center gap-1.5 bg-acc px-2.5 text-[12px] text-acc-ink transition-transform duration-(--dur-fast) hover:-translate-y-px">Продолжить <ArrowUpRight size={14} strokeWidth={1.5} /></Link>
                 </div>
-              </li>
+              </motion.li>
             ))}
           </ol>
         )}

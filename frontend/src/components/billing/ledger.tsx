@@ -18,7 +18,7 @@ const when = (iso: string) =>
   new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 
 /** Журнал операций: только чтение; возвраты за сбои отдельной строкой. */
-export function Ledger({ entries }: { entries: LedgerEntry[] }) {
+export function Ledger({ entries, fresh }: { entries: LedgerEntry[]; fresh?: Set<string> }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [sent, setSent] = useState<string | null>(null);
   const rows = entries.filter((e) => filter === "all" || e.kind === filter || (filter === "topup" && (e.kind === "grant" || e.kind === "bonus")));
@@ -58,10 +58,11 @@ export function Ledger({ entries }: { entries: LedgerEntry[] }) {
             {rows.map((e, i) => (
               <motion.tr
                 key={`${filter}-${e.id}`}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
+                layout="position"
+                initial={fresh?.has(e.id) ? { opacity: 0, y: -10 } : { opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ delay: i * 0.03, duration: 0.2 }}
-                className="border-b border-line last:border-b-0 hover:bg-g1"
+                className={cn("border-b border-line last:border-b-0 hover:bg-g1", fresh?.has(e.id) && "k-row-new")}
               >
                 <td className="px-3 py-2.5 font-mono text-[12px] text-ink3 tabular-nums">{when(e.at)}</td>
                 <td className="px-3 py-2.5">

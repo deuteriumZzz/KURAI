@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Mic, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { vibrate } from "@/lib/haptics";
 import { Hint } from "./hint";
 
 type SR = {
@@ -148,6 +149,8 @@ export function VoiceInput({ onText, onAudio, onError, onActiveChange }: Props) 
           // на телефоне — как рация: держите, говорите, отпустите
           if (e.pointerType !== "touch") return;
           held.current = true;
+          // 82 — короткий отклик: удержание распознано, запись началась
+          vibrate(15);
           void start().then(() => {
             const up = () => {
               window.removeEventListener("pointerup", up);
@@ -166,11 +169,11 @@ export function VoiceInput({ onText, onAudio, onError, onActiveChange }: Props) 
   }
 
   return (
-    <div role="status" aria-label="Идёт запись голоса" className="flex h-8 items-center gap-2 border border-acc-line bg-acc-soft px-2 pointer-coarse:h-11">
+    <div role="status" aria-label="Идёт запись голоса" className="flex h-8 items-center gap-2 rounded-(--radius-sm) border border-acc-line bg-acc-soft px-2 pointer-coarse:h-11">
       <span aria-hidden="true" className="fx-caret size-2 bg-acc" />
       <span aria-hidden="true" className="flex h-4 items-end gap-0.5">
         {levels.map((l, i) => (
-          <i key={i} className={cn("w-[3px]", l > 0.08 ? "bg-acc" : "bg-line2")} style={{ height: `${Math.max(15, Math.round(l * 100))}%` }} />
+          <i key={i} className={cn("w-[3px] rounded-full transition-[height,background-color] duration-75", l > 0.08 ? "bg-acc" : "bg-line2")} style={{ height: `${Math.max(15, Math.round(l * 100))}%` }} />
         ))}
       </span>
       <span className="font-mono text-[11px] text-acc tabular-nums">{fmt(secs)}</span>

@@ -7,15 +7,15 @@ const nb = (s: string) => s.replace(/ /g, " ");
 
 describe("formatCredits", () => {
   it("formats large balances without fraction", () => {
-    expect(formatCredits(12_480_000)).toBe(nb("1 248") + " кр");
+    expect(formatCredits(12_480_000)).toBe(nb("1 248") + "\u00a0кр");
   });
   it("keeps one decimal below 100 credits", () => {
-    expect(formatCredits(78_000)).toBe("7,8 кр");
-    expect(formatCredits(4_000)).toBe("0,4 кр");
-    expect(formatCredits(20_000)).toBe("2 кр");
+    expect(formatCredits(78_000)).toBe("7,8\u00a0кр");
+    expect(formatCredits(4_000)).toBe("0,4\u00a0кр");
+    expect(formatCredits(20_000)).toBe("2\u00a0кр");
   });
   it("supports approx and no unit", () => {
-    expect(formatCredits(20_000, { approx: true })).toBe("≈ 2 кр");
+    expect(formatCredits(20_000, { approx: true })).toBe("≈\u00a02\u00a0кр");
     expect(formatCredits(20_000, { unit: false })).toBe("2");
   });
 });

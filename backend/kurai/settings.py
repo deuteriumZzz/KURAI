@@ -78,6 +78,8 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOWED_ORIGINS = [origin for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if origin]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key")
+# the composer counts down a rate limit from the real Retry-After, so the browser must be allowed to read it
+CORS_EXPOSE_HEADERS = ["Retry-After"]
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -112,6 +114,14 @@ try:
     KURAI_RESEARCH_SEARCH_COST_USD_PER_USE = Decimal(os.getenv("KURAI_RESEARCH_SEARCH_COST_USD_PER_USE", "0.007"))
 except InvalidOperation as error:
     raise RuntimeError("KURAI_RESEARCH_SEARCH_COST_USD_PER_USE must be a decimal") from error
+# OpenRouter lists routers (openrouter/auto, …) with price -1; their hold is reserved at this ceiling.
+try:
+    KURAI_VARIABLE_PROMPT_USD_PER_TOKEN = Decimal(os.getenv("KURAI_VARIABLE_PROMPT_USD_PER_TOKEN", "0.000005"))
+    KURAI_VARIABLE_COMPLETION_USD_PER_TOKEN = Decimal(os.getenv("KURAI_VARIABLE_COMPLETION_USD_PER_TOKEN", "0.000025"))
+except InvalidOperation as error:
+    raise RuntimeError("KURAI variable-price ceilings must be decimals") from error
+if KURAI_VARIABLE_PROMPT_USD_PER_TOKEN <= 0 or KURAI_VARIABLE_COMPLETION_USD_PER_TOKEN <= 0:
+    raise RuntimeError("KURAI variable-price ceilings must be positive")
 KURAI_VIDEO_DEFAULT_DURATION_SECONDS = int(os.getenv("KURAI_VIDEO_DEFAULT_DURATION_SECONDS", "5"))
 # Run options (runs/options.py): bounded so a reserved hold always covers the run.
 KURAI_VIDEO_DURATIONS = tuple(int(value) for value in os.getenv("KURAI_VIDEO_DURATIONS", "5,8,10").split(","))

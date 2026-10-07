@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import { formatCredits } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Label } from "@/components/fx/primitives";
@@ -95,10 +96,16 @@ export function SpendChart({ days }: { days: Day[] }) {
                   const credits = d.micro / 10_000;
                   const on = Math.round((credits / top) * SEG);
                   return (
-                    <button
+                    <motion.button
                       key={d.date}
                       type="button"
                       role="listitem"
+                      // 49 — столбцы поднимаются от нуля лёгкой волной, когда график попал в экран; один раз
+                      initial={{ scaleY: 0 }}
+                      whileInView={{ scaleY: 1 }}
+                      viewport={{ once: true, margin: "0px 0px -40px 0px" }}
+                      transition={{ delay: i * 0.018, duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+                      style={{ originY: 1 }}
                       aria-label={`${fmtDay(d.date)}: ${formatCredits(d.micro)}`}
                       onMouseEnter={() => setActive(i)}
                       onFocus={() => setActive(i)}
@@ -117,7 +124,7 @@ export function SpendChart({ days }: { days: Day[] }) {
                         />
                       ))}
                       {on === 0 && <i className="block h-px w-full max-w-6 bg-line2" />}
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>

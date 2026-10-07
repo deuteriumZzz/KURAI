@@ -1,4 +1,4 @@
-import type { JobStatus, Message, MessagePart, Micro } from "@/types/api";
+import type { JobStatus, Message, MessagePart, Micro, Source } from "@/types/api";
 
 /** События потока ответа — форма будущего SSE от бэкенда. */
 export type StreamEvent =
@@ -14,7 +14,7 @@ export type StreamEvent =
   | { type: "ask"; question: string; options: string[] }
   | { type: "answered"; choice: number }
   | { type: "tasks"; tasks: AgentTask[] }
-  | { type: "source"; url: string; title: string }
+  | { type: "source"; url: string; title: string; quote?: string; readAt?: string }
   | { type: "artifact"; artifact: Artifact }
   | { type: "done"; costMicro: Micro; durationMs: number }
   | { type: "error"; message: string; refundedMicro: Micro }
@@ -31,12 +31,22 @@ export type RunState = {
   status: "streaming" | "done" | "error" | "aborted";
   log: { tone: LogTone; text: string }[];
   durationMs?: number;
+  /** Хронометраж из событий этого запуска (мс от эпохи): старт, первая мысль, первое слово, конец. */
+  startedAt?: number;
+  /** Что человек выбрал до запуска (например, «auto») — чтобы честно объяснить итоговый маршрут. */
+  requested?: string;
+  thinkingAt?: number;
+  firstTokenAt?: number;
+  doneAt?: number;
   queuePosition?: number;
   tip?: string;
   /** Агент ждёт уточнения — выбор реплики. */
   ask?: { question: string; options: string[]; choice?: number };
   tasks?: AgentTask[];
-  sources?: { url: string; title: string }[];
+  sources?: Source[];
+  /** Сервер выбрал маршрут (конец очереди) и пришёл первый источник — слои хронометража. */
+  routedAt?: number;
+  searchAt?: number;
   artifact?: Artifact;
   /** Что модель «увидела» во вложениях — для сканера. */
   scans?: { name: string; labels: string[] }[];
@@ -50,7 +60,7 @@ export type RunState = {
   actions?: string[];
 };
 
-export const newRun = (): RunState => ({ status: "streaming", log: [] });
+export const newRun = (at: number = Date.now()): RunState => ({ status: "streaming", log: [], startedAt: at });
 
 function appendText(parts: MessagePart[], text: string): MessagePart[] {
   const last = parts[parts.length - 1];
@@ -58,18 +68,18 @@ function appendText(parts: MessagePart[], text: string): MessagePart[] {
   return [...parts, { type: "text", text }];
 }
 
-/** Чистая функция: применяет событие к сообщению и состоянию выполнения. */
-export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg: Message; run: RunState } {
+/** Чистая функция: применяет событие к сообщению и состоянию выполнения; `now` — момент события. */
+export function applyEvent(msg: Message, run: RunState, ev: StreamEvent, now: number = Date.now()): { msg: Message; run: RunState } {
   switch (ev.type) {
     case "route":
-      return { msg: { ...msg, model: ev.model }, run: { ...run, log: [...run.log, { tone: "default", text: `${ev.model}${ev.node ? ` · ${ev.node}` : ""}${ev.latencyMs ? ` · ${ev.latencyMs} мс` : ""}` }] } };
+      return { msg: { ...msg, model: ev.model }, run: { ...run, routedAt: run.routedAt ?? now, log: [...run.log, { tone: "default", text: `${ev.model}${ev.node ? ` · ${ev.node}` : ""}${ev.latencyMs ? ` · ${ev.latencyMs} мс` : ""}` }] } };
     case "fallback":
       return {
         msg: { ...msg, model: ev.to },
         run: { ...run, log: [...run.log, { tone: "warn", text: `${ev.reason} → переключаюсь на ${ev.to}` }] },
       };
     case "delta":
-      return { msg: { ...msg, parts: appendText(msg.parts, ev.text) }, run };
+      return { msg: { ...msg, parts: appendText(msg.parts, ev.text) }, run: run.firstTokenAt ? run : { ...run, firstTokenAt: now } };
     case "job": {
       const parts = msg.parts.map((p) => (p.type === "job" ? { ...p, status: ev.status, progress: ev.progress } : p));
       return { msg: { ...msg, parts }, run: { ...run, queuePosition: ev.queuePosition, tip: ev.tip ?? run.tip } };
@@ -79,7 +89,7 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     case "action":
       return { msg, run: { ...run, actions: [...(run.actions ?? []), ev.text] } };
     case "thinking":
-      return { msg, run: { ...run, thinking: (run.thinking ?? "") + ev.text } };
+      return { msg, run: { ...run, thinking: (run.thinking ?? "") + ev.text, thinkingAt: run.thinkingAt ?? now } };
     case "followups":
       return { msg, run: { ...run, followups: ev.items } };
     case "scan":
@@ -91,11 +101,15 @@ export function applyEvent(msg: Message, run: RunState, ev: StreamEvent): { msg:
     case "tasks":
       return { msg, run: { ...run, tasks: ev.tasks } };
     case "source":
-      return { msg, run: { ...run, sources: [...(run.sources ?? []), { url: ev.url, title: ev.title }] } };
+      return { msg, run: { ...run, searchAt: run.searchAt ?? now, sources: [...(run.sources ?? []), { url: ev.url, title: ev.title, ...(ev.quote ? { quote: ev.quote } : {}), ...(ev.readAt ? { readAt: ev.readAt } : {}) }] } };
     case "artifact":
       return { msg, run: { ...run, artifact: ev.artifact } };
     case "done":
-      return { msg: { ...msg, costMicro: ev.costMicro }, run: { ...run, status: "done", durationMs: ev.durationMs, queuePosition: undefined, tip: undefined } };
+      // живой сервер не присылает длительность — берём её из собственных отметок запуска
+      return {
+        msg: { ...msg, costMicro: ev.costMicro },
+        run: { ...run, status: "done", durationMs: ev.durationMs || (run.startedAt ? now - run.startedAt : 0), doneAt: now, queuePosition: undefined, tip: undefined },
+      };
     case "error":
       return {
         msg: { ...msg, costMicro: 0 },

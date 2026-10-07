@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { useCalm } from "@/lib/use-calm";
 import { Label } from "@/components/fx/primitives";
 import { EmptyState } from "@/components/fx/empty-state";
+import { flyTo } from "@/lib/motion";
 
 /** «Входящие» — центр уведомлений о долгих задачах, чтобы ничего не терялось, пока вы в другом чате. */
 export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
@@ -18,6 +19,19 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const unread = items.filter((i) => i.unread).length;
+  const bell = useRef<SVGSVGElement>(null);
+  const lastUnread = useRef(unread);
+
+  // 39 — пришло новое уведомление: видимый тост улетает в колокольчик, ничего не теряется
+  useEffect(() => {
+    const icon = bell.current;
+    if (unread > lastUnread.current && icon && icon.getBoundingClientRect().right > 0) {
+      const toasts = document.querySelectorAll("[data-toast]");
+      const toast = toasts[toasts.length - 1];
+      if (toast) void flyTo(toast, icon, { endScale: 0.15, arc: 30, ms: 600 });
+    }
+    lastUnread.current = unread;
+  }, [unread]);
 
   useEffect(() => {
     if (!open) return;
@@ -39,13 +53,10 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
         aria-expanded={open}
         aria-label={`Входящие${unread ? `, непрочитанных: ${unread}` : ""}`}
         title="Входящие"
-        className={cn(
-          "k-rail-item flex h-9 w-full cursor-pointer items-center gap-3 rounded-(--radius-sm) px-3 text-[14px] text-ink2 hover:bg-s1 hover:text-ink pointer-coarse:h-11 [&>svg]:text-ink3",
-          collapsed && "justify-center px-0",
-        )}
+        className="k-rail-item flex h-9 w-full cursor-pointer items-center gap-3 rounded-(--radius-sm) px-3 text-[14px] text-ink2 hover:text-ink pointer-coarse:h-11 [&>svg]:text-ink3"
       >
-        <Bell size={16} strokeWidth={1.5} />
-        {!collapsed && <span className="k-shift">Входящие</span>}
+        <Bell ref={bell} size={16} strokeWidth={1.5} className="shrink-0" />
+        <span className="k-shift k-label">Входящие</span>
         {unread > 0 && (
           <motion.span
             key={unread}

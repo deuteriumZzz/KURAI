@@ -17,12 +17,14 @@ def test_quote_rate_limit_is_scoped_to_the_authenticated_member(db):
     client = signed_in_client()
 
     first = client.post("/api/v1/runs/quote", data={"mode": "text", "text": "Первый запрос"}, content_type="application/json")
-    second = client.post("/api/v1/runs/quote", data={"mode": "text", "text": "Второй запрос"}, content_type="application/json")
+    second = client.post("/api/v1/runs/quote", data={"mode": "text", "text": "Второй запрос"}, content_type="application/json", headers={"Origin": "http://localhost:3000"})
 
     assert first.status_code == 200
     assert second.status_code == 429
     assert second.json()["error"]["code"] == "rate_limited"
     assert second["Retry-After"] == "60"
+    # the cabinet on another origin reads the wait to count it down
+    assert "retry-after" in second["Access-Control-Expose-Headers"].lower()
 
 
 @override_settings(KURAI_RUN_START_RATE_LIMIT_COUNT=1, KURAI_RUN_RATE_LIMIT_WINDOW_SECONDS=60)

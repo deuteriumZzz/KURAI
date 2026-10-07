@@ -16,7 +16,7 @@ describe("KURAI API client", () => {
 
     const project = await api.createProject("Запуск");
 
-    expect(project).toEqual({ id: "b4d0", name: "Запуск", chatIds: [], createdAt: "2026-09-24T10:00:00Z" });
+    expect(project).toEqual({ id: "b4d0", name: "Запуск", chatIds: [], createdAt: "2026-09-24T10:00:00Z", instructions: "", defaultModel: "" });
     expect(fetcher).toHaveBeenCalledWith(
       "https://api.kurai.test/api/v1/projects",
       expect.objectContaining({ method: "POST", credentials: "include", body: JSON.stringify({ name: "Запуск", accent: "cyan" }) }),
@@ -235,5 +235,15 @@ describe("KURAI API client — run options and chat actions", () => {
     expect(JSON.parse(fetcher.mock.calls[1]?.[1]?.body as string)).toMatchObject({ mode: "image", options: { count: 4 } });
     expect(fetcher.mock.calls[2]?.[0]).toBe("https://api.kurai.test/api/v1/chats/c1");
     expect(fetcher.mock.calls[2]?.[1]).toMatchObject({ method: "PATCH", body: JSON.stringify({ archived: true }) });
+  });
+
+  it("estimates a price from the draft length only — the draft text never leaves the browser", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(ok({ csrfToken: "csrf-1" })).mockResolvedValueOnce(ok({ estimatedCostMicro: 33_000, parts: { input: 1_000, output: 32_000 } }));
+    const api = createKuraiClient("https://api.kurai.test", fetcher);
+
+    await expect(api.estimate("text", "openrouter/auto", 500, { web: true, think: false })).resolves.toEqual({ estimatedCostMicro: 33_000, parts: { input: 1_000, output: 32_000 } });
+
+    expect(fetcher.mock.calls[1]?.[0]).toBe("https://api.kurai.test/api/v1/runs/estimate");
+    expect(JSON.parse(fetcher.mock.calls[1]?.[1]?.body as string)).toEqual({ mode: "text", modelId: "openrouter/auto", chars: 500, options: { web: true, think: false } });
   });
 });

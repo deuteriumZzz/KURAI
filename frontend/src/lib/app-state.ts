@@ -1,9 +1,9 @@
 "use client";
 
-import type { Balance, ChatSummary, Project, User } from "@/types/api";
-import { MOCK_BALANCE, MOCK_CHATS, MOCK_PROJECTS, MOCK_USER } from "@/mocks/data";
+import type { Balance, ChatSummary, LedgerEntry, Project, User } from "@/types/api";
+import { MOCK_BALANCE, MOCK_CHATS, MOCK_LEDGER, MOCK_PROJECTS, MOCK_USER } from "@/mocks/data";
 import { createStore } from "./store";
-import { kuraiApi } from "./kurai-api";
+import { kuraiApi, type KuraiLedger } from "./kurai-api";
 
 /** Участник рабочего пространства: в локальном просмотре — демо-пользователь, с API — ответ /me. */
 export const memberStore = createStore<User>(kuraiApi ? { id: "", name: "", email: "" } : MOCK_USER);
@@ -11,13 +11,40 @@ export const memberStore = createStore<User>(kuraiApi ? { id: "", name: "", emai
 /** Один баланс на весь кабинет: рейка, поле ввода и чат читают одно значение (с API — из журнала). */
 export const balanceStore = createStore<Balance | null>(kuraiApi ? null : MOCK_BALANCE);
 
+/** Журнал операций кабинета: из него — расходы месяца, лимит и прогнозы (с API — серверный журнал). */
+export const ledgerStore = createStore<LedgerEntry[]>(kuraiApi ? [] : MOCK_LEDGER);
+
+export const toLedgerRows = (entries: KuraiLedger["entries"]): LedgerEntry[] =>
+  entries.map((entry) => ({
+    id: entry.id,
+    at: entry.at,
+    kind: entry.kind,
+    title: entry.title,
+    ...(entry.model ? { model: entry.model } : {}),
+    ...(entry.chatId ? { chatId: entry.chatId } : {}),
+    ...(entry.mode ? { mode: entry.mode } : {}),
+    amountMicro: entry.amountMicro,
+  }));
+
+/** После резерва, списания или возврата сумму перечитываем с сервера — она там единственная правда. */
+export function refreshBalance() {
+  kuraiApi
+    ?.ledger()
+    .then((ledger) => {
+      balanceStore.set((b) => b && { ...b, micro: ledger.availableMicro });
+      ledgerStore.set(() => toLedgerRows(ledger.entries));
+    })
+    .catch(() => undefined);
+}
+
 export type InboxItem = { id: string; title: string; href?: string; at: string; unread: boolean; tone?: "default" | "warn" };
 
 // в рабочем режиме история приходит с сервера — демо-чаты не мелькают до ответа API
 export const chatsStore = createStore<ChatSummary[]>(kuraiApi ? [] : MOCK_CHATS);
 export const projectsStore = createStore<Project[]>(kuraiApi ? [] : MOCK_PROJECTS);
 
-export const inboxStore = createStore<InboxItem[]>([
+// в рабочем режиме уведомления рождаются только из реальных запусков этой сессии
+export const inboxStore = createStore<InboxItem[]>(kuraiApi ? [] : [
   { id: "n1", title: "Отчёт «Рынок AI-агрегаторов» готов", href: "/app/c/b21c", at: "14:41", unread: true },
   { id: "n2", title: "Видео «Оживи вторую» готово · 118 кр", href: "/app/c/7f3a", at: "14:12", unread: false },
   { id: "n3", title: "Баланс ниже 100 кр — пополните, чтобы видео не встало в очередь", href: "/app/billing", at: "вчера", unread: false, tone: "warn" },

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
+import { ViewTransition } from "@/components/fx/view-transition";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Bookmark, Brain, Check, Globe, Paperclip, SlidersHorizontal, Sparkles, Square, X } from "lucide-react";
 import { usePrefs } from "@/lib/use-prefs";
@@ -14,18 +15,33 @@ import { MODES, modeById, parseCommand } from "@/lib/modes";
 import { defaultModel, fromCatalogModel, modelById, modelsForMode, type ModelInfo } from "@/lib/models";
 import { contextUsage } from "@/lib/context";
 import { fileError, type FileMeta } from "@/lib/files";
-import { formatCredits } from "@/lib/format";
+import { formatCredits, MICRO_PER_CREDIT } from "@/lib/format";
 import { readPrefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
-import { retrigger } from "@/lib/motion";
+import { isCalm, markSendOrigin, retrigger, SPRING } from "@/lib/motion";
+import { FlapNumber } from "@/components/fx/flap-number";
 import { Hatch, Segments, useFx } from "@/components/fx/primitives";
 import { Hint } from "./hint";
 import { ModelPicker } from "./model-picker";
 import { VoiceInput } from "./voice-input";
 import { AttachmentChips, type Attachment } from "./attachments";
-import { kuraiApi, type KuraiCapability } from "@/lib/kurai-api";
+import { kuraiApi, type KuraiCapability, type KuraiEstimate } from "@/lib/kurai-api";
+import { chatsStore, ledgerStore, refreshBalance } from "@/lib/app-state";
+import { useStore } from "@/lib/store";
+import { forecast, monthSpend } from "@/lib/spend";
+import { playSignal } from "@/lib/sound";
 
-export type Outgoing = { text: string; mode: Mode; model: ModelInfo; compareModels?: ModelInfo[]; web: boolean; think: boolean; params: ModeParams; files: FileMeta[] };
+export type Outgoing = { text: string; mode: Mode; model: ModelInfo; compareModels?: ModelInfo[]; web: boolean; think: boolean; params: ModeParams; files: FileMeta[]; /** Котировка, уже подтверждённая человеком (дорогой запуск). */ quoteId?: string };
+
+/** К14 — от этой оценки запуск требует подтверждения по зафиксированной цене. */
+const EXPENSIVE_MICRO = 10 * MICRO_PER_CREDIT;
+const PART_LABEL = { input: "модель · ввод", output: "ответ, потолок", think: "думать дольше", search: "веб-поиск, лимит", generation: "генерация" } as const;
+// ячейки — до сотых, чтобы их сумма сходилась с итогом, округлённым до десятых
+const cellCredits = (micro: number) => `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(micro / MICRO_PER_CREDIT)}\u00a0кр`;
+const routeOf = (m: ModelInfo) => (m.id === "auto" ? "openrouter/auto" : m.id);
+/** Время для обработчиков: компилятор React считает прямой Date.now() в теле компонента нечистым. */
+const nowMs = () => Date.now();
+const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 type Props = {
   /** home — центр пустого экрана (чипы под полем, как у Kimi); dock — низ чата (чипы над полем). */
@@ -50,6 +66,10 @@ type Props = {
   onEditLast?: () => void;
   /** Ключ черновика: текст сохраняется, пока не отправлен (закрыли вкладку — он на месте). */
   draftKey?: string;
+  /** Маршрут показан в инспекторе — в доке остаются только инструменты и отправка. */
+  routeInInspector?: boolean;
+  /** 101 — модель по умолчанию проекта, в котором живёт чат. */
+  projectModel?: string;
 };
 
 let seq = 0;
@@ -69,6 +89,8 @@ export function Composer({
   onCompress,
   onEditLast,
   draftKey,
+  routeInInspector = false,
+  projectModel,
 }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -90,11 +112,21 @@ export function Composer({
   const [params, setParams] = useState<Partial<Record<Mode, ModeParams>>>({});
   const [pending, setPending] = useState<{ msg: Outgoing; left: number; text: string } | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [confirm, setConfirm] = useState<{ msg: Outgoing; cost: number; deadline: number; ttl: number } | null>(null);
+  const [now, setNow] = useState(0);
+  const [savedAt, setSavedAt] = useState(0);
+  const [limitAsk, setLimitAsk] = useState<Outgoing | null>(null);
+  // 75 — до какого момента сервер просил не отправлять (Retry-After)
+  const [cooldown, setCooldown] = useState<{ until: number; secs: number } | null>(null);
+  const ledger = useStore(ledgerStore);
+  const [mountedAt] = useState(nowMs);
   const [catalog, setCatalog] = useState<ModelInfo[]>([]);
   const [capabilities, setCapabilities] = useState<KuraiCapability[] | null>(null);
   const prefs = usePrefs();
   const boxRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const restored = useRef<string | null>(null);
   const voiceBase = useRef("");
   const [errRef, glitch] = useFx<HTMLDivElement>("fx-glitch");
 
@@ -130,16 +162,37 @@ export function Composer({
   const liveModeUnavailable = Boolean(kuraiApi && capabilities && !currentCapability?.available);
   const liveModelCatalogPending = Boolean(kuraiApi && capabilities && currentCapability?.available && liveModels.length === 0);
   const availableModels = kuraiApi && capabilities ? liveModels : liveModels.length > 0 ? liveModels : modelsForMode(mode);
-  const model = picked[mode] ?? availableModels.find((item) => item.id === preferred) ?? availableModels[0] ?? defaultModel(mode, preferred);
+  // без явного выбора — маршрут автоподбора, а не первая по алфавиту модель каталога
+  const model = picked[mode] ?? availableModels.find((item) => item.id === projectModel) ?? availableModels.find((item) => item.id === preferred) ?? availableModels.find((item) => item.group === "auto") ?? availableModels[0] ?? defaultModel(mode, preferred);
   const comparisonModels = comparisonIds.map((id) => availableModels.find((candidate) => candidate.id === id)).filter((candidate): candidate is ModelInfo => Boolean(candidate));
   const comparisonActive = comparisonModels.length >= 2 && (mode === "text" || mode === "research");
   const modeParams = params[mode] ?? defaultParams(mode);
   const canThink = mode === "text" || mode === "research";
   const baseCost = comparisonActive ? comparisonModels.reduce((total, candidate) => total + candidate.priceHintMicro, 0) : mode === "research" || mode === "slides" ? cfg.costHintMicro : model.priceHintMicro;
-  const cost = Math.round(baseCost * costFactor(mode, modeParams) * (think && canThink ? 1.7 : 1));
+  const routeId = model.id === "auto" ? "openrouter/auto" : model.id;
+  const liveOptions = JSON.stringify(apiOptions(mode, { web, think: think && canThink, params: modeParams }));
+  // корзины по 500 символов: сервер не дёргается на каждую букву, а оценка всегда покрывает черновик
+  const draftChars = Math.ceil(value.length / 500) * 500;
+  const [estimate, setEstimate] = useState<KuraiEstimate | null>(null);
+  useEffect(() => {
+    const api = kuraiApi;
+    if (!api || comparisonActive) return;
+    const timer = setTimeout(() => {
+      void api.estimate(mode, routeId, draftChars, JSON.parse(liveOptions)).then(setEstimate).catch(() => undefined);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [mode, routeId, liveOptions, draftChars, comparisonActive]);
+  // в рабочем режиме цена — та же формула, что и резерв на сервере; эвристика остаётся для просмотра и сравнения
+  const cost = kuraiApi && !comparisonActive && estimate !== null ? estimate.estimatedCostMicro : Math.round(baseCost * costFactor(mode, modeParams) * (think && canThink ? 1.7 : 1));
   const short = cost > balanceMicro;
+  // 111 — мягкий лимит месяца (в этом браузере): на 80% — тихое предупреждение, сверх лимита — подтверждение
+  const limitMicro = prefs.spendLimit * MICRO_PER_CREDIT;
+  const spentMonth = limitMicro > 0 ? monthSpend(ledger, mountedAt) : 0;
+  const overLimit = limitMicro > 0 && spentMonth + cost > limitMicro;
+  // 112 — прогноз долгой задачи по прошлым списаниям той же модели
+  const usual = mode === "research" || mode === "slides" ? forecast(ledger, { model: routeId, mode }) : null;
   const usage = contextUsage(contextChars, model.contextK);
-  const uploading = files.some((f) => f.progress < 1);
+  const uploading = files.some((f) => f.progress < 1 && !f.failed);
   const isBusy = busy || launching;
 
   function switchMode(next: Mode) {
@@ -156,6 +209,8 @@ export function Composer({
   }
 
   function onChange(text: string) {
+    // правка текста отменяет подтверждение: зафиксирована цена другого запроса
+    setConfirm(null);
     const cmd = parseCommand(text);
     if (cmd) {
       switchMode(cmd.mode);
@@ -181,7 +236,9 @@ export function Composer({
           void kuraiApi.uploadFile(f).then((asset) => {
             setFiles((fs) => fs.map((item) => (item.id === id ? { ...item, progress: 1, assetId: asset.id } : item)));
           }).catch((uploadError) => {
-            setFiles((fs) => fs.filter((item) => item.id !== id));
+            // 16 — чип показывает ошибку и уходит сам, причина остаётся в строке ошибки
+            setFiles((fs) => fs.map((item) => (item.id === id ? { ...item, failed: true } : item)));
+            setTimeout(() => setFiles((fs) => fs.filter((item) => item.id !== id)), 2400);
             setError(uploadError instanceof Error ? uploadError.message : `Не удалось загрузить «${f.name}».`);
             glitch();
           });
@@ -199,6 +256,7 @@ export function Composer({
     if (!draftKey || initialValue) return;
     try {
       const saved = localStorage.getItem(`kurai:draft:${draftKey}`);
+      restored.current = saved;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setValue(saved);
     } catch {}
@@ -207,12 +265,53 @@ export function Composer({
     if (!draftKey) return;
     const t = setTimeout(() => {
       try {
-        if (value) localStorage.setItem(`kurai:draft:${draftKey}`, value);
-        else localStorage.removeItem(`kurai:draft:${draftKey}`);
+        if (value) {
+          localStorage.setItem(`kurai:draft:${draftKey}`, value);
+          // восстановленный черновик не «сохраняется заново» — метка только после правки
+          if (value !== restored.current) setSavedAt(nowMs());
+        } else localStorage.removeItem(`kurai:draft:${draftKey}`);
       } catch {}
     }, 300);
     return () => clearTimeout(t);
   }, [draftKey, value]);
+
+  // 14 — поле растёт плавно: меряем высоту по содержимому и даём ей CSS-переход
+  useLayoutEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    const from = el.offsetHeight;
+    el.style.height = "auto";
+    const to = Math.min(el.scrollHeight, 240);
+    if (from === to || isCalm()) {
+      el.style.height = `${to}px`;
+      return;
+    }
+    el.style.height = `${from}px`;
+    void el.offsetHeight;
+    el.style.height = `${to}px`;
+  }, [value]);
+
+  // К14 — секунды до конца фиксации цены
+  useEffect(() => {
+    if (!confirm) return;
+    const t = setInterval(() => setNow(nowMs()), 250);
+    return () => clearInterval(t);
+  }, [confirm]);
+
+  useEffect(() => {
+    const onCool = (e: Event) => {
+      const secs = (e as CustomEvent<number>).detail;
+      setCooldown({ until: nowMs() + secs * 1000, secs });
+    };
+    window.addEventListener("kurai:cooldown", onCool);
+    return () => window.removeEventListener("kurai:cooldown", onCool);
+  }, []);
+  // кнопка оживает сама, когда срок вышел
+  useEffect(() => {
+    if (!cooldown) return;
+    const t = setTimeout(() => setCooldown(null), Math.max(0, cooldown.until - nowMs()));
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   // «Спросить про это» / «Цитировать» из меню выделения подставляют текст в поле
   useEffect(() => {
@@ -229,6 +328,7 @@ export function Composer({
   useEffect(() => {
     if (!pending) return;
     if (pending.left <= 0) {
+      markSendOrigin(boxRef.current);
       onSend?.(pending.msg);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- завершение таймера отправки
       setPending(null);
@@ -279,30 +379,83 @@ export function Composer({
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    if ((!value.trim() && files.length === 0) || isBusy || short || uploading || recording) return;
+    if ((!value.trim() && files.length === 0) || isBusy || short || uploading || recording || cooldown) return;
     if (liveModeUnavailable || liveModelCatalogPending) {
       const detail = liveModeUnavailable ? `Режим «${cfg.label}» ещё не подключён к этому серверу.` : "Каталог моделей ещё синхронизируется. Повторите через несколько секунд.";
       setError(detail);
       glitch();
       return;
     }
-    const msg: Outgoing = { text: value.trim(), mode, model, ...(comparisonActive ? { compareModels: comparisonModels } : {}), web, think: think && canThink, params: modeParams, files: files.map(({ name, size, type, assetId }) => ({ name, size, type, assetId })) };
+    const msg: Outgoing = { text: value.trim(), mode, model, ...(comparisonActive ? { compareModels: comparisonModels } : {}), web, think: think && canThink, params: modeParams, files: files.filter((f) => !f.failed).map(({ name, size, type, assetId }) => ({ name, size, type, assetId })) };
+    if (overLimit) {
+      setLimitAsk(msg);
+      return;
+    }
+    proceed(msg);
+  }
+
+  function proceed(msg: Outgoing) {
+    setLimitAsk(null);
+    if (kuraiApi && !comparisonActive && cost >= EXPENSIVE_MICRO) {
+      void requestConfirm(msg);
+      return;
+    }
+    dispatch(msg);
+  }
+
+  /** К14 — дорогой запуск: сервер фиксирует цену котировкой, человек подтверждает, пока она действует. */
+  async function requestConfirm(msg: Outgoing) {
+    const api = kuraiApi;
+    if (!api) return;
+    setLaunching(true);
+    try {
+      const quote = await api.quote(msg.mode, msg.text, routeOf(msg.model), msg.files.flatMap((f) => (f.assetId ? [f.assetId] : [])), apiOptions(msg.mode, msg));
+      const at = nowMs();
+      setNow(at);
+      setConfirm({ msg: { ...msg, quoteId: quote.quoteId }, cost: quote.estimatedCostMicro, deadline: at + quote.expiresInSeconds * 1000, ttl: quote.expiresInSeconds });
+    } catch (quoteError) {
+      setError(quoteError instanceof Error ? quoteError.message : "Не удалось зафиксировать цену.");
+      glitch();
+    } finally {
+      setLaunching(false);
+    }
+  }
+
+  // по истечении цена тихо пересчитывается сервером — подтверждение остаётся на месте
+  const expired = !!confirm && now >= confirm.deadline;
+  useEffect(() => {
+    if (!expired || !confirm || launching) return;
+    void requestConfirm({ ...confirm.msg, quoteId: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- пересчёт один раз на истечение
+  }, [expired]);
+
+  function dispatch(msg: Outgoing) {
     setValue("");
     setFiles([]);
     setError(null);
+    setConfirm(null);
     // route handoff: одна волна по верхней грани поля — только после реальной отправки
     retrigger(boxRef.current, "k-sweep");
+    playSignal("send");
+    // 41 — точки поля на главной стягиваются к месту отправки
+    const r = boxRef.current?.getBoundingClientRect();
+    if (r) window.dispatchEvent(new CustomEvent("kurai:sent", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }));
     if (onSend && prefs.undoSend) {
-      setPending({ msg, left: 3, text: value });
+      setPending({ msg, left: 3, text: msg.text });
       return;
     }
-    if (onSend) onSend(msg);
+    if (onSend) {
+      markSendOrigin(boxRef.current);
+      onSend(msg);
+    }
     else if (kuraiApi) {
       const api = kuraiApi;
       setLaunching(true);
       void (async () => {
         try {
           const chat = await api.createChat(msg.text.slice(0, 80) || modeById(msg.mode).label);
+          chatsStore.set((xs) => [chat, ...xs]);
+          let runId: string | null = null;
           const attachmentIds = msg.files.flatMap((file) => file.assetId ? [file.assetId] : []);
           const options = apiOptions(msg.mode, msg);
           if (msg.compareModels && (msg.mode === "text" || msg.mode === "research")) {
@@ -313,10 +466,10 @@ export function Composer({
             }));
             await api.startCompareRun({ chatId: chat.id, mode: msg.mode, text: msg.text, attachmentIds, options, routes, idempotencyKey: crypto.randomUUID() });
           } else {
-            const quote = await api.quote(msg.mode, msg.text, msg.model.id === "auto" ? "openrouter/auto" : msg.model.id, attachmentIds, options);
-            await api.startRun({
+            const quoteId = msg.quoteId ?? (await api.quote(msg.mode, msg.text, routeOf(msg.model), attachmentIds, options)).quoteId;
+            const started = await api.startRun({
               chatId: chat.id,
-              quoteId: quote.quoteId,
+              quoteId,
               mode: msg.mode,
               modelId: msg.model.id === "auto" ? "openrouter/auto" : msg.model.id,
               text: msg.text,
@@ -324,8 +477,10 @@ export function Composer({
               options,
               idempotencyKey: crypto.randomUUID(),
             });
+            runId = started.runId;
           }
-          router.push(`/app/c/${chat.id}`);
+          refreshBalance();
+          router.push(runId ? `/app/c/${chat.id}?run=${runId}` : `/app/c/${chat.id}`);
         } catch (launchError) {
           setError(launchError instanceof Error ? launchError.message : "Не удалось запустить задачу.");
           glitch();
@@ -337,6 +492,13 @@ export function Composer({
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    const first = /^\/\S*$/.test(value) ? slashModes[0] : undefined;
+    if (e.key === "Enter" && !e.shiftKey && first && value.length > 1) {
+      e.preventDefault();
+      switchMode(first.id);
+      setValue("");
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e);
     if (e.key === "ArrowUp" && value === "" && onEditLast) {
       e.preventDefault();
@@ -421,14 +583,22 @@ export function Composer({
   );
 
   const home = variant === "home";
+  // 19 — меню «/» сужается по мере ввода: режимы по названию, шаблоны по тексту
+  const slash = /^\/\S*$/.test(value) ? value.slice(1).toLowerCase() : null;
+  // команда («/s» — слайды) важнее совпадения в названии («Deep Research» тоже содержит «s»)
+  const slashModes =
+    slash === null
+      ? []
+      : [...MODES.filter((m) => m.command.slice(1).startsWith(slash)), ...MODES.filter((m) => !m.command.slice(1).startsWith(slash) && m.label.toLowerCase().includes(slash))];
+  const slashTemplates = slash === null ? [] : prefs.templates.filter((t) => t.toLowerCase().includes(slash));
   // подписи инструментов прячутся по ширине самого поля (container query), а не окна
-  const toolLabel = home ? "@max-xl:hidden" : "@max-3xl:hidden";
+  const toolLabel = "@max-xl:hidden";
   const menuId = `tools-${variant}`;
-  const canSend = (value.trim() !== "" || files.length > 0) && !short && !uploading && !recording;
+  const canSend = (value.trim() !== "" || files.length > 0) && !short && !uploading && !recording && !cooldown;
   const picker = comparisonActive ? (
     <span className={cn("inline-flex items-center rounded-(--radius-sm) border border-violet-line bg-violet-soft px-2.5 text-[12.5px] text-violet", home ? "h-11" : "h-9")}>Compare · {comparisonModels.length}</span>
   ) : (
-    <ModelPicker variant={variant} mode={mode} value={model} catalog={availableModels} onChange={(m) => setPicked((p) => ({ ...p, [mode]: m }))} />
+    <ModelPicker variant={variant} mode={mode} value={model} catalog={availableModels} hideTrigger={!home && routeInInspector} onChange={(m) => setPicked((p) => ({ ...p, [mode]: m }))} />
   );
 
   return (
@@ -456,6 +626,46 @@ export function Composer({
           </button>
         </div>
       )}
+      {limitAsk && (
+        <div role="alertdialog" aria-label="Лимит расходов месяца" className="k-hazard relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-(--radius-md) border border-warn/50 bg-g1 px-3.5 py-2.5 text-[13px]">
+          <span className="relative text-ink2">
+            Лимит месяца: после запуска будет <span className="font-mono text-ink">{formatCredits(spentMonth + cost, { approx: true })}</span> из <span className="font-mono text-ink">{formatCredits(limitMicro)}</span>
+          </span>
+          <span className="relative flex items-center gap-2">
+            <button type="button" onClick={() => setLimitAsk(null)} className="k-tool h-8 text-[12.5px]">Отмена</button>
+            <button type="button" autoFocus onClick={() => proceed(limitAsk)} className="k-tool h-8 border border-warn/50 text-[12.5px] text-warn">Запустить сверх лимита</button>
+          </span>
+        </div>
+      )}
+      {limitMicro > 0 && !limitAsk && spentMonth >= limitMicro * 0.8 && (
+        <p role="status" className="text-[12.5px] text-warn">
+          Потрачено {formatCredits(spentMonth)} из {formatCredits(limitMicro)} за месяц — лимит в настройках.
+        </p>
+      )}
+      {confirm && (
+        <div role="alertdialog" aria-label="Подтверждение дорогого запуска" className="relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-(--radius-md) border border-acc-line bg-g1 px-3.5 py-2.5 text-[13px]">
+          {(() => {
+            const left = Math.max(0, Math.ceil((confirm.deadline - now) / 1000));
+            return (
+              <>
+                <span className="text-ink2">
+                  Запуск ≈ <span className="font-mono text-ink">{formatCredits(confirm.cost)}</span> ·{" "}
+                  {left > 0 ? (
+                    <>цена зафиксирована ещё <span className="font-mono text-ink tabular-nums">{clock(left)}</span></>
+                  ) : (
+                    "обновляю цену…"
+                  )}
+                </span>
+                <span className="flex items-center gap-2">
+                  <button type="button" onClick={() => setConfirm(null)} className="k-tool h-8 text-[12.5px]">Отмена</button>
+                  <button type="button" autoFocus disabled={left === 0} onClick={() => dispatch(confirm.msg)} className="k-tool h-8 bg-acc text-[12.5px] text-acc-ink hover:bg-acc hover:text-acc-ink disabled:opacity-50">Запустить</button>
+                </span>
+                <i aria-hidden="true" key={confirm.deadline} className="k-fix-bar" style={{ animationDuration: `${confirm.ttl}s` }} />
+              </>
+            );
+          })()}
+        </div>
+      )}
       {comparisonActive && (
         <section aria-label="Сравнение моделей" className="flex flex-wrap items-center justify-between gap-3 rounded-(--radius-md) border border-violet-line bg-violet-soft px-3.5 py-2.5">
           <div>
@@ -472,21 +682,31 @@ export function Composer({
           </div>
         </section>
       )}
-      {value === "/" && (
-        <div role="listbox" aria-label="Команды и шаблоны" className="flex max-h-64 flex-col overflow-y-auto rounded-(--radius-md) border border-line2 bg-g1 p-1 shadow-(--shadow-float)">
-          {MODES.map((m) => (
-            <button key={m.id} type="button" role="option" aria-selected="false" onClick={() => { switchMode(m.id); setValue(""); }} className="flex cursor-pointer items-center justify-between gap-3 rounded-(--radius-sm) px-3 py-2 text-left text-[13.5px] text-ink2 hover:bg-s2 hover:text-ink">
+      {slash !== null && slashModes.length + slashTemplates.length > 0 && (
+        <motion.div
+          layout
+          role="listbox"
+          aria-label="Команды и шаблоны"
+          // 19 — «/» стоит в начале поля: меню вырастает из этой точки
+          initial={{ opacity: 0, scale: 0.94, y: 6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={SPRING.snappy}
+          style={{ transformOrigin: home ? "0% 0%" : "0% 100%" }}
+          className="k-stagger k-fade-y flex max-h-64 flex-col overflow-y-auto rounded-(--radius-md) border border-line2 bg-g1 p-1 shadow-(--shadow-float)"
+        >
+          {slashModes.map((m, i) => (
+            <button key={m.id} type="button" role="option" aria-selected={i === 0} onClick={() => { switchMode(m.id); setValue(""); }} className="flex cursor-pointer items-center justify-between gap-3 rounded-(--radius-sm) px-3 py-2 text-left text-[13.5px] text-ink2 hover:bg-s2 hover:text-ink">
               <span className="flex items-center gap-2.5"><ModeIcon mode={m.id} size={15} /> {m.label}</span>
               <span className="font-mono text-[11px] text-ink3">{m.command}</span>
             </button>
           ))}
-          {prefs.templates.length > 0 && <span className="k-index px-3 pt-3 pb-1.5">Мои шаблоны</span>}
-          {prefs.templates.map((t) => (
+          {slashTemplates.length > 0 && <span className="k-index px-3 pt-3 pb-1.5">Мои шаблоны</span>}
+          {slashTemplates.map((t) => (
             <button key={t} type="button" role="option" aria-selected="false" onClick={() => setValue(t)} className="cursor-pointer truncate rounded-(--radius-sm) px-3 py-2 text-left text-[13.5px] text-ink2 hover:bg-s2 hover:text-ink">
               {t}
             </button>
           ))}
-        </div>
+        </motion.div>
       )}
       {error && (
         <div ref={errRef} role="alert" className="flex items-start justify-between gap-3 rounded-(--radius-md) border border-err/40 bg-err-soft px-3.5 py-2.5 text-[13px] text-err">
@@ -496,7 +716,31 @@ export function Composer({
           </button>
         </div>
       )}
+      {/* 1 — одно и то же поле переезжает с главной в чат (пара в скелетоне чата) */}
+      <ViewTransition name="composer" share="k-morph" default="none">
       <div ref={boxRef} data-mode={mode} data-dragging={dragging || undefined} className={cn("k-composer @container", home ? "px-5 pt-5 pb-3" : "px-4 pt-3.5 pb-2.5")}>
+        {/* 17 — поле раскрывается навстречу файлу, который несут над окном */}
+        <AnimatePresence initial={false}>
+          {dragging && (
+            <motion.div
+              key="drop"
+              aria-hidden="true"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={SPRING.gentle}
+              className="overflow-hidden"
+            >
+              <div className="k-breathe mb-3 flex items-center gap-3 rounded-(--radius-md) border border-dashed border-acc-line bg-acc-soft px-4 py-5">
+                <Paperclip size={18} strokeWidth={1.5} className="text-(--color-acc-text)" />
+                <span className="flex flex-col">
+                  <span className="text-[14px] text-ink">Отпустите, чтобы прикрепить</span>
+                  <span className="text-[12px] text-ink3">Фото · PDF · DOCX · XLSX · аудио · до 50 МБ</span>
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <AttachmentChips
           items={files}
           onRemove={(id) =>
@@ -513,13 +757,14 @@ export function Composer({
         </label>
         <textarea
           id="composer-input"
+          ref={input}
           rows={home ? 3 : 1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
           placeholder={recording ? "Говорите — текст появится здесь…" : home ? "Опишите, что нужно сделать…" : "Напишите сообщение…"}
-          className={cn("block max-h-60 w-full resize-none bg-transparent text-ink field-sizing-content outline-none placeholder:text-ink3 focus-visible:outline-none", home ? "min-h-[4.75rem] text-[17px] leading-relaxed" : "min-h-7 text-[15px]")}
+          className={cn("k-grow block max-h-60 w-full resize-none bg-transparent text-ink outline-none placeholder:text-ink3 focus-visible:outline-none", home ? "min-h-[4.75rem] text-[17px] leading-relaxed" : "min-h-7 text-[15px]")}
         />
         <div className={cn("flex flex-wrap items-center justify-between gap-2", home ? "mt-4" : "mt-2")}>
           <div className="-ml-1.5 flex min-w-0 flex-wrap items-center gap-1">
@@ -628,13 +873,59 @@ export function Composer({
             )}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {!home && contextChars > 0 && model.contextK > 0 && (
+            {/* тихое поле: шкала контекста — только когда она уже влияет на цену и качество */}
+            {!home && usage >= 0.5 && model.contextK > 0 && (
               <span className="hidden items-center gap-1.5 lg:flex" title="Заполненность контекста модели">
                 <Segments value={usage} count={8} tone={usage >= 0.8 ? "warn" : "acc"} label="Заполненность контекста" className="w-12" />
                 <span className={cn("font-mono text-[11px] tabular-nums", usage >= 0.8 ? "text-warn" : "text-ink3")}>{Math.max(1, Math.round(usage * 100))}%</span>
               </span>
             )}
-            <span className="k-meta" title="Оценка до запуска; точная цена фиксируется в квитанции">{formatCredits(cost, { approx: true })}</span>
+            {/* цена появляется вместе с черновиком: пустое поле чистое, а до запуска сумма всегда видна */}
+            {/* 117 — тихое подтверждение, что черновик лежит в браузере */}
+            <AnimatePresence>
+              {draftKey && savedAt > 0 && value && (
+                <motion.span
+                  key={savedAt}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 1, 0] }}
+                  transition={{ duration: 1.8, times: [0, 0.15, 0.7, 1] }}
+                  className="k-meta max-sm:hidden"
+                >
+                  черновик сохранён
+                </motion.span>
+              )}
+            </AnimatePresence>
+            {(value.trim() !== "" || files.length > 0 || short) && (
+              <span className="group/price relative">
+                {/* 13 — цена перекатывается цифрами; К13 — состав цены ячейками по формуле сервера */}
+                <span tabIndex={estimate?.parts ? 0 : undefined} aria-describedby={estimate?.parts ? `${menuId}-parts` : undefined} className="k-meta cursor-default rounded-(--radius-xs) outline-offset-2" title={estimate?.parts ? undefined : "Оценка до запуска; точная цена фиксируется в квитанции"}>
+                  <FlapNumber value={formatCredits(cost, { approx: true })} />
+                </span>
+                {estimate?.parts && !comparisonActive && (
+                  <span id={`${menuId}-parts`} role="tooltip" className={cn("k-cells absolute right-0 z-(--z-bay) hidden w-max flex-col gap-1.5 rounded-(--radius-md) border border-line2 bg-g1 p-2 shadow-(--shadow-float) group-focus-within/price:flex group-hover/price:flex", home ? "top-full mt-2" : "bottom-full mb-2")}>
+                    <span className="k-stagger flex gap-1">
+                      {Object.entries(estimate.parts).map(([part, micro]) => (
+                        <span key={part} className="flex flex-col gap-0.5 rounded-(--radius-sm) border border-line bg-g2 px-2.5 py-1.5">
+                          <span className="text-[11px] text-ink3">{PART_LABEL[part as keyof typeof PART_LABEL]}</span>
+                          <span className="font-mono text-[12.5px] text-ink">{cellCredits(micro ?? 0)}</span>
+                        </span>
+                      ))}
+                    </span>
+                    <span className="px-0.5 text-[11.5px] text-ink3">Резерв до запуска; списывается фактическая цена</span>
+                    {usual && (
+                      <span className="flex flex-col gap-1 border-t border-line px-0.5 pt-1.5 text-[11.5px] text-ink2">
+                        обычно {formatCredits(usual.low, { unit: false })}–{formatCredits(usual.high)}, резерв {formatCredits(cost)} · по {usual.points.length} похожим запускам ({usual.by === "model" ? "та же модель" : "тот же режим"})
+                        <span aria-hidden="true" className="relative h-2">
+                          {usual.points.map((p, i) => (
+                            <i key={i} className="absolute top-0 size-1.5 rounded-full bg-acc/70" style={{ left: `${(p / Math.max(...usual.points)) * 96}%` }} />
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                  </span>
+                )}
+              </span>
+            )}
             {!home && picker}
             <AnimatePresence initial={false} mode="popLayout">
               {isBusy ? (
@@ -666,7 +957,7 @@ export function Composer({
                   disabled={!canSend}
                   className={cn(
                     "relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-(--radius-sm) border transition-colors duration-(--dur-fast) disabled:cursor-not-allowed",
-                    canSend ? "border-acc bg-acc text-acc-ink active:translate-y-px" : "border-line2 bg-transparent text-ink3",
+                    canSend ? "k-ignite k-chamfer border-acc bg-acc text-acc-ink active:translate-y-px" : "border-line2 bg-transparent text-ink3",
                     home ? "h-11 px-4 text-[13.5px]" : "size-9 pointer-coarse:size-11",
                   )}
                 >
@@ -679,12 +970,22 @@ export function Composer({
                     <ArrowUp size={16} strokeWidth={2} />
                   )}
                   <Hint k="Enter" />
+                  {cooldown && (
+                    // 75 — кольцо тает до разрешённого повтора; число — честные секунды из Retry-After
+                    <span role="status" aria-label={`Повтор через ${cooldown.secs} с`} className="pointer-events-none absolute -inset-1.5 grid place-items-center">
+                      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full -rotate-90">
+                        <circle cx="20" cy="20" r="18" fill="none" stroke="var(--color-line2)" strokeWidth="1.5" />
+                        <circle key={cooldown.until} cx="20" cy="20" r="18" fill="none" stroke="var(--color-warn)" strokeWidth="1.5" pathLength={100} strokeDasharray="100" className="k-cooldown" style={{ animationDuration: `${cooldown.secs}s` }} />
+                      </svg>
+                    </span>
+                  )}
                 </motion.button>
               )}
             </AnimatePresence>
           </div>
         </div>
       </div>
+      </ViewTransition>
       {usage >= 0.8 && onCompress && (
         <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-warn">
           Задача длинная — каждый ответ дороже.
@@ -694,15 +995,6 @@ export function Composer({
         </p>
       )}
       {home && modeRow}
-      {dragging && (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-(--z-overlay) grid place-items-center rounded-(--radius-md) border border-dashed border-acc-line bg-bg/85">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Paperclip size={22} strokeWidth={1.5} className="text-acc" />
-            <p className="text-[20px] font-light text-ink">Отпустите, чтобы прикрепить</p>
-            <p className="text-[12.5px] text-ink3">Фото · PDF · DOCX · XLSX · аудио · до 50 МБ</p>
-          </div>
-        </div>
-      )}
     </form>
   );
 }

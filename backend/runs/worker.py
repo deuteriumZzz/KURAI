@@ -143,8 +143,14 @@ def persist_delta(run_id: str, text: str) -> bool:
     return True
 
 
+def source_item(source) -> dict:
+    """Browser-safe citation: URL, title, a short plain-text quote (never HTML) and when it was read."""
+    quote = " ".join(source.excerpt.split())[:280]
+    return {"url": source.url, "title": source.title, **({"quote": quote} if quote else {}), "readAt": source.created_at.isoformat()}
+
+
 def persist_research_sources(run_id: str, citations) -> None:
-    """Persist provider citations and emit only safe URL/title data to the browser."""
+    """Persist provider citations and emit only safe URL/title/quote data to the browser."""
     citations = sanitise_citations(citations)
     if not citations:
         return
@@ -171,12 +177,12 @@ def persist_research_sources(run_id: str, citations) -> None:
             created.append(source)
         if not created:
             return
-        sources = RunSource.objects.filter(run=run).order_by("position").values("url", "title")
+        sources = RunSource.objects.filter(run=run).order_by("position")
         current_parts = [part for part in run.output_message.parts if not (isinstance(part, dict) and part.get("type") == "sources")]
-        run.output_message.parts = [*current_parts, {"type": "sources", "items": list(sources)}]
+        run.output_message.parts = [*current_parts, {"type": "sources", "items": [source_item(source) for source in sources]}]
         run.output_message.save(update_fields=("parts",))
         for source in created:
-            append_event(run, RunEvent.Type.SOURCE, {"url": source.url, "title": source.title})
+            append_event(run, RunEvent.Type.SOURCE, source_item(source))
 
 
 def complete_run(run_id: str, attempt_id, resolved_model: str, provider_request_id: str, cost_usd: Decimal | None) -> None:
@@ -523,10 +529,12 @@ def process_run(run_id: str) -> None:
     resolved_model = model_id
     request_id = ""
     billed_cost_usd: Decimal | None = None
+    # Project rules travel as a system message, never mixed into the user's own text.
+    instructions = Run.objects.filter(id=run_id).values_list("chat__project__instructions", flat=True).first() or ""
     try:
         uses = search_uses(mode, options)
         for chunk in stream_openrouter_completion(
-            model_id=model_id, prompt=prompt, user_id=user_id, session_id=chat_id,
+            model_id=model_id, prompt=prompt, user_id=user_id, session_id=chat_id, system=instructions or None,
             research=uses > 0, search_uses=uses or None, reasoning=bool(options.get("think")), max_tokens=completion_tokens(options),
         ):
             if chunk.model_id:

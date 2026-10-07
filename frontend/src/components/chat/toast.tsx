@@ -20,6 +20,7 @@ export function IncomingToast({ title, onOpen, onClose }: { title: string; onOpe
       exit={{ opacity: 0, transition: { duration: 0.14 } }}
       transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
       role="status"
+      data-toast
       className="fixed right-4 bottom-4 z-(--z-toast) flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-(--radius-md) border border-line2 bg-g1 p-3.5 shadow-(--shadow-float)"
     >
       <i aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 bg-acc" />

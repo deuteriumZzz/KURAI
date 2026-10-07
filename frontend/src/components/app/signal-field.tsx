@@ -28,6 +28,9 @@ export function SignalField() {
     const pointer = { x: -9999, y: -9999 };
     let level = 1; // текущая интенсивность
     let target = 1; // 1 — покой, 1.35 — фокус поля, 0.12 — идёт набор текста
+    // 41 — отправка: точки на миг стягиваются к полю ввода и отпускают
+    const gather = { x: 0, y: 0, at: 0 };
+    const GATHER_MS = 700;
 
     const resize = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -45,9 +48,12 @@ export function SignalField() {
     const draw = () => {
       raf = 0;
       level += (target - level) * 0.12;
+      const t = gather.at ? (performance.now() - gather.at) / GATHER_MS : 1;
+      // 0 → 1 → 0: быстро стянулись, мягко отпустили
+      const g = t < 1 ? Math.sin(Math.PI * Math.min(1, t)) ** 2 : 0;
       const css = getComputedStyle(canvas);
-      const ink = css.getPropertyValue("--color-ink").trim() || "#e7e4da";
-      const acc = css.getPropertyValue("--color-acc").trim() || "#d7ff2f";
+      const ink = css.getPropertyValue("--color-ink").trim() || "#f2f2f2";
+      const acc = css.getPropertyValue("--color-acc").trim() || "#d9ef7a";
       ctx.clearRect(0, 0, w, h);
       for (let y = STEP / 2; y < h; y += STEP) {
         // поле растворяется к низу, чтобы не спорить со списками под полем ввода
@@ -60,13 +66,15 @@ export function SignalField() {
           const alpha = (0.13 + near * 0.5) * fade * level;
           if (alpha < 0.01) continue;
           const pull = near * near * 5;
-          ctx.globalAlpha = Math.min(1, alpha);
-          ctx.fillStyle = near > 0.55 && level > 0.6 ? acc : ink;
-          ctx.fillRect(Math.round(x - (dx / dist) * pull), Math.round(y - (dy / dist) * pull), dot, dot);
+          const gx = (gather.x - x) * g * 0.22;
+          const gy = (gather.y - y) * g * 0.22;
+          ctx.globalAlpha = Math.min(1, alpha + g * 0.35 * fade);
+          ctx.fillStyle = (near > 0.55 && level > 0.6) || g > 0.5 ? acc : ink;
+          ctx.fillRect(Math.round(x - (dx / dist) * pull + gx), Math.round(y - (dy / dist) * pull + gy), dot, dot);
         }
       }
       ctx.globalAlpha = 1;
-      if (Math.abs(target - level) > 0.01) schedule();
+      if (Math.abs(target - level) > 0.01 || t < 1) schedule();
     };
 
     const schedule = () => {
@@ -90,9 +98,17 @@ export function SignalField() {
       schedule();
     };
 
+    const onSent = (e: Event) => {
+      const { x, y } = (e as CustomEvent<{ x: number; y: number }>).detail;
+      const r = canvas.getBoundingClientRect();
+      Object.assign(gather, { x: x - r.left, y: y - r.top, at: performance.now() });
+      schedule();
+    };
+
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("kurai:sent", onSent);
     document.addEventListener("pointerleave", onLeave);
     document.addEventListener("input", sync, true);
     document.addEventListener("focusin", sync);
@@ -104,6 +120,7 @@ export function SignalField() {
       cancelAnimationFrame(raf);
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("kurai:sent", onSent);
       document.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("input", sync, true);
       document.removeEventListener("focusin", sync);

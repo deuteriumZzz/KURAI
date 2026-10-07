@@ -7,6 +7,8 @@ type ApiProject = {
   id: string;
   name: string;
   accent: "cyan" | "magenta" | "lime" | "violet";
+  instructions?: string;
+  defaultModel?: string;
   createdAt: string;
 };
 
@@ -39,13 +41,14 @@ export type KuraiLedgerEntry = {
   title: string;
   model: string | null;
   chatId: string | null;
+  mode?: Mode | null;
   amountMicro: number;
 };
 export type KuraiLedger = { availableMicro: number; entries: KuraiLedgerEntry[] };
 
 type ApiMember = KuraiMember & { csrfToken?: string };
 
-type ApiChat = { id: string; title: string; projectId: string | null; pinned: boolean; createdAt: string };
+type ApiChat = { id: string; title: string; projectId: string | null; pinned: boolean; createdAt: string; updatedAt?: string };
 type ApiChatSnapshot = { chat: ApiChat; messages: Message[] };
 type ApiQuote = { quoteId: string; mode: Mode; resolvedModel: string; estimatedCostMicro: number; expiresInSeconds: number };
 export type KuraiRun = { runId: string; chatId: string; outputMessageId: string | null; status: string; estimatedCostMicro: number; eventUrl: string };
@@ -59,19 +62,21 @@ export type KuraiRecipe = {
   id: string; projectId: string | null; chatId: string; sourceMessageId: string; title: string;
   prompt: string; mode: Mode; model: string; sourceCostMicro: number; createdAt: string;
 };
+/** Части цены по формуле резерва: ввод, потолок ответа, лимит поиска (или одна генерация для медиа). */
+export type KuraiEstimate = { estimatedCostMicro: number; parts?: Partial<Record<"input" | "output" | "think" | "search" | "generation", number>> };
 export type KuraiShareLink = { id: string; token: string; chatId: string; expiresAt: string | null; createdAt: string };
 export type KuraiSharedMessage = { role: "user" | "assistant"; model: string | null; text: string };
 export type KuraiSharedChat = { chat: { title: string }; messages: KuraiSharedMessage[] };
 
 export class KuraiApiError extends Error {
-  constructor(public readonly status: number, public readonly code: string, message: string) {
+  constructor(public readonly status: number, public readonly code: string, message: string, public readonly retryAfter?: number) {
     super(message);
     this.name = "KuraiApiError";
   }
 }
 
 function mapProject(project: ApiProject): Project {
-  return { id: project.id, name: project.name, chatIds: [], createdAt: project.createdAt };
+  return { id: project.id, name: project.name, chatIds: [], createdAt: project.createdAt, instructions: project.instructions ?? "", defaultModel: project.defaultModel ?? "" };
 }
 
 function mapChat(chat: ApiChat, messages: Message[] = []): ChatSummary {
@@ -79,7 +84,8 @@ function mapChat(chat: ApiChat, messages: Message[] = []): ChatSummary {
   return {
     id: chat.id,
     title: chat.title,
-    updatedAt: head?.createdAt ?? chat.createdAt,
+    // последняя активность: время головного сообщения, иначе — отметка сервера (а не дата создания)
+    updatedAt: head?.createdAt ?? chat.updatedAt ?? chat.createdAt,
     pinned: chat.pinned,
     headId: head?.id ?? "",
     preview: head?.parts.find((part) => part.type === "text")?.type === "text" ? head.parts.find((part) => part.type === "text")?.text.slice(0, 120) : undefined,
@@ -118,12 +124,18 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
     });
     const body = (await response.json()) as ApiEnvelope<T> & ApiFailure;
     if (!response.ok) {
-      throw new KuraiApiError(response.status, body.error?.code ?? "request_failed", body.error?.message ?? "Не удалось выполнить запрос.");
+      // 75 — сервер просит подождать: срок из Retry-After получает поле ввода (кольцо обратного отсчёта)
+      const retryAfter = response.status === 429 ? Number(response.headers.get("Retry-After")) || undefined : undefined;
+      if (retryAfter && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("kurai:cooldown", { detail: retryAfter }));
+      throw new KuraiApiError(response.status, body.error?.code ?? "request_failed", body.error?.message ?? "Не удалось выполнить запрос.", retryAfter);
     }
     return body.data;
   }
 
   return {
+    /** 101 — правка проекта: название и общие инструкции для всех его чатов. */
+    updateProject: async (id: string, patch: { name?: string; instructions?: string; defaultModel?: string }): Promise<Project> =>
+      mapProject(await request<ApiProject>(`/api/v1/projects/${id}`, { method: "PATCH", body: JSON.stringify(patch) })),
     createProject: async (name: string): Promise<Project> => {
       const project = await request<ApiProject>("/api/v1/projects", {
         method: "POST",
@@ -187,6 +199,9 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
     // options входят в подпись расчёта на сервере: запуск обязан прислать те же, что и расчёт
     quote: (mode: Mode, text: string, modelId = "openrouter/auto", attachmentIds: string[] = [], options: RunOptions = {}): Promise<ApiQuote> =>
       request<ApiQuote>("/api/v1/runs/quote", { method: "POST", body: JSON.stringify({ mode, modelId, text, attachmentIds, options }) }),
+    /** Цена по формуле резерва, без записи на сервере: черновик не уходит, лимит расчётов не тратится. */
+    estimate: (mode: Mode, modelId: string, chars: number, options: RunOptions = {}): Promise<KuraiEstimate> =>
+      request<KuraiEstimate>("/api/v1/runs/estimate", { method: "POST", body: JSON.stringify({ mode, modelId, chars, options }) }),
     startRun: ({ chatId, parentId, quoteId, mode, modelId = "openrouter/auto", text, attachmentIds = [], options = {}, idempotencyKey }: { chatId: string; parentId?: string | null; quoteId: string; mode: Mode; modelId?: string; text: string; attachmentIds?: string[]; options?: RunOptions; idempotencyKey: string }): Promise<KuraiRun> =>
       request<KuraiRun>("/api/v1/runs", {
         method: "POST",
@@ -200,10 +215,16 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
         body: JSON.stringify({ chatId, ...(parentId ? { parentId } : {}), mode, text, attachmentIds, options, routes }),
       }),
     /** Переименовать, закрепить или убрать чат в архив (обратимо; история запусков и списаний сохраняется). */
-    updateChat: (chatId: string, patch: { title?: string; pinned?: boolean; archived?: boolean }): Promise<unknown> =>
+    updateChat: (chatId: string, patch: { title?: string; pinned?: boolean; archived?: boolean; projectId?: string | null }): Promise<unknown> =>
       request<unknown>(`/api/v1/chats/${encodeURIComponent(chatId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
     getRun: (runId: string): Promise<KuraiRun> => request<KuraiRun>(`/api/v1/runs/${runId}`, { method: "GET" }),
     cancelRun: (runId: string): Promise<KuraiRun> => request<KuraiRun>(`/api/v1/runs/${runId}/cancel`, { method: "POST" }),
+    /** 92 — ответ как .docx: обложка с кодом, текст, страница источников. */
+    exportDocument: async (messageId: string): Promise<Blob> => {
+      const response = await fetcher(`${base}/api/v1/messages/${encodeURIComponent(messageId)}/exports/document`, { credentials: "include" });
+      if (!response.ok) throw new KuraiApiError(response.status, "export_failed", "Не удалось собрать документ.");
+      return response.blob();
+    },
     exportSlides: async (messageId: string, title?: string): Promise<Blob> => {
       if (!csrfToken) await refreshCsrfToken();
       const response = await fetcher(`${base}/api/v1/messages/${encodeURIComponent(messageId)}/exports/slides`, {

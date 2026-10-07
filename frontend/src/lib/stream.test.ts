@@ -92,4 +92,15 @@ describe("applyEvent", () => {
     const s = run([{ type: "action", text: "открываю habr.com" }, { type: "action", text: "читаю статью" }]);
     expect(s.run.actions).toEqual(["открываю habr.com", "читаю статью"]);
   });
+
+  it("stamps honest timings: first thought, first word and duration from its own marks", () => {
+    const steps: [StreamEvent, number][] = [
+      [{ type: "thinking", text: "план" }, 1_400],
+      [{ type: "delta", text: "Да" }, 2_600],
+      [{ type: "delta", text: "." }, 2_900],
+      [{ type: "done", costMicro: 10, durationMs: 0 }, 5_000],
+    ];
+    const s = steps.reduce((acc, [ev, at]) => applyEvent(acc.msg, acc.run, ev, at), { msg: base, run: newRun(1_000) });
+    expect([s.run.thinkingAt, s.run.firstTokenAt, s.run.doneAt, s.run.durationMs]).toEqual([1_400, 2_600, 5_000, 4_000]);
+  });
 });

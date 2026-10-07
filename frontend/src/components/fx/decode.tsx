@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ElementType } from "react";
+import { useEffect, useRef, useState, type ElementType } from "react";
 import { scramble, tail } from "@/lib/decode";
 import { isCalm, MOTION } from "@/lib/motion";
 import { cn } from "@/lib/cn";
@@ -57,6 +57,8 @@ type StreamTextProps = {
 /** Стриминг с расшифровкой на переднем крае. Готовый текст неподвижен. */
 export function StreamText({ text, done, tailLength = 8, className }: StreamTextProps) {
   const [glyphs, setGlyphs] = useState("");
+  // 21 — граница «устоявшегося» текста: всё, что пришло после неё, проявляется из прозрачности
+  const [settled, setSettled] = useState(0);
 
   useEffect(() => {
     if (done || isCalm()) return;
@@ -64,9 +66,24 @@ export function StreamText({ text, done, tailLength = 8, className }: StreamText
     return () => clearInterval(id);
   }, [done, tailLength]);
 
+  const latest = useRef(text.length);
+  useEffect(() => {
+    latest.current = text.length;
+  });
+  // шаг 160 мс, а не «после паузы»: при сплошном потоке каждая новая порция всё равно проявляется
+  useEffect(() => {
+    if (done) return;
+    const id = setInterval(() => setSettled(latest.current), 160);
+    return () => clearInterval(id);
+  }, [done]);
+
+  const cut = Math.min(settled, text.length);
   return (
     <span className={cn("whitespace-pre-wrap", className)} aria-busy={!done}>
-      {text}
+      {text.slice(0, cut)}
+      <span key={cut} className="k-fresh">
+        {text.slice(cut)}
+      </span>
       {!done && (
         <span aria-hidden="true" className="text-acc opacity-75">
           {glyphs}

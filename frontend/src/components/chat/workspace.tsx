@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { isCalm } from "@/lib/motion";
 
 /** Действия агента: фактическая лента инструментов и источников. Открыта, пока агент работает. */
 export function Workspace({ actions, live }: { actions: string[]; live: boolean }) {
   const [open, setOpen] = useState<boolean | null>(null);
   const isOpen = open ?? live;
   const box = useRef<HTMLOListElement>(null);
+  // 30 — лента сама держит текущий шаг на виду, мягко докручивая к нему
   useEffect(() => {
-    if (box.current) box.current.scrollTop = box.current.scrollHeight;
+    box.current?.scrollTo({ top: box.current.scrollHeight, behavior: isCalm() ? "auto" : "smooth" });
   }, [actions.length]);
 
   return (

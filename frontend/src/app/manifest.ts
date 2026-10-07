@@ -7,12 +7,13 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Текст, изображения, видео и голос от ведущих нейросетей в едином чате.",
     start_url: "/app",
     display: "standalone",
-    background_color: "#070A0E",
-    theme_color: "#070A0E",
+    background_color: "#151515",
+    theme_color: "#151515",
     lang: "ru",
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },
+      { src: "/maskable-icon", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

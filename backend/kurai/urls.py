@@ -1,6 +1,6 @@
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView
-from .api import HealthView, QuoteView, ReadinessView, ServiceStatusView
+from .api import EstimateView, HealthView, QuoteView, ReadinessView, ServiceStatusView
 from accounts.api import AccountExportView, CsrfView, LoginView, LogoutView, MeView, SignUpView
 from ledger.api import LedgerView
 from sharing.api import ChatShareLinkView, ShareLinkRevokeView, SharedChatView
@@ -9,7 +9,7 @@ from model_catalog.api import ModelCollectionView
 from model_catalog.api import CapabilityView
 from media.api import MediaCollectionView, MediaDownloadView
 from runs.api import CompareRunCollectionView, RunCancelView, RunCollectionView, RunDetailView, RunEventStreamView
-from workspace.api import ArtifactCollectionView, ArtifactDetailView, ChatCollectionView, ChatDetailView, MessageSlideExportView, ProjectCollectionView, RecipeCollectionView
+from workspace.api import ArtifactCollectionView, ArtifactDetailView, ChatCollectionView, ChatDetailView, MessageDocumentExportView, MessageSlideExportView, ProjectCollectionView, ProjectDetailView, RecipeCollectionView
 
 urlpatterns = [
     path("api/v1/health", HealthView.as_view(), name="health"),
@@ -32,17 +32,20 @@ urlpatterns = [
     path("api/v1/media", MediaCollectionView.as_view(), name="media"),
     path("api/v1/media/<uuid:asset_id>/download", MediaDownloadView.as_view(), name="media-download"),
     path("api/v1/runs/quote", QuoteView.as_view(), name="run-quote"),
+    path("api/v1/runs/estimate", EstimateView.as_view(), name="run-estimate"),
     path("api/v1/runs", RunCollectionView.as_view(), name="runs"),
     path("api/v1/runs/compare", CompareRunCollectionView.as_view(), name="compare-runs"),
     path("api/v1/runs/<uuid:run_id>", RunDetailView.as_view(), name="run-detail"),
     path("api/v1/runs/<uuid:run_id>/cancel", RunCancelView.as_view(), name="run-cancel"),
     path("api/v1/runs/<uuid:run_id>/events", RunEventStreamView.as_view(), name="run-events"),
     path("api/v1/projects", ProjectCollectionView.as_view(), name="projects"),
+    path("api/v1/projects/<uuid:project_id>", ProjectDetailView.as_view(), name="project-detail"),
     path("api/v1/chats", ChatCollectionView.as_view(), name="chats"),
     path("api/v1/chats/<uuid:chat_id>", ChatDetailView.as_view(), name="chat-detail"),
     path("api/v1/artifacts", ArtifactCollectionView.as_view(), name="artifacts"),
     path("api/v1/artifacts/<uuid:artifact_id>", ArtifactDetailView.as_view(), name="artifact-detail"),
     path("api/v1/recipes", RecipeCollectionView.as_view(), name="recipes"),
     path("api/v1/messages/<uuid:message_id>/exports/slides", MessageSlideExportView.as_view(), name="message-slide-export"),
+    path("api/v1/messages/<uuid:message_id>/exports/document", MessageDocumentExportView.as_view(), name="message-document-export"),
     path("api/schema", SpectacularAPIView.as_view(), name="openapi-schema"),
 ]

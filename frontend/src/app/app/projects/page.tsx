@@ -1,17 +1,72 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ArrowUpRight, FolderKanban, MessageSquare } from "lucide-react";
 import { PageTitle } from "@/components/fx/page-title";
 import { Label } from "@/components/fx/primitives";
 import { chatsStore, projectsStore } from "@/lib/app-state";
 import { projectChatOutline } from "@/lib/projects";
 import { useStore } from "@/lib/store";
+import { kuraiApi } from "@/lib/kurai-api";
+import { ActionButton } from "@/components/ui/action-button";
+import type { Project } from "@/types/api";
+
+/** 101 — общие инструкции проекта: уходят модели системным сообщением в каждом его чате. */
+function Instructions({ project, models }: { project: Project; models: { id: string; name: string }[] }) {
+  const [text, setText] = useState(project.instructions ?? "");
+  const [model, setModel] = useState(project.defaultModel ?? "");
+  const unchanged = text.trim() === (project.instructions ?? "") && model === (project.defaultModel ?? "");
+  return (
+    <details className="mt-4 rounded-(--radius-md) border border-line px-3 py-2" open={!!project.instructions || undefined}>
+      <summary className="cursor-pointer text-[13px] text-ink2 hover:text-ink">
+        Инструкции и модель проекта {project.instructions || project.defaultModel ? <span className="k-meta">· применяются</span> : <span className="k-meta">· не заданы</span>}
+      </summary>
+      <label className="mt-2 block">
+        <span className="fx-sr">Инструкции проекта «{project.name}»</span>
+        <textarea
+          value={text}
+          maxLength={4000}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Например: отвечай по-русски, кратко; целевая аудитория — малый бизнес."
+          className="block min-h-24 w-full resize-y rounded-(--radius-sm) border border-line2 bg-g1 px-3 py-2 text-[13.5px] text-ink outline-none field-sizing-content focus:border-ink3"
+        />
+      </label>
+      <label className="mt-2 flex items-center justify-between gap-3 text-[13px]">
+        <span className="text-ink2">Модель по умолчанию</span>
+        <select value={model} onChange={(e) => setModel(e.target.value)} className="h-8 max-w-[60%] rounded-(--radius-sm) border border-line2 bg-g1 px-2 text-[12.5px] text-ink outline-none focus:border-ink3">
+          <option value="">как в настройках</option>
+          {models.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+      </label>
+      <div className="mt-2 flex items-center justify-between gap-3 pb-1">
+        <span className="text-[11.5px] text-ink3">{text.length} / 4000 · общие для всех чатов проекта</span>
+        <ActionButton
+          size="sm"
+          disabled={!kuraiApi || unchanged}
+          onAction={async () => {
+            if (!kuraiApi) return;
+            const saved = await kuraiApi.updateProject(project.id, { instructions: text, defaultModel: model });
+            projectsStore.set((xs) => xs.map((x) => (x.id === project.id ? { ...x, instructions: saved.instructions, defaultModel: saved.defaultModel } : x)));
+          }}
+        >
+          Сохранить
+        </ActionButton>
+      </div>
+    </details>
+  );
+}
 
 /** Project workspace is a truthful branch map: only chats actually attached to a project appear here. */
 export default function ProjectsPage() {
   const projects = useStore(projectsStore);
   const chats = useStore(chatsStore);
+  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    void kuraiApi?.models("text").then((list) => setModels(list.map((m) => ({ id: m.id, name: m.name })))).catch(() => undefined);
+  }, []);
 
   return (
     <main className="kurai-projects-page flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -43,6 +98,7 @@ export default function ProjectsPage() {
                     </div>
                     <Label>{outline.length} веток</Label>
                   </div>
+                  <Instructions project={project} models={models} />
                   <ol className="kurai-project-branches mt-5 flex flex-col">
                     {outline.length > 0 ? outline.map((chat, index) => (
                       <li key={chat.id} className="kurai-project-branch">

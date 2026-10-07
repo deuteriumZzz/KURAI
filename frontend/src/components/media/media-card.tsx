@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
 import { AudioLines, Clapperboard, Play, Star } from "lucide-react";
 import type { MediaItem } from "@/types/api";
 import { formatBytes, formatCredits } from "@/lib/format";
@@ -15,9 +16,24 @@ const MODE = { image: "image", video: "video", audio: "audio" } as const;
 export function MediaCard({ item, all = [], index = 0, fav = false, onFav, onDetails }: { item: MediaItem; all?: LightboxItem[]; index?: number; fav?: boolean; onFav?: () => void; onDetails?: () => void }) {
   const repeat = `/app?mode=${MODE[item.kind]}&prompt=${encodeURIComponent(item.prompt)}`;
   const date = new Date(item.createdAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  const preview = useRef<HTMLVideoElement>(null);
+  // 77 — у готового видео при наведении без звука играет сам файл; без файла — только постер
+  const canPreview = item.kind === "video" && !!item.url;
 
   return (
-    <article data-kind={item.kind} className="kurai-asset-card group relative flex flex-col bg-g1">
+    <article
+      data-kind={item.kind}
+      onPointerEnter={(e) => {
+        if (canPreview && e.pointerType === "mouse") void preview.current?.play().catch(() => undefined);
+      }}
+      onPointerLeave={() => {
+        const v = preview.current;
+        if (!v) return;
+        v.pause();
+        v.currentTime = 0;
+      }}
+      className="kurai-asset-card group relative flex flex-col bg-g1"
+    >
       <div className="relative aspect-square overflow-hidden bg-g2">
         {item.kind === "audio" ? (
           <div className="grid h-full place-items-center">
@@ -39,8 +55,20 @@ export function MediaCard({ item, all = [], index = 0, fav = false, onFav, onDet
             />
           </button>
         )}
+        {canPreview && (
+          <video
+            ref={preview}
+            src={item.url}
+            muted
+            loop
+            playsInline
+            preload="none"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-0 transition-[opacity,transform] duration-(--dur-slow) group-hover:scale-[1.04] group-hover:opacity-100"
+          />
+        )}
         {item.kind === "video" && (
-          <span aria-hidden="true" className="absolute inset-0 grid place-items-center">
+          <span aria-hidden="true" className="absolute inset-0 grid place-items-center transition-opacity duration-(--dur-base) group-hover:opacity-0">
             <span className="grid size-10 place-items-center rounded-(--radius-sm) border border-line2 bg-bg/80 text-ink">
               <Play size={16} strokeWidth={1.5} />
             </span>

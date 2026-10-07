@@ -35,3 +35,16 @@ describe.each([
     expect(contrast(t[fg]!, t.bg!)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+// К11: альтернативные акценты меняют только акцентные токены — кнопка и акцентный текст должны читаться в обеих темах
+describe.each([
+  ["Night Ops · Night City", { ...night, ...theme(':root[data-accent="yellow"] .kurai-app') }],
+  ["Night Ops · циан", { ...night, ...theme(':root[data-accent="cyan"] .kurai-app') }],
+  ["Paper · Night City", { ...paper, ...theme(':root[data-theme="light"][data-accent="yellow"] .kurai-app') }],
+  ["Paper · циан", { ...paper, ...theme(':root[data-theme="light"][data-accent="cyan"] .kurai-app') }],
+])("%s — акцент читается", (_, t) => {
+  it("текст на акцентной кнопке и акцент как текст", () => {
+    expect(contrast(t["acc-ink"]!, t.acc!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(t["acc-text"]!, t.bg!)).toBeGreaterThanOrEqual(4.5);
+  });
+});

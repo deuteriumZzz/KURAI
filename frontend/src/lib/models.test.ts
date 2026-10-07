@@ -41,7 +41,8 @@ describe("models", () => {
       priceHintMicro: 8_400,
     });
 
-    expect(model).toMatchObject({ id: "openrouter/auto", group: "auto", contextK: 200, priceHintMicro: 8_400 });
-    expect(model.note).toBe("Маршрутизация по задаче");
+    // id остаётся служебным (по нему идёт расчёт и запуск), людям показываем «Авто» и описание KURAI
+    expect(model).toMatchObject({ id: "openrouter/auto", name: "Авто", group: "auto", contextK: 200, priceHintMicro: 8_400 });
+    expect(model.note).toBe("Один запрос — KURAI подбирает подходящую модель под задачу");
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ChevronDown, Coins, Layers, Search, Star, Workflow } from "lucide-react";
 import { readPrefs, writePrefs, pushRecent, toggleFavorite } from "@/lib/prefs";
 import { AnimatePresence, motion } from "motion/react";
@@ -10,7 +10,9 @@ import { MODES } from "@/lib/modes";
 import { formatCredits } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { useCalm } from "@/lib/use-calm";
+import { flyTo, SPRING } from "@/lib/motion";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
+import { Decode } from "@/components/fx/decode";
 
 const ctx = (k: number) => (k <= 0 ? "—" : k >= 1000 ? `${k / 1000}M` : `${k}K`);
 const COLS = "grid-cols-[minmax(0,1fr)_3.5rem_4.75rem] md:grid-cols-[minmax(11.5rem,1.1fr)_minmax(0,1.4fr)_3.75rem_5.5rem]";
@@ -20,8 +22,11 @@ function RouteDetail({ m, mode }: { m: ModelInfo; mode: Mode }) {
   const modes = MODES.filter((x) => m.modes.includes(x.id)).map((x) => x.label.toLowerCase());
   return (
     <div className="flex h-full flex-col">
-      <ModelGlyph id={m.id} kind={glyphKind(m.group)} size={34} />
-      <p className="mt-4 text-[22px] leading-tight font-normal tracking-[-0.01em] text-ink">{m.name}</p>
+      <span data-route-glyph className="self-start">
+        <ModelGlyph id={m.id} kind={glyphKind(m.group)} size={34} />
+      </span>
+      {/* К1 — скан-карточка: имя печатается из кодов, ниже — настоящие данные маршрута */}
+      <Decode as="p" text={m.name} duration={320} className="mt-4 text-[22px] leading-tight font-normal tracking-[-0.01em] text-ink" />
       <p className="mt-1 text-[13px] text-ink3">{m.group === "auto" ? "Один запрос — подходящий маршрут" : `${GROUP_LABEL[m.group]} · ${m.provider}`}</p>
       <p className="mt-4 text-[13.5px] leading-relaxed text-ink2">{m.note}</p>
       <ul className="mt-5 flex flex-col gap-3 border-t border-line pt-5 text-[13px] text-ink2">
@@ -45,6 +50,8 @@ type Props = {
   catalog?: ModelInfo[];
   /** home — крупная кнопка маршрута, Model Bay раскрывается вниз; dock — компактная, вверх. */
   variant?: "home" | "dock";
+  /** Маршрут уже виден в инспекторе: кнопка не дублирует его, модуль открывает «Сменить маршрут». */
+  hideTrigger?: boolean;
 };
 
 /**
@@ -52,7 +59,7 @@ type Props = {
  * детали провайдера — вторым слоем. Стрелки, Enter, Esc; фокус возвращается на кнопку.
  * Панель позиционируется относительно поля ввода (ближайшего relative-предка).
  */
-export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }: Props) {
+export function ModelPicker({ mode, value, onChange, catalog, variant = "dock", hideTrigger = false }: Props) {
   const calm = useCalm();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -64,7 +71,9 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const list = useMemo(() => {
-    const all = searchModels(catalog ?? modelsForMode(mode), q);
+    // автоподбор первым, дальше группы в постоянном порядке: живой каталог приходит по алфавиту, и без этого заголовки групп повторяются
+    const order = Object.keys(GROUP_LABEL);
+    const all = [...searchModels(catalog ?? modelsForMode(mode), q)].sort((a, b) => Number(b.group === "auto") - Number(a.group === "auto") || (q ? 0 : order.indexOf(a.group) - order.indexOf(b.group)));
     if (q) return all.map((m) => ({ m, group: GROUP_LABEL[m.group] }));
     const pinned = all.filter((m) => favs.includes(m.id)).map((m) => ({ m, group: "Избранные" }));
     const rec = recent.map((id) => all.find((m) => m.id === id)).filter((m): m is ModelInfo => !!m && !favs.includes(m.id)).map((m) => ({ m, group: "Недавние" }));
@@ -84,7 +93,8 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
 
   function close(returnFocus = true) {
     setOpen(false);
-    if (returnFocus) requestAnimationFrame(() => trigger.current?.focus());
+    // без видимой кнопки фокус возвращается в поле ввода, а не теряется
+    if (returnFocus) requestAnimationFrame(() => (hideTrigger ? document.getElementById("composer-input") : trigger.current)?.focus());
   }
 
   useEffect(() => {
@@ -121,6 +131,11 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
 
   function pick(m: ModelInfo | undefined) {
     if (!m) return;
+    // 3 — знак модели перелетает из панели в кнопку маршрута (или в инспектор, если кнопка скрыта)
+    const seen = (el: Element | null | undefined) => (el && el.getClientRects().length > 0 ? el : null);
+    const from = seen(panel.current?.querySelector("[data-route-glyph]")) ?? seen(document.getElementById(`${listId}-${m.id}`)?.querySelector(".k-radio"));
+    const targets = [hideTrigger ? null : seen(trigger.current?.firstElementChild), seen(document.querySelector("[data-route-glyph-target]"))].filter(Boolean) as Element[];
+    if (from && m.id !== value.id) targets.forEach((to, i) => void flyTo(from, to, { endScale: 0.55, ms: 460 + i * 120, fade: false }));
     writePrefs({ recent: pushRecent(readPrefs().recent, m.id) });
     onChange(m);
     close();
@@ -151,13 +166,14 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
       <button
         ref={trigger}
         type="button"
+        hidden={hideTrigger}
         onClick={() => (open ? close(false) : show())}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Модель: ${value.name}. Выбрать другую`}
         className={cn(
           "flex cursor-pointer items-center gap-2.5 rounded-(--radius-sm) text-ink transition-colors duration-(--dur-fast)",
-          home ? "h-11 border border-line2 px-3.5 text-[14px] hover:border-ink3 aria-expanded:border-acc-line" : "h-9 max-w-52 px-2.5 text-[13px] text-ink2 hover:bg-s2 hover:text-ink aria-expanded:bg-s2 pointer-coarse:h-11",
+          home ? "h-11 border border-line2 px-3.5 text-[14px] hover:border-ink3 aria-expanded:border-ink3" : "h-9 max-w-52 px-2.5 text-[13px] text-ink2 hover:bg-s2 hover:text-ink aria-expanded:bg-s2 pointer-coarse:h-11",
         )}
       >
         <ModelGlyph id={value.id} kind={glyphKind(value.group)} size={home ? 20 : 17} />
@@ -189,7 +205,7 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                 </div>
                 <span className="hidden shrink-0 items-center gap-2 text-[12px] text-ink3 sm:flex">Навигация <span className="k-kbd">↑</span><span className="k-kbd">↓</span></span>
               </div>
-              <label className="mt-4 flex h-11 items-center gap-3 rounded-(--radius-sm) border border-line bg-bg px-3.5 focus-within:border-acc-line">
+              <label className="mt-4 flex h-11 items-center gap-3 rounded-(--radius-sm) border border-line2 bg-bg px-3.5 focus-within:border-ink3">
                 <Search size={16} strokeWidth={1.5} className="shrink-0 text-ink3" aria-hidden="true" />
                 <input
                   autoFocus
@@ -214,14 +230,23 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                 <span>Контекст</span>
                 <span className="text-right">Цена</span>
               </div>
-              <ul id={listId} role="listbox" aria-label="Модели" className="-mx-1 max-h-[min(20rem,42dvh)] overflow-y-auto px-1 pb-1">
+              <ul id={listId} role="listbox" aria-label="Модели" className="k-fade-y -mx-1 max-h-[min(20rem,42dvh)] overflow-y-auto px-1 pb-1">
                 {list.length === 0 && <li className="px-3 py-4 text-[13.5px] text-ink3">Не нашли такую модель — попробуйте описать задачу иначе.</li>}
                 {list.map(({ m, group }, i) => {
                   const header = group !== list[i - 1]?.group ? group : null;
                   const selected = m.id === value.id;
+                  const fav = favs.includes(m.id);
+                  // 94 — насколько дороже или дешевле текущей модели (та же оценка «типового запроса»)
+                  const delta = m.priceHintMicro - value.priceHintMicro;
                   return (
-                    <li key={`${group}-${m.id}`} role="presentation">
-                      {header && i > 0 && <span className="k-index block px-3 pt-4 pb-2">{header}</span>}
+                    <Fragment key={`${group}-${m.id}`}>
+                    {/* 11 — заголовок группы прилипает к верху списка, тень — только когда прилип */}
+                    {header && i > 0 && (
+                      <li role="presentation" className="k-sticky-head">
+                        <span className="k-index px-3 pt-4 pb-2">{header}</span>
+                      </li>
+                    )}
+                    <li role="presentation">
                       <div role="presentation" className="relative">
                       <div
                         id={`${listId}-${m.id}`}
@@ -230,7 +255,7 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                         data-active={i === active || undefined}
                         onMouseEnter={() => setActive(i)}
                         onClick={() => pick(m)}
-                        className={cn("k-bay-row grid cursor-pointer items-center gap-3 py-3 pr-11 pl-3", COLS)}
+                        className={cn("k-bay-row k-scan grid cursor-pointer items-center gap-3 py-3 pr-11 pl-3", COLS)}
                       >
                         <span className="flex min-w-0 items-center gap-3">
                           <span className="k-radio" aria-hidden="true" />
@@ -241,24 +266,33 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
                         </span>
                         <span className="line-clamp-2 text-[13px] leading-snug text-ink2 max-md:hidden">{m.note}</span>
                         <span className="font-mono text-[12px] text-ink2">{ctx(m.contextK)}</span>
-                        <span className="text-right font-mono text-[12px] text-ink2">{formatCredits(m.priceHintMicro, { approx: true })}</span>
+                        <span className="flex flex-col items-end font-mono text-[12px] text-ink2">
+                          {formatCredits(m.priceHintMicro, { approx: true })}
+                          {!selected && Math.abs(delta) >= 500 && (
+                            <span title={`Разница с «${value.name}»`} className={cn("text-[10.5px]", delta > 0 ? "k-delta-up" : "k-delta-down")}>
+                              {delta > 0 ? "+" : "−"}
+                              {formatCredits(Math.abs(delta), { unit: false })}
+                            </span>
+                          )}
+                        </span>
                       </div>
                       {/* избранное — отдельная кнопка рядом со строкой, а не элемент внутри варианта списка */}
                       <button
                         type="button"
-                        aria-label={favs.includes(m.id) ? `Убрать ${m.name} из избранного` : `Добавить ${m.name} в избранное`}
-                        aria-pressed={favs.includes(m.id)}
+                        aria-label={fav ? `Убрать ${m.name} из избранного` : `Добавить ${m.name} в избранное`}
+                        aria-pressed={fav}
                         onClick={() => {
                           const next = toggleFavorite(favs, m.id);
                           setFavs(next);
                           writePrefs({ favorites: next });
                         }}
-                        className={cn("k-act absolute top-1/2 right-1.5 -translate-y-1/2", favs.includes(m.id) ? "text-acc" : "text-ink3")}
+                        className={cn("k-act absolute top-1/2 right-1.5 -translate-y-1/2", fav ? "text-acc" : "text-ink3")}
                       >
-                        <Star size={13} strokeWidth={1.5} fill={favs.includes(m.id) ? "currentColor" : "none"} />
+                        <StarBounce on={fav} size={13} />
                       </button>
                       </div>
                     </li>
+                    </Fragment>
                   );
                 })}
               </ul>
@@ -276,5 +310,14 @@ export function ModelPicker({ mode, value, onChange, catalog, variant = "dock" }
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** 61 — звезда избранного: при добавлении выскакивает с отскоком, при снятии просто гаснет. */
+export function StarBounce({ on, size }: { on: boolean; size: number }) {
+  return (
+    <motion.span key={String(on)} initial={on ? { scale: 0.3, rotate: -40 } : false} animate={{ scale: 1, rotate: 0 }} transition={SPRING.bouncy} className="grid place-items-center">
+      <Star aria-hidden="true" size={size} strokeWidth={1.5} fill={on ? "currentColor" : "none"} />
+    </motion.span>
   );
 }

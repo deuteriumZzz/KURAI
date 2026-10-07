@@ -7,7 +7,7 @@ import { Field } from "@/components/auth/field";
 import { TelegramLogin } from "@/components/auth/telegram-login";
 import { Button } from "@/components/ui/button";
 import { emailError, loginPasswordError } from "@/lib/auth-validate";
-import { kuraiApi } from "@/lib/kurai-api";
+import { kuraiApi, KuraiApiError } from "@/lib/kurai-api";
 import { useFx } from "@/components/fx/primitives";
 
 export default function LoginPage() {
@@ -48,9 +48,16 @@ export default function LoginPage() {
         await new Promise((r) => setTimeout(r, 500));
         if (password === "wrongpass") throw new Error("Неверный email или пароль. Проверьте раскладку или восстановите пароль.");
       }
+      try {
+        // К3 — после входа кабинет один раз показывает короткую загрузку сеанса
+        sessionStorage.setItem("kurai:boot", "1");
+      } catch {}
       router.push("/app");
     } catch (error) {
-      setErrors({ form: error instanceof Error ? error.message : "Не удалось войти. Попробуйте ещё раз." });
+      const message = error instanceof Error ? error.message : "Не удалось войти. Попробуйте ещё раз.";
+      // 65 — неверные данные показываются у поля пароля: оно качается, рамка краснеет, причина под ним
+      const wrong = (error instanceof KuraiApiError && error.code === "invalid_credentials") || (!kuraiApi && password === "wrongpass");
+      setErrors(wrong ? { password: message } : { form: message });
       glitch();
     } finally {
       setSubmitting(false);

@@ -15,6 +15,10 @@ class Project(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="projects")
     name = models.CharField(max_length=120)
     accent = models.CharField(max_length=16, choices=Accent.choices, default=Accent.CYAN)
+    # Shared rules for every chat in the project, sent to the model as a system message.
+    instructions = models.TextField(blank=True, default="", max_length=4000)
+    # Route new requests in the project start from; empty means the member's own default.
+    default_model = models.CharField(max_length=160, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

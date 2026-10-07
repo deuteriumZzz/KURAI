@@ -78,10 +78,9 @@ def test_research_persists_sanitised_citations_and_replays_them_to_the_chat(stre
     source = RunSource.objects.get(run=run)
     source_part = next(part for part in run.output_message.parts if part["type"] == "sources")
     assert source.url == "https://example.com/report?utm_source=provider"
-    assert source_part["items"] == [{"url": source.url, "title": "Independent report"}]
-    assert list(RunEvent.objects.filter(run=run, type=RunEvent.Type.SOURCE).values_list("payload", flat=True)) == [
-        {"url": source.url, "title": "Independent report"}
-    ]
+    expected = {"url": source.url, "title": "Independent report", "quote": "A provider excerpt that is retained for audit, but never rendered as HTML.", "readAt": source.created_at.isoformat()}
+    assert source_part["items"] == [expected]
+    assert list(RunEvent.objects.filter(run=run, type=RunEvent.Type.SOURCE).values_list("payload", flat=True)) == [expected]
 
     snapshot = client.get(f"/api/v1/chats/{chat.id}").json()["data"]
     answer = next(message for message in snapshot["messages"] if message["id"] == str(run.output_message_id))

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Markdown } from "@/components/chat/markdown";
 import { SiteHeader } from "@/components/landing/site-chrome";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
-import { modelByName } from "@/lib/models";
+import { modelByName, routeLabel } from "@/lib/models";
 import { KuraiApiError, kuraiApi, type KuraiSharedChat } from "@/lib/kurai-api";
 
 type SharedState =
@@ -108,9 +108,9 @@ export function SharedChatClient({ token }: { token: string }) {
             <article key={index} className="flex flex-col gap-3">
               <p className="flex items-center gap-2.5 text-[14px] text-ink">
                 <ModelGlyph id={info?.id ?? message.model ?? "auto"} kind={glyphKind(info?.group)} size={22} />
-                {message.model ?? "Автомаршрут"}
+                {message.model ? routeLabel(message.model) : "Автомаршрут"}
               </p>
-              <Markdown text={message.text} />
+              {message.text.trim() ? <Markdown text={message.text} /> : <p className="text-[14px] text-ink3">Ответа нет — запуск остановили или он не завершился.</p>}
             </article>
           );
         })}
