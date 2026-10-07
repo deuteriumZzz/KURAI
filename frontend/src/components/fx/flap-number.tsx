@@ -5,7 +5,9 @@ import { AnimatePresence, motion } from "motion/react";
 /** Табло: каждая цифра при смене значения перелистывается сверху вниз. Нецифровые символы стоят на месте. */
 export function FlapNumber({ value, className }: { value: string; className?: string }) {
   return (
-    <span className={className} aria-label={value}>
+    <span className={className}>
+      {/* диктор читает значение целиком; перелистывающиеся цифры — только для глаз */}
+      <span className="fx-sr">{value}</span>
       {value.split("").map((ch, i) =>
         /\d/.test(ch) ? (
           <span key={i} aria-hidden="true" className="relative inline-block overflow-hidden align-bottom">

@@ -155,13 +155,13 @@ export function SettingsForm({ user }: { user: User }) {
             <span className="flex items-center justify-between text-[14px]">
               Размер текста ответов <span className="font-mono text-[12px] text-ink3">{prefs.readSizePx || { s: 14, m: 15, l: 17 }[prefs.readSize]} px</span>
             </span>
-            <input type="range" min={13} max={20} step={0.5} value={prefs.readSizePx || { s: 14, m: 15, l: 17 }[prefs.readSize]} onChange={(e) => set({ readSizePx: Number(e.target.value) })} className="k-range" />
+            <input type="range" min={13} max={20} step={0.5} value={prefs.readSizePx || { s: 14, m: 15, l: 17 }[prefs.readSize]} onChange={(e) => set({ readSizePx: Number(e.target.value) })} className="k-range pointer-coarse:h-11" />
           </label>
           <label className="mt-2 flex flex-col gap-1.5">
             <span className="flex items-center justify-between text-[14px]">
               Ширина колонки чата <span className="font-mono text-[12px] text-ink3">{prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)} rem · {(prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)) < 48 ? "удобно читать" : "таблицы и код"}</span>
             </span>
-            <input type="range" min={34} max={64} step={1} value={prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)} onChange={(e) => set({ readWidthRem: Number(e.target.value) })} className="k-range" />
+            <input type="range" min={34} max={64} step={1} value={prefs.readWidthRem || (prefs.readWidth === "wide" ? 56 : 42)} onChange={(e) => set({ readWidthRem: Number(e.target.value) })} className="k-range pointer-coarse:h-11" />
           </label>
           {/* 83 — колонка и текст меняются вживую: видно результат сразу */}
           <div aria-hidden="true" className="mt-3 overflow-hidden rounded-(--radius-sm) border border-line bg-bg p-3">

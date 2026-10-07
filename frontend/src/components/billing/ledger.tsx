@@ -45,7 +45,7 @@ export function Ledger({ entries, fresh }: { entries: LedgerEntry[]; fresh?: Set
         </div>
       </div>
       <div className="overflow-x-auto border border-line">
-        <table className="w-full min-w-[560px] border-collapse text-[13px]">
+        <table className="w-full min-w-[480px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line bg-g1 text-left font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase">
               <th className="px-3 py-2 font-medium">Время</th>

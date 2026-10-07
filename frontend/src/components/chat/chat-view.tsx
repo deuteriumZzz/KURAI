@@ -14,7 +14,7 @@ import { takeHandoff } from "@/lib/chat-cache";
 import { followupMode, followupsFor, livePlan, type LivePhase } from "@/lib/live-plan";
 import Link from "next/link";
 import { ArrowDown, Bookmark, ChevronDown, ChevronUp, PanelRight, Pencil, Pin, PinOff, Plus, Presentation, Search, Share2, X } from "lucide-react";
-import { DISPLAY_TZ, formatCredits, hostOf } from "@/lib/format";
+import { DISPLAY_TZ, formatCredits, hostOf, plural } from "@/lib/format";
 import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
 import type { Outgoing } from "@/components/app/composer";
 import type { FileMeta } from "@/lib/files";
@@ -1344,7 +1344,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
                 </Fragment>
               );
             })}
-            {lowBalance && <SysNote tone="warn">на балансе {formatCredits(balanceMicro)} — хватит примерно на {Math.max(0, Math.floor(balanceMicro / lastCost))} таких ответа</SysNote>}
+            {lowBalance && <SysNote tone="warn">на балансе {formatCredits(balanceMicro)} — {Math.floor(balanceMicro / lastCost) < 1 ? "не хватит даже на один такой ответ" : `хватит примерно на ${plural(Math.floor(balanceMicro / lastCost), ["такой ответ", "таких ответа", "таких ответов"])}`}</SysNote>}
             {branch.length === 0 && <p className="text-ink3 md:pl-[52px]">Опишите задачу ниже — модель подберётся автоматически, цена будет видна до запуска.</p>}
           </div>
         </div>

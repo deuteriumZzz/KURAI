@@ -65,12 +65,13 @@ export function ProfileDashboard() {
           </div>
           <dl className="flex flex-col gap-4 border border-line bg-g1 p-5">
             {stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col gap-1.5">
-                <div className="flex items-baseline justify-between gap-3 text-[13.5px]">
-                  <dt className="text-ink2">{stat.label}</dt>
-                  <dd className="font-mono text-ink tabular-nums">{stat.value}</dd>
-                </div>
-                <Segments value={stat.fill} count={16} label={stat.label} />
+              // в группе списка допустимы только dt/dd: шкала — второе значение под строкой
+              <div key={stat.label} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1.5 text-[13.5px]">
+                <dt className="text-ink2">{stat.label}</dt>
+                <dd className="font-mono text-ink tabular-nums">{stat.value}</dd>
+                <dd className="col-span-2">
+                  <Segments value={stat.fill} count={16} label={stat.label} />
+                </dd>
               </div>
             ))}
           </dl>

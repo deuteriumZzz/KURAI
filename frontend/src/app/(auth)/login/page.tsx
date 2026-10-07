@@ -79,7 +79,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={errors.password}
           hint={
-            <Link href="/reset" className="hover:text-ink">
+            <Link href="/reset" className="inline-flex min-h-6 items-center underline decoration-line2 underline-offset-4 hover:text-ink pointer-coarse:min-h-11">
               Забыли пароль?
             </Link>
           }
@@ -97,7 +97,7 @@ export default function LoginPage() {
       <TelegramLogin />
       <p className="mt-6 text-[14px] text-ink2">
         Ещё нет аккаунта?{" "}
-        <Link href="/register" className="text-acc hover:underline">
+        <Link href="/register" className="text-acc underline underline-offset-2">
           Создать
         </Link>
       </p>

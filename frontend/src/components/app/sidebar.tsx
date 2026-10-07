@@ -603,7 +603,7 @@ function Projects({
   return (
     <section aria-label="Проекты">
       <div className="flex items-center justify-between pr-1 pb-2 pl-3">
-        <Link href="/app/projects" onClick={onNavigate} className="text-[12.5px] text-ink3 hover:text-ink">
+        <Link href="/app/projects" onClick={onNavigate} className="inline-flex min-h-6 items-center text-[12.5px] text-ink3 hover:text-ink pointer-coarse:min-h-11">
           Проекты
         </Link>
         <button type="button" onClick={() => { setProjectError(null); setAdding(true); }} aria-label="Новый проект" className="grid size-7 cursor-pointer place-items-center rounded-(--radius-sm) text-ink3 hover:bg-s2 hover:text-ink">

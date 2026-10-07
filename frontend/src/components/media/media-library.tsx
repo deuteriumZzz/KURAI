@@ -9,7 +9,7 @@ import { projectsStore, type LightboxItem } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import { useCalm } from "@/lib/use-calm";
-import { formatBytes, formatCredits } from "@/lib/format";
+import { formatBytes, formatCredits, plural } from "@/lib/format";
 import { Appear } from "@/components/fx/motion";
 import { Label } from "@/components/fx/primitives";
 import { cn } from "@/lib/cn";
@@ -89,7 +89,7 @@ export function MediaLibrary({ items, lightbox, visual, showPrototypeCollections
             <h2 className="k-index text-ink2">
               {new Date(day).toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" })}
             </h2>
-            <Label>{list.length} работ</Label>
+            <Label>{plural(list.length, ["работа", "работы", "работ"])}</Label>
           </div>
           <div className="h-px bg-line" aria-hidden="true" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

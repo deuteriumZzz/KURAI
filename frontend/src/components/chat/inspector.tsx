@@ -90,7 +90,7 @@ export function Inspector({ branch, runs, totalMicro, contextChars, onJump, onFo
   const seenMax = Math.max(1, ...seenItems.map((x) => x.tokens));
 
   return (
-    <aside aria-label="Контекст задачи" className={cn("k-inspector flex w-[340px] shrink-0 flex-col overflow-y-auto", className)}>
+    <aside aria-label="Контекст задачи" className={cn("k-inspector flex w-[340px] shrink-0 flex-col overflow-x-hidden overflow-y-auto", className)}>
       {onClose && (
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
           <span className="text-[14px] text-ink">Контекст задачи</span>

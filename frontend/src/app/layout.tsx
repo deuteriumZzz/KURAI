@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* тема кабинета до первой отрисовки — без вспышки; при первом входе следует системе */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(location.pathname.startsWith("/app")){var p=JSON.parse(localStorage.getItem("kurai:prefs")||"{}"),t=p.theme||"system";if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;if(p.accent&&p.accent!=="lime")document.documentElement.dataset.accent=p.accent;if(p.density==="compact")document.documentElement.dataset.density="compact"}}catch(e){}`,
+            __html: `try{if(location.pathname.startsWith("/app")){var p=JSON.parse(localStorage.getItem("kurai:prefs")||"{}"),t=p.theme||"system";if(t==="system")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;if(p.accent&&p.accent!=="lime")document.documentElement.dataset.accent=p.accent;if(p.density==="compact")document.documentElement.dataset.density="compact";if(p.calm)document.documentElement.classList.add("calm");if(p.softContrast)document.documentElement.classList.add("soft")}}catch(e){}`,
           }}
         />
       </head>

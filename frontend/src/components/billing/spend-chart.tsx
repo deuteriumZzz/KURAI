@@ -36,7 +36,7 @@ export function SpendChart({ days }: { days: Day[] }) {
         </h2>
         <div className="flex items-center gap-3">
           <Label className="tabular-nums">всего {formatCredits(total)}</Label>
-          <button type="button" onClick={() => setTable((t) => !t)} aria-pressed={table} className="cursor-pointer text-[12.5px] text-ink2 underline-offset-2 hover:text-ink hover:underline">
+          <button type="button" onClick={() => setTable((t) => !t)} aria-pressed={table} className="min-h-6 cursor-pointer text-[12.5px] text-ink2 underline-offset-2 hover:text-ink hover:underline pointer-coarse:min-h-11">
             {table ? "График" : "Таблица"}
           </button>
         </div>

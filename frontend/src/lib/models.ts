@@ -82,6 +82,18 @@ export function searchModels(list: ModelInfo[], query: string): ModelInfo[] {
 }
 
 /** Имя маршрута для людей: служебный id автоподбора показываем как «Авто», остальное — как вернул сервер. */
+/**
+ * Описание из каталога провайдера — простым текстом: Markdown-ссылки «[текст](адрес)» становятся «текст»,
+ * голые адреса убираются. Иначе разметка видна людям, а длинный адрес не переносится и рвёт таблицы.
+ */
+export function plainDescription(text: string): string {
+  return text
+    .replace(/\[([^\]]+)\]\((?:https?:)?[^)\s]+\)/g, "$1")
+    .replace(/\(?https?:\/\/\S+\)?/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export const routeLabel = (model: string) => (model === "openrouter/auto" ? "Авто" : model);
 
 export function modelById(id: string): ModelInfo | undefined {
@@ -124,6 +136,6 @@ export function fromCatalogModel(model: CatalogRecord): ModelInfo {
       value: group === "cheap" ? 10 : 7,
       context: model.contextLength >= 1_000_000 ? 10 : model.contextLength >= 128_000 ? 8 : 6,
     },
-    note: group === "auto" ? "Один запрос — KURAI подбирает подходящую модель под задачу" : model.description || "Доступна через OpenRouter",
+    note: group === "auto" ? "Один запрос — KURAI подбирает подходящую модель под задачу" : plainDescription(model.description) || "Доступна через OpenRouter",
   };
 }

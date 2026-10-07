@@ -67,7 +67,7 @@ export default function ArtifactsPage() {
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="truncate text-[16px] text-ink">{artifact.title}</h2>
                     <span className="k-shard-tag font-mono text-[10.5px] tracking-[0.06em] text-violet uppercase">{KIND[artifact.kind]}</span>
-                    <button type="button" onClick={() => void navigator.clipboard?.writeText(codeOf(artifact.id)).catch(() => undefined)} aria-label={`Скопировать код ${codeOf(artifact.id)}`} className="k-code cursor-pointer rounded-(--radius-xs) px-1 text-[11px] text-ink3 hover:bg-s2 hover:text-ink">
+                    <button type="button" onClick={() => void navigator.clipboard?.writeText(codeOf(artifact.id)).catch(() => undefined)} aria-label={`Скопировать код ${codeOf(artifact.id)}`} className="k-code inline-flex min-h-6 cursor-pointer items-center rounded-(--radius-xs) px-1 text-[11px] text-ink3 hover:bg-s2 hover:text-ink">
                       {codeOf(artifact.id)}
                     </button>
                   </div>

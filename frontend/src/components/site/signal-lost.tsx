@@ -17,7 +17,7 @@ export function SignalLost({ code, text, action }: { code: string; text: string;
       <Scanner />
       <div className="flex flex-wrap items-center justify-center gap-4">
         {action}
-        <Link href="/" className="text-[14px] text-ink2 hover:text-ink">
+        <Link href="/" className="py-2 text-[14px] text-ink2 hover:text-ink pointer-coarse:py-3">
           На главную →
         </Link>
       </div>

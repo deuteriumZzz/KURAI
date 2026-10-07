@@ -146,7 +146,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
         <p className="border border-line px-4 py-8 text-center text-[13.5px] text-ink3">Для этого режима нет активных моделей.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="kurai-model-registry w-full min-w-[760px] border-collapse text-left">
+          <table className="kurai-model-registry w-full min-w-[700px] border-collapse text-left">
             <thead>
               <tr className="text-[12.5px] text-ink3">
                 <th scope="col" className="py-2.5 pr-3 pl-3 font-normal">Модель</th>
@@ -178,7 +178,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
                           </span>
                         </span>
                       </th>
-                      <td className="px-3 py-3.5 text-[13.5px] leading-snug text-ink2">{model.note}</td>
+                      <td className="px-3 py-3.5 text-[13.5px] leading-snug [overflow-wrap:anywhere] text-ink2">{model.note}</td>
                       <td className="px-3 py-3.5 font-mono text-[12.5px] text-ink2">{model.contextK > 0 ? (model.contextK >= 1000 ? `${model.contextK / 1000}M` : `${model.contextK}K`) : "—"}</td>
                       <td className="px-3 py-3.5 font-mono text-[12.5px] text-ink2">{formatCredits(model.priceHintMicro, { approx: true })}</td>
                       <td className="py-3.5 pr-3 pl-3">

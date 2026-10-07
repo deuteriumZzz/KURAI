@@ -29,7 +29,7 @@ export function SiteFooter() {
     <footer className="border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-[12.5px] text-ink3 sm:px-6">
         <span className="font-mono tracking-[0.1em]">© 2026 KURAI</span>
-        <nav aria-label="Документы" className="flex flex-wrap gap-x-5 gap-y-2">
+        <nav aria-label="Документы" className="flex flex-wrap gap-x-5 gap-y-2 [&>a]:inline-flex [&>a]:min-h-6 [&>a]:items-center pointer-coarse:gap-y-0 pointer-coarse:[&>a]:min-h-11">
           <Link href="/status" className="hover:text-ink">Статус</Link>
           <Link href="/changelog" className="hover:text-ink">Что нового</Link>
           <Link href="/privacy" className="hover:text-ink">Конфиденциальность</Link>

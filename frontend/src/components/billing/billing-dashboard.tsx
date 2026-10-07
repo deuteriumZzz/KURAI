@@ -132,7 +132,7 @@ export function BillingDashboard() {
       )}
       {connected && !ledger && !failed && <p role="status" className="font-mono text-[12px] text-ink3">Загружаем журнал операций…</p>}
       {failed && <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err">Не удалось загрузить баланс. Обновите страницу или попробуйте позже.</p>}
-      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start [&>*]:min-w-0">
         {connected ? (
           hasSpend ? (
             <SpendChart days={days} />

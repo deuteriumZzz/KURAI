@@ -63,7 +63,8 @@ export function Compare() {
     <section aria-labelledby="cmp-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Сравнение</Label>
       <h2 id="cmp-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">KURAI против трёх отдельных подписок</h2>
-      <div className="overflow-x-auto border border-line">
+      {/* прокрутка вбок доступна и с клавиатуры: область получает фокус и имя */}
+      <div tabIndex={0} role="region" aria-labelledby="cmp-title" className="overflow-x-auto border border-line">
         <table className="w-full min-w-[560px] border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-line bg-g1 text-left font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase">

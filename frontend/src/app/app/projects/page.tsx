@@ -8,6 +8,7 @@ import { Label } from "@/components/fx/primitives";
 import { chatsStore, projectsStore } from "@/lib/app-state";
 import { projectChatOutline } from "@/lib/projects";
 import { useStore } from "@/lib/store";
+import { plural } from "@/lib/format";
 import { kuraiApi } from "@/lib/kurai-api";
 import { ActionButton } from "@/components/ui/action-button";
 import type { Project } from "@/types/api";
@@ -19,7 +20,7 @@ function Instructions({ project, models }: { project: Project; models: { id: str
   const unchanged = text.trim() === (project.instructions ?? "") && model === (project.defaultModel ?? "");
   return (
     <details className="mt-4 rounded-(--radius-md) border border-line px-3 py-2" open={!!project.instructions || undefined}>
-      <summary className="cursor-pointer text-[13px] text-ink2 hover:text-ink">
+      <summary className="cursor-pointer py-1.5 text-[13px] text-ink2 hover:text-ink pointer-coarse:py-3">
         Инструкции и модель проекта {project.instructions || project.defaultModel ? <span className="k-meta">· применяются</span> : <span className="k-meta">· не заданы</span>}
       </summary>
       <label className="mt-2 block">
@@ -72,7 +73,7 @@ export default function ProjectsPage() {
     <main className="kurai-projects-page flex min-h-0 flex-1 flex-col overflow-y-auto">
       <header className="kurai-projects-page__header flex h-14 shrink-0 items-center justify-between gap-3 px-4 pl-16 md:px-6 md:pl-6">
         <PageTitle title="Проекты" />
-        <Label>{projects.length} активных контекстов</Label>
+        <Label>{plural(projects.length, ["активный контекст", "активных контекста", "активных контекстов"])}</Label>
       </header>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
         <section className="kurai-projects-intro">
@@ -87,7 +88,7 @@ export default function ProjectsPage() {
             {projects.map((project, projectIndex) => {
               const outline = projectChatOutline(project, chats);
               return (
-                <li key={project.id} className="kurai-project-card bg-g1 p-5">
+                <li key={project.id} className="kurai-project-card min-w-0 bg-g1 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <span aria-hidden="true" className="grid size-9 place-items-center bg-g2 text-ink2"><FolderKanban size={17} strokeWidth={1.5} /></span>
@@ -96,7 +97,7 @@ export default function ProjectsPage() {
                         <Label>PROJECT / {String(projectIndex + 1).padStart(2, "0")}</Label>
                       </div>
                     </div>
-                    <Label>{outline.length} веток</Label>
+                    <Label>{plural(outline.length, ["ветка", "ветки", "веток"])}</Label>
                   </div>
                   <Instructions project={project} models={models} />
                   <ol className="kurai-project-branches mt-5 flex flex-col">

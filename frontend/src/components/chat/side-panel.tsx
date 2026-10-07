@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { plural } from "@/lib/format";
 import { X } from "lucide-react";
 import { motion } from "motion/react";
 import type { Artifact } from "@/lib/stream";
@@ -58,7 +59,7 @@ export function SidePanel({ artifact, onClose }: { artifact: Artifact; onClose: 
       <header className="kurai-artifact-workspace__header flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4">
         <div className="min-w-0">
           <p className="truncate text-[14px]">{artifact.title}</p>
-          <Label>{artifact.slides.length} слайдов · создано из ответа в этой задаче</Label>
+          <Label>{plural(artifact.slides.length, ["слайд", "слайда", "слайдов"])} · создано из ответа в этой задаче</Label>
         </div>
         <button ref={closeRef} type="button" onClick={onClose} aria-label="Закрыть панель" className="k-act size-9">
           <X size={16} strokeWidth={1.5} />

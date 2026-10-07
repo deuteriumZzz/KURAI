@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultModel, fromCatalogModel, modelById, modelByName, modelsForMode, searchModels } from "./models";
+import { defaultModel, fromCatalogModel, modelById, modelByName, modelsForMode, searchModels, plainDescription } from "./models";
 
 describe("modelByName", () => {
   it("resolves catalog names and treats «Авто · …» as the auto route", () => {
@@ -44,5 +44,10 @@ describe("models", () => {
     // id остаётся служебным (по нему идёт расчёт и запуск), людям показываем «Авто» и описание KURAI
     expect(model).toMatchObject({ id: "openrouter/auto", name: "Авто", group: "auto", contextK: 200, priceHintMicro: 8_400 });
     expect(model.note).toBe("Один запрос — KURAI подбирает подходящую модель под задачу");
+  });
+
+  it("shows catalog descriptions as plain text without markdown links or raw addresses", () => {
+    expect(plainDescription("Pricing is [here](https://docs.perplexity.ai/guides/pricing#a-very-long-anchor) for min_coding_score.")).toBe("Pricing is here for min_coding_score.");
+    expect(plainDescription("See https://openrouter.ai/docs/very/long/path for details")).toBe("See for details");
   });
 });

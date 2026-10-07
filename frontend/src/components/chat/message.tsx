@@ -6,7 +6,7 @@ import { Archive, BookOpen, BookmarkPlus, Brain, Check, ChevronLeft, ChevronRigh
 import { Reader } from "./reader";
 import type { Message, MessagePart } from "@/types/api";
 import type { RunState } from "@/lib/stream";
-import { DISPLAY_TZ, formatBytes, formatCredits } from "@/lib/format";
+import { DISPLAY_TZ, formatBytes, formatCredits, plural } from "@/lib/format";
 import { modeById } from "@/lib/modes";
 import { GROUP_LABEL, modelByName, routeLabel } from "@/lib/models";
 import { memberStore } from "@/lib/app-state";
@@ -438,7 +438,7 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
         {run?.thinking && <Thinking text={run.thinking} live={streaming && !text} from={run.thinkingAt} to={run.firstTokenAt} />}
         {toc.length >= 3 && (
           <details className="k-toc rounded-(--radius-md) border border-line px-3 py-2 text-[13px]">
-            <summary className="cursor-pointer text-ink2 hover:text-ink">Содержание · {toc.length} разделов</summary>
+            <summary className="cursor-pointer text-ink2 hover:text-ink">Содержание · {plural(toc.length, ["раздел", "раздела", "разделов"])}</summary>
             <ol className="mt-2 flex flex-col gap-0.5 pb-1">
               {toc.map((h, i) => (
                 <li key={`${i}-${h}`}>
@@ -688,6 +688,8 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
         )}
 
         {speaking && spoken && <SpokenLine {...spoken} />}
+        {/* 109 — подсветка слова под голосом прямо в тексте; правило живёт здесь: парсер CSS сборки не знает ::highlight() */}
+        {speaking && <style>{"::highlight(k-speak){background-color:var(--color-acc-soft);color:var(--color-ink)}"}</style>}
 
         {rating === "down" && !reason && (
           <div className="flex flex-wrap items-center gap-1.5 text-[12.5px]">

@@ -15,7 +15,7 @@ import { MODES, modeById, parseCommand } from "@/lib/modes";
 import { defaultModel, fromCatalogModel, modelById, modelsForMode, type ModelInfo } from "@/lib/models";
 import { contextUsage } from "@/lib/context";
 import { fileError, type FileMeta } from "@/lib/files";
-import { formatCredits, MICRO_PER_CREDIT } from "@/lib/format";
+import { formatCredits, MICRO_PER_CREDIT, plural } from "@/lib/format";
 import { readPrefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
 import { isCalm, markSendOrigin, retrigger, SPRING } from "@/lib/motion";
@@ -928,7 +928,7 @@ export function Composer({
                     <span className="px-0.5 text-[11.5px] text-ink3">Резерв до запуска; списывается фактическая цена</span>
                     {usual && (
                       <span className="flex flex-col gap-1 border-t border-line px-0.5 pt-1.5 text-[11.5px] text-ink2">
-                        обычно {formatCredits(usual.low, { unit: false })}–{formatCredits(usual.high)}, резерв {formatCredits(cost)} · по {usual.points.length} похожим запускам ({usual.by === "model" ? "та же модель" : "тот же режим"})
+                        обычно {formatCredits(usual.low, { unit: false })}–{formatCredits(usual.high)}, резерв {formatCredits(cost)} · по {plural(usual.points.length, ["похожему запуску", "похожим запускам", "похожим запускам"])} ({usual.by === "model" ? "та же модель" : "тот же режим"})
                         <span aria-hidden="true" className="relative h-2">
                           {usual.points.map((p, i) => (
                             <i key={i} className="absolute top-0 size-1.5 rounded-full bg-acc/70" style={{ left: `${(p / Math.max(...usual.points)) * 96}%` }} />

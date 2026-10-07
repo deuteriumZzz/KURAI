@@ -203,7 +203,7 @@ textarea {
   --color-ink: #f2f2f2;
   --color-prose: #d6d6d6;
   --color-ink2: #b4b4b4;
-  --color-ink3: #8e8e8e;
+  --color-ink3: #949494;
   --color-acc: #d8ec98;
   --color-acc-ink: #141414;
   --color-acc-text: #d8ec98;
@@ -251,14 +251,14 @@ textarea {
   --color-ink: #141414;
   --color-prose: #252525;
   --color-ink2: #424242;
-  --color-ink3: #666664;
+  --color-ink3: #5d5d5b;
   --color-acc: #b9e600;
   --color-acc-ink: #141414;
   --color-acc-text: #4c6100;
   --color-acc-soft: rgb(185 230 0 / 0.16);
   --color-acc-line: rgb(96 122 0 / 0.62);
   --color-signal: #c72f62;
-  --color-violet: #7356d4;
+  --color-violet: #6c50c7;
   --color-ok: #3e6f1c;
   --color-warn: #8a5800;
   --color-err: #b72b44;
@@ -2033,11 +2033,6 @@ li[data-bookmark]::before {
 }
 
 /* ════════ Доводка под демо ════════ */
-/* 109 — слово под голосом подсвечено прямо в тексте ответа */
-::highlight(k-speak) {
-  background-color: var(--color-acc-soft);
-  color: var(--color-ink);
-}
 /* 107 — длинный ответ из истории: три строки сути, полный текст раскрывается до естественной высоты */
 .k-collapsible {
   overflow: hidden;

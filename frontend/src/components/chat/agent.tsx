@@ -135,7 +135,7 @@ export function AgentSummary({ run, costMicro, onOpenArtifact, onSavePacket }: {
       <span className="flex flex-wrap gap-1.5">
         {run.artifact && (
           <button type="button" onClick={onOpenArtifact} className="k-tool h-8 border border-line bg-g1 text-[12.5px] text-ink">
-            Открыть «{run.artifact.title}» · {run.artifact.slides.length} слайдов
+            Открыть «{run.artifact.title}» · {plural(run.artifact.slides.length, ["слайд", "слайда", "слайдов"])}
           </button>
         )}
         {onSavePacket && (
@@ -194,7 +194,7 @@ function ObjectCode({ id }: { id: string }) {
         }, () => undefined);
       }}
       aria-label={copied ? "Код ответа скопирован" : `Скопировать код ответа ${code}`}
-      className="k-code cursor-pointer rounded-(--radius-xs) px-1 hover:bg-s2 hover:text-ink"
+      className="k-code inline-flex min-h-6 cursor-pointer items-center rounded-(--radius-xs) px-1 hover:bg-s2 hover:text-ink"
     >
       {copied ? "скопировано" : code}
     </button>
@@ -228,7 +228,7 @@ export function RunReceipt({ run, costMicro, model, code }: { run?: RunState; co
         </>
       )}
       {costMicro > 0 && (
-        <Link href="/app/billing" className="ml-1 underline decoration-line2 underline-offset-4 hover:text-ink">
+        <Link href="/app/billing" className="ml-1 inline-flex min-h-6 items-center underline decoration-line2 underline-offset-4 hover:text-ink">
           История списаний
         </Link>
       )}

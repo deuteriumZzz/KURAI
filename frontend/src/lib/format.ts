@@ -81,7 +81,12 @@ export function formatBytes(bytes: number): string {
 
 const ruPlural = new Intl.PluralRules("ru");
 /** «1 источник · 3 источника · 12 источников»: формы для one / few / many по правилам русского языка. */
-export function plural(n: number, [one, few, many]: [string, string, string]): string {
+export function plural(n: number, forms: [string, string, string]): string {
+  return `${n} ${pluralWord(n, forms)}`;
+}
+
+/** Только слово в нужной форме — когда число выводится отдельно (например, с разделителями тысяч). */
+export function pluralWord(n: number, [one, few, many]: [string, string, string]): string {
   const form = ruPlural.select(n);
-  return `${n} ${form === "one" ? one : form === "few" ? few : many}`;
+  return form === "one" ? one : form === "few" ? few : many;
 }

@@ -291,6 +291,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           else void animate(drawerX, -DRAWER, SPRING.release);
         }}
       >
+        {/* клавиатура: первым — переход к рабочей области, мимо пунктов меню */}
+        <a href="#k-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-(--z-toast) focus:rounded-(--radius-sm) focus:bg-acc focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-acc-ink">
+          Перейти к рабочей области
+        </a>
         <div className={cn("hidden transition-[margin] duration-(--dur-base) md:block", focus && "md:hidden")}>{sidebar(false)}</div>
 
         {/* телефон: шторка */}
@@ -355,11 +359,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <OfflineBanner />
           <VerifyBanner />
           <motion.div
+            id="k-main"
+            tabIndex={-1}
             key={section}
             initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             transition={{ duration: MOTION.base / 1000 }}
-            className="flex min-h-0 min-w-0 flex-1 flex-col"
+            className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
           >
             {children}
           </motion.div>

@@ -1,4 +1,5 @@
 import { Label } from "@/components/fx/primitives";
+import { plural, pluralWord } from "@/lib/format";
 
 const LEVELS = ["bg-line", "bg-acc/25", "bg-acc/50", "bg-acc/75", "bg-acc"] as const;
 const level = (n: number) => (n === 0 ? 0 : n < 4 ? 1 : n < 8 ? 2 : n < 13 ? 3 : 4);
@@ -15,19 +16,19 @@ export function Activity({ days }: { days: { date: string; count: number }[] }) 
     <figure className="flex flex-col gap-3 border border-line bg-g1 p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <figcaption className="text-[14px]">Активность · 12 недель</figcaption>
-        <Label className="tabular-nums">{total.toLocaleString("ru-RU")} запросов</Label>
+        <Label className="tabular-nums">{total.toLocaleString("ru-RU")} {pluralWord(total, ["запрос", "запроса", "запросов"])}</Label>
       </div>
       <div className="flex gap-[3px] overflow-x-auto" aria-hidden="true">
         {weeks.map((w, i) => (
           <div key={i} className="flex flex-col gap-[3px]">
             {w.map((d) => (
-              <i key={d.date} title={`${fmt(d.date)}: ${d.count} запросов`} className={`block size-3 ${LEVELS[level(d.count)]}`} />
+              <i key={d.date} title={`${fmt(d.date)}: ${plural(d.count, ["запрос", "запроса", "запросов"])}`} className={`block size-3 ${LEVELS[level(d.count)]}`} />
             ))}
           </div>
         ))}
       </div>
       <p className="fx-sr">
-        Всего {total} запросов за 12 недель. Самый активный день — {fmt(best.date)}: {best.count}.
+        Всего {plural(total, ["запрос", "запроса", "запросов"])} за 12 недель. Самый активный день — {fmt(best.date)}: {best.count}.
       </p>
       <div className="flex items-center gap-1.5 text-[11px] text-ink3" aria-hidden="true">
         меньше

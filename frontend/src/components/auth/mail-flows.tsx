@@ -121,7 +121,7 @@ export function ResetFlow({ uid, token }: { uid?: string; token?: string }) {
           {busy ? "Отправляем…" : withLink ? "Сохранить пароль" : "Отправить ссылку"}
         </Button>
       </form>
-      <Link href="/login" className="mt-5 block text-center text-[13px] text-ink2 hover:text-ink">
+      <Link href="/login" className="mt-3 block py-2 text-center text-[13px] text-ink2 hover:text-ink pointer-coarse:py-3">
         Вспомнили пароль? Войти
       </Link>
     </>

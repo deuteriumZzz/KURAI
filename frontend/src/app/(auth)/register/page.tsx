@@ -96,16 +96,16 @@ export default function RegisterPage() {
               onChange={(e) => setConsent(e.target.checked)}
               aria-invalid={!!errors.consent}
               aria-describedby={errors.consent ? "consent-err" : undefined}
-              className="mt-0.5 size-4 shrink-0 accent-(--color-acc)"
+              className="mt-0.5 size-5 shrink-0 accent-(--color-acc)"
             />
             <span>
-              Ознакомился и принимаю{" "}
-              <Link href="/offer" className="text-acc hover:underline">
+              Принимаю{" "}
+              <Link href="/offer" className="text-acc underline underline-offset-2">
                 оферту
               </Link>{" "}
-              и ознакомился с политикой обработки персональных данных{" "}
-              <Link href="/privacy" className="text-acc hover:underline">
-                политике
+              и ознакомился с{" "}
+              <Link href="/privacy" className="text-acc underline underline-offset-2">
+                политикой обработки персональных данных
               </Link>
             </span>
           </label>
@@ -124,7 +124,7 @@ export default function RegisterPage() {
       <TelegramLogin />
       <p className="mt-6 text-[14px] text-ink2">
         Уже есть аккаунт?{" "}
-        <Link href="/login" className="text-acc hover:underline">
+        <Link href="/login" className="text-acc underline underline-offset-2">
           Войти
         </Link>
       </p>

@@ -49,7 +49,7 @@ export default function Landing() {
                   Создать аккаунт
                 </Link>
               </Magnetic>
-              <Link href="/login" className="text-[14px] text-ink2 hover:text-ink">
+              <Link href="/login" className="inline-flex min-h-6 items-center text-[14px] text-ink2 hover:text-ink pointer-coarse:min-h-11">
                 Войти →
               </Link>
               <Label>диалог · research · изображения · слайды</Label>
@@ -143,7 +143,7 @@ export default function Landing() {
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Система развивается контурами, а не обещаниями</h2>
-            <Link href="/status" className="text-[14px] text-acc hover:underline">
+            <Link href="/status" className="inline-flex min-h-6 items-center text-[14px] text-acc hover:underline pointer-coarse:min-h-11">
               Статус сервисов →
             </Link>
           </div>
