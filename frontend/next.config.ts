@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // и клиентская гидрация не получает свой рантайм: интерфейс виден, но кнопки
   // не реагируют. Это действует только в режиме разработки.
   allowedDevOrigins: ["127.0.0.1"],
+  // браузеры и боты по привычке просят /favicon.ico — отдаём ту же SVG-иконку, что объявлена в <head>
+  rewrites() {
+    return [{ source: "/favicon.ico", destination: "/icon.svg" }];
+  },
 };
 
 export default nextConfig;

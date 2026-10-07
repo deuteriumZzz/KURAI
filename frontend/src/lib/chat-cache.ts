@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatSummary, Message } from "@/types/api";
+import type { ChatSummary, Message, Mode } from "@/types/api";
 import { MOCK_CHATS, MOCK_MESSAGES } from "@/mocks/data";
 import { kuraiApi } from "./kurai-api";
 
@@ -47,4 +47,20 @@ export function summarize(snapshot: ChatSnapshot): { text: string; model: string
     .replace(/\s+/g, " ")
     .trim();
   return { text, model: last?.model ?? null, costMicro: snapshot.messages.reduce((sum, m) => sum + m.costMicro, 0) };
+}
+
+/** Офлайн-прототип: запрос с главной, который новый локальный чат отправит сам после открытия. */
+export type Handoff = { text: string; mode: Mode; model: string };
+// хранилище на globalThis: главная и страница чата могут оказаться в разных чанках
+const handoffs: Map<string, Handoff> = ((globalThis as unknown as { __kuraiHandoffs?: Map<string, Handoff> }).__kuraiHandoffs ??= new Map());
+
+export function handOff(chatId: string, handoff: Handoff): void {
+  handoffs.set(chatId, handoff);
+}
+
+/** Забрать один раз: повторное открытие чата запрос не отправит. */
+export function takeHandoff(chatId: string): Handoff | undefined {
+  const h = handoffs.get(chatId);
+  handoffs.delete(chatId);
+  return h;
 }

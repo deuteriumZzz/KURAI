@@ -10,6 +10,7 @@ import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
 import { markStep, readPrefs } from "@/lib/prefs";
 import { flyFromOrigin, flyTo, isCalm, retrigger, SPRING } from "@/lib/motion";
+import { takeHandoff } from "@/lib/chat-cache";
 import { followupMode, followupsFor, livePlan, type LivePhase } from "@/lib/live-plan";
 import Link from "next/link";
 import { ArrowDown, Bookmark, ChevronDown, ChevronUp, PanelRight, Pencil, Pin, PinOff, Plus, Presentation, Search, Share2, X } from "lucide-react";
@@ -124,6 +125,8 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
   const [shareLink, setShareLink] = useState<KuraiShareLink | null>(null);
   const [revokeAsk, setRevokeAsk] = useState(false);
   const liveRunId = useRef<string | null>(null);
+  // режим запуска с живым потоком: при текстовом потоке опрос снимка пропускается (иначе задвоится текст)
+  const liveMode = useRef<Mode>("text");
   const [docked, setDocked] = useState(true);
   const [sheet, setSheet] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -351,6 +354,34 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
     [apply, chat.id],
   );
 
+  // офлайн-прототип: запрос с главной уходит в этот новый чат. Забираем его только в момент отправки:
+  // двойной монтаж в dev отменит первый таймер, и запрос не потеряется и не уйдёт дважды
+  useEffect(() => {
+    if (live) return;
+    const t = setTimeout(() => {
+      const h = takeHandoff(chat.id);
+      if (h) postUser(null, h.text, h.mode, [], { model: h.model });
+    }, 0);
+    return () => clearTimeout(t);
+    // postUser читает только setState и refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.id, live]);
+
+  // несколько генераций в одном чате: те, что без живого потока, обновляются опросом сервера
+  const pendingJobs = live && state.messages.some((m) => m.parts.some((p) => p.type === "job" && (p.status === "running" || p.status === "queued")));
+  useEffect(() => {
+    const api = kuraiApi;
+    if (!api || !pendingJobs) return;
+    const t = window.setInterval(() => {
+      if (liveRunId.current && !isJobMode(liveMode.current)) return;
+      void api
+        .getChat(chat.id)
+        .then((next) => setState((current) => ({ ...current, messages: next.messages, runs: { ...current.runs, ...persistedSourceRuns(next.messages, current.runs) } })))
+        .catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(t);
+  }, [pendingJobs, chat.id]);
+
   // незавершённая генерация из истории: с сервером — подключаемся к настоящему запуску (jobId = id запуска),
   // в офлайн-прототипе — демо-поток. Симуляция с сервером запрещена: она выдумала бы результат и цену.
   useEffect(() => {
@@ -576,6 +607,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
     track({ runId: started.runId, chatId: chat.id, title: chat.title, mode: snapshot.messages.find((m) => m.id === outputId)?.mode ?? "text", startedAt: new Date().toISOString(), status: "running", step: "в очереди" });
     // 29/30 — план и лента действий исследования и слайдов строятся из тех же событий сервера
     const runMode = snapshot.messages.find((m) => m.id === outputId)?.mode ?? "text";
+    liveMode.current = runMode;
     let phase: LivePhase = "queued";
     let sourceCount = 0;
     const plan = (next: LivePhase) => {

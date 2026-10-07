@@ -5,6 +5,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: 
 vi.mock("@/lib/kurai-api", () => ({ kuraiApi: null }));
 
 import { ChatView } from "./chat-view";
+import { handOff } from "@/lib/chat-cache";
 
 const chat = { id: "t", title: "Тест", updatedAt: "2026-09-23T12:00:00Z", pinned: false, headId: "" };
 
@@ -43,5 +44,14 @@ describe("ChatView — send, stream, cancel, recover", () => {
     await new Promise((r) => setTimeout(r, 2500));
     expect(screen.getByText(/Изображение · генерация · 30%/)).toBeTruthy();
     expect(screen.queryAllByRole("img", { name: /Открыть/ })).toHaveLength(0);
+  });
+
+  it("sends the prompt handed over from home exactly once in a new offline chat", { timeout: 10_000 }, async () => {
+    handOff("local-1", { text: "Спланируй запуск кофейни", mode: "text", model: "Авто" });
+    render(<ChatView chat={{ ...chat, id: "local-1" }} initial={[]} balanceMicro={10_000_000} />);
+
+    await waitFor(() => expect(screen.getAllByText("Спланируй запуск кофейни")).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getAllByText("Спланируй запуск кофейни")).toHaveLength(1);
   });
 });

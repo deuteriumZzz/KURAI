@@ -27,6 +27,7 @@ import { VoiceInput } from "./voice-input";
 import { AttachmentChips, type Attachment } from "./attachments";
 import { kuraiApi, type KuraiCapability, type KuraiEstimate } from "@/lib/kurai-api";
 import { chatsStore, ledgerStore, refreshBalance } from "@/lib/app-state";
+import { handOff } from "@/lib/chat-cache";
 import { useStore } from "@/lib/store";
 import { forecast, monthSpend } from "@/lib/spend";
 import { playSignal } from "@/lib/sound";
@@ -495,7 +496,13 @@ export function Composer({
           setLaunching(false);
         }
       })();
-    } else router.push("/app/c/7f3a");
+    } else {
+      // офлайн-прототип: новый локальный чат с этим запросом, а не переход в чужой демо-чат
+      const chat = { id: `local-${crypto.randomUUID().slice(0, 8)}`, title: msg.text.slice(0, 80) || modeById(msg.mode).label, updatedAt: new Date(nowMs()).toISOString(), pinned: false, headId: "" };
+      chatsStore.set((xs) => [chat, ...xs]);
+      handOff(chat.id, { text: msg.text, mode: msg.mode, model: msg.model.name });
+      router.push(`/app/c/${chat.id}`);
+    }
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {

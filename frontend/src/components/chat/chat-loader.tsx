@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useState } from "react";
 import type { ChatSummary, Message } from "@/types/api";
 import { kuraiApi } from "@/lib/kurai-api";
-import { balanceStore } from "@/lib/app-state";
+import { balanceStore, chatsStore } from "@/lib/app-state";
 import { useStore } from "@/lib/store";
 import { takeChat } from "@/lib/chat-cache";
 import { ChatView } from "./chat-view";
@@ -13,7 +13,11 @@ type Props = { chatId: string; fallback?: { chat: ChatSummary; messages: Message
 
 /** Loads server-owned chat history when the workspace is connected to KURAI API. */
 export function ChatLoader({ chatId, fallback }: Props) {
-  const [snapshot, setSnapshot] = useState(fallback);
+  // офлайн: чат, только что созданный с главной, есть лишь в локальной истории
+  const [snapshot, setSnapshot] = useState(() => {
+    const local = !kuraiApi && !fallback ? chatsStore.get().find((c) => c.id === chatId) : undefined;
+    return fallback ?? (local ? { chat: local, messages: [] } : undefined);
+  });
   const [error, setError] = useState<string | null>(null);
   const balanceMicro = useStore(balanceStore)?.micro ?? Infinity;
 
