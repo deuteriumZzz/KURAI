@@ -78,3 +78,10 @@ export function formatBytes(bytes: number): string {
   const num = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: v < 10 && i > 0 ? 1 : 0 }).format(v);
   return `${num} ${units[i]}`;
 }
+
+const ruPlural = new Intl.PluralRules("ru");
+/** «1 источник · 3 источника · 12 источников»: формы для one / few / many по правилам русского языка. */
+export function plural(n: number, [one, few, many]: [string, string, string]): string {
+  const form = ruPlural.select(n);
+  return `${n} ${form === "one" ? one : form === "few" ? few : many}`;
+}

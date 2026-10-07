@@ -323,6 +323,13 @@ export function Composer({
     window.addEventListener("kurai:prefill", onPrefill);
     return () => window.removeEventListener("kurai:prefill", onPrefill);
   }, []);
+  // К15 — продолжение приходит со своим режимом; переключение проходит обычную проверку доступности.
+  // Без списка зависимостей: подписка каждый раз видит текущие режим и возможности сервера.
+  useEffect(() => {
+    const onMode = (e: Event) => switchMode((e as CustomEvent<Mode>).detail);
+    window.addEventListener("kurai:mode", onMode);
+    return () => window.removeEventListener("kurai:mode", onMode);
+  });
 
   // отмена отправки: 3 секунды, потом уходит
   useEffect(() => {

@@ -6,7 +6,7 @@ import { ArrowRight, Bookmark, ChevronDown, ExternalLink, FileText, SlidersHoriz
 import type { Message } from "@/types/api";
 import type { RunState } from "@/lib/stream";
 import type { Fork } from "@/lib/tree";
-import { DISPLAY_TZ, formatBytes, formatCredits, hostOf, webHref } from "@/lib/format";
+import { DISPLAY_TZ, formatBytes, formatCredits, hostOf, webHref, plural } from "@/lib/format";
 import { contextUsage } from "@/lib/context";
 import { GROUP_LABEL, modelByName, routeLabel } from "@/lib/models";
 import { openLightbox } from "@/lib/app-state";
@@ -187,7 +187,7 @@ export function Inspector({ branch, runs, totalMicro, contextChars, onJump, onFo
                     {(() => {
                       // 28 — сколько утверждений ответа опирается на этот источник (по сноскам в тексте)
                       const claims = citing ? (textOf(citing).match(new RegExp(`\\[${i + 1}\\](?!\\()`, "g"))?.length ?? 0) : 0;
-                      return claims > 0 ? <span className="mt-0.5 block text-[11px] text-violet">→ подтверждает {claims} {claims === 1 ? "утверждение" : claims < 5 ? "утверждения" : "утверждений"}</span> : null;
+                      return claims > 0 ? <span className="mt-0.5 block text-[11px] text-violet">→ подтверждает {plural(claims, ["утверждение", "утверждения", "утверждений"])}</span> : null;
                     })()}
                     {citing && (() => {
                       // 105 — точное время чтения источника, если сервер его прислал; иначе — время ответа

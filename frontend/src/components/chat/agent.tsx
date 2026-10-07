@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Check, FileText, Square } from "lucide-react";
 import type { AgentTask, RunState } from "@/lib/stream";
 import { cn } from "@/lib/cn";
-import { formatCredits, hostOf, webHref } from "@/lib/format";
+import { formatCredits, hostOf, webHref, plural } from "@/lib/format";
 import { routeLabel } from "@/lib/models";
 
 
@@ -120,10 +120,10 @@ export function EvidenceLog({ sources, live }: { sources: NonNullable<RunState["
 export function AgentSummary({ run, costMicro, onOpenArtifact, onSavePacket }: { run: RunState; costMicro: number; onOpenArtifact?: () => void; onSavePacket?: () => void }) {
   const sec = run.durationMs ? Math.round(run.durationMs / 1000) : 0;
   const facts = [
-    sec > 0 ? `${Math.floor(sec / 60)} мин ${sec % 60} с` : null,
+    sec > 0 ? (sec < 60 ? `${sec} с` : `${Math.floor(sec / 60)} мин ${sec % 60} с`) : null,
     formatCredits(costMicro),
-    run.sources?.length ? `${run.sources.length} источников` : null,
-    run.tasks ? `${run.tasks.length} шагов` : null,
+    run.sources?.length ? plural(run.sources.length, ["источник", "источника", "источников"]) : null,
+    run.tasks ? plural(run.tasks.length, ["шаг", "шага", "шагов"]) : null,
   ].filter(Boolean);
   return (
     <div className="fx-reveal flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-(--radius-md) border border-acc-line bg-acc-soft px-4 py-3">

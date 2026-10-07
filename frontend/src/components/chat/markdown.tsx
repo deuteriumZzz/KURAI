@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { Citation } from "./citation";
 import { CodeBlock } from "./code-block";
 import { LinkPreview } from "./link-preview";
-import { webHref } from "@/lib/format";
+import { webHref, plural } from "@/lib/format";
 
 // Безопасность: сырой HTML не рендерится (skipHtml), ссылки проходят встроенный urlTransform
 // (javascript: и прочие опасные схемы вырезаются).
@@ -77,7 +77,7 @@ export function Markdown({ text, sources = [] }: { text: string; sources?: Sourc
       block.style.setProperty("--i", String(i));
       if ((block.textContent ?? "").length < 60) return block.removeAttribute("data-cover");
       const n = block.querySelectorAll(".k-cite").length;
-      block.setAttribute("data-cover", n === 0 ? "без подтверждения" : `${n} ${n === 1 ? "источник" : n < 5 ? "источника" : "источников"}`);
+      block.setAttribute("data-cover", n === 0 ? "без подтверждения" : plural(n, ["источник", "источника", "источников"]));
       block.toggleAttribute("data-uncovered", n === 0);
     });
   }, [text, sources.length]);

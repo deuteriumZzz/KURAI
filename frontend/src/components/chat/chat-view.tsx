@@ -10,9 +10,10 @@ import { findMatches } from "@/lib/search";
 import { useTabStatus } from "@/lib/use-tab-status";
 import { markStep, readPrefs } from "@/lib/prefs";
 import { flyFromOrigin, flyTo, isCalm, retrigger, SPRING } from "@/lib/motion";
+import { followupMode, followupsFor, livePlan, type LivePhase } from "@/lib/live-plan";
 import Link from "next/link";
 import { ArrowDown, Bookmark, ChevronDown, ChevronUp, PanelRight, Pencil, Pin, PinOff, Plus, Presentation, Search, Share2, X } from "lucide-react";
-import { DISPLAY_TZ, formatCredits } from "@/lib/format";
+import { DISPLAY_TZ, formatCredits, hostOf } from "@/lib/format";
 import { partialCost, simulate, type SimOptions } from "@/mocks/stream";
 import type { Outgoing } from "@/components/app/composer";
 import type { FileMeta } from "@/lib/files";
@@ -80,13 +81,22 @@ let seq = 0;
 const newId = (p: string) => `${p}_${Date.now().toString(36)}${(seq++).toString(36)}`;
 
 /** Source citations are a persisted message projection, so they survive an SSE reconnect or a full reload. */
-function persistedSourceRuns(messages: Message[]): Record<string, RunState> {
+function persistedSourceRuns(messages: Message[], runs: Record<string, RunState> = {}): Record<string, RunState> {
   return Object.fromEntries(
     messages.flatMap((message) => {
       const sources = message.parts.find((part) => part.type === "sources");
-      return sources && sources.items.length > 0 ? [[message.id, { status: "done" as const, log: [], sources: sources.items }]] : [];
+      if (!sources || sources.items.length === 0) return [];
+      // у живого запуска из снимка берём только источники: план, хронометраж и продолжения остаются
+      const known = runs[message.id];
+      return [[message.id, known ? { ...known, sources: sources.items } : { status: "done" as const, log: [], sources: sources.items }]];
     }),
   );
+}
+
+/** К15 — продолжение встаёт в поле ввода вместе со своим режимом («…слайды» → режим слайдов). */
+function prefillFollowup(text: string) {
+  window.dispatchEvent(new CustomEvent("kurai:mode", { detail: followupMode(text) }));
+  window.dispatchEvent(new CustomEvent("kurai:prefill", { detail: text }));
 }
 
 /** Единый чат: одна лента для текста, изображений и видео; ветки ответов; стриминг с расшифровкой. */
@@ -559,11 +569,24 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
       ...current,
       messages: snapshot.messages,
       // хронометраж запуска начинается с момента отправки, а не с ответа сервера
-      runs: { ...current.runs, ...persistedSourceRuns(snapshot.messages), [outputId]: current.runs[outputId] ?? (temp ? current.runs[temp.answer] : undefined) ?? newRun() },
+      runs: { ...current.runs, ...persistedSourceRuns(snapshot.messages, current.runs), [outputId]: current.runs[outputId] ?? (temp ? current.runs[temp.answer] : undefined) ?? newRun() },
       head: snapshot.chat.headId,
     }));
     // К12 — запуск видно из любого раздела, пока он идёт
     track({ runId: started.runId, chatId: chat.id, title: chat.title, mode: snapshot.messages.find((m) => m.id === outputId)?.mode ?? "text", startedAt: new Date().toISOString(), status: "running", step: "в очереди" });
+    // 29/30 — план и лента действий исследования и слайдов строятся из тех же событий сервера
+    const runMode = snapshot.messages.find((m) => m.id === outputId)?.mode ?? "text";
+    let phase: LivePhase = "queued";
+    let sourceCount = 0;
+    const plan = (next: LivePhase) => {
+      phase = next;
+      const tasks = livePlan(runMode, phase, sourceCount);
+      if (tasks) apply(outputId, { type: "tasks", tasks });
+    };
+    const act = (text: string) => {
+      if (livePlan(runMode, phase, 0)) apply(outputId, { type: "action", text });
+    };
+    plan("queued");
     // К12 — текущий шаг из настоящих событий запуска; обновляется только на смене шага
     let step = "в очереди";
     const stepTo = (next: string) => {
@@ -574,7 +597,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
 
     const refreshSnapshot = async () => {
       const next = await api.getChat(chat.id);
-      setState((current) => ({ ...current, messages: next.messages, runs: { ...current.runs, ...persistedSourceRuns(next.messages) }, head: next.chat.headId }));
+      setState((current) => ({ ...current, messages: next.messages, runs: { ...current.runs, ...persistedSourceRuns(next.messages, current.runs) }, head: next.chat.headId }));
       // К12 — у генерации медиа есть настоящий процент
       const job = next.messages.find((m) => m.id === outputId)?.parts.find((p) => p.type === "job");
       if (job?.type === "job") settleTracked(started.runId, { pct: job.progress, step: job.status === "queued" ? "в очереди" : "генерация" });
@@ -599,16 +622,34 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
           case "routed":
             apply(outputId, { type: "route", model: payload.model ?? routeName, node: "OpenRouter", latencyMs: 0 });
             stepTo(`маршрут · ${routeLabel(payload.model ?? routeName)}`);
+            plan("routed");
+            act(`маршрут → ${routeLabel(payload.model ?? routeName)}`);
             break;
           case "delta":
             apply(outputId, { type: "delta", text: payload.text ?? "" });
             stepTo("пишет ответ");
+            if (phase !== "writing") {
+              plan("writing");
+              act("пишет ответ");
+            }
             break;
           case "source":
-            if (payload.url && payload.title) apply(outputId, { type: "source", url: payload.url, title: payload.title, ...(payload.quote ? { quote: payload.quote } : {}), ...(payload.readAt ? { readAt: payload.readAt } : {}) });
+            if (payload.url && payload.title) {
+              apply(outputId, { type: "source", url: payload.url, title: payload.title, ...(payload.quote ? { quote: payload.quote } : {}), ...(payload.readAt ? { readAt: payload.readAt } : {}) });
+              sourceCount += 1;
+              plan(phase);
+              act(`источник ${sourceCount} · ${hostOf(payload.url)} · ${payload.title}`);
+            }
             stepTo("читает источники");
             break;
           case "done":
+            plan("done");
+            act(`готово${payload.costMicro ? ` · ${formatCredits(payload.costMicro)}` : ""}`);
+            // К15 — продолжения только для режимов, которые сервер сейчас умеет
+            void api
+              .capabilities()
+              .then((c) => apply(outputId, { type: "followups", items: followupsFor(runMode, (m) => c.modes.some((x) => x.id === m && x.available)) }))
+              .catch(() => undefined);
             apply(outputId, { type: "done", costMicro: payload.costMicro ?? 0, durationMs: 0 });
             // 46 — сумма из квитанции улетает в баланс
             if (payload.costMicro) flyMoney(outputId, `−${formatCredits(payload.costMicro)}`, "ink");
@@ -833,7 +874,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
     contextChars,
     onJump: scrollToMsg,
     // К15 — выбранное продолжение встаёт в поле ввода, как реплика в диалоге
-    onFollowup: (f: string) => window.dispatchEvent(new CustomEvent("kurai:prefill", { detail: f })),
+    onFollowup: prefillFollowup,
     forks: forksOf(branch, state.messages),
     onSwitchBranch: (id: string) => setState((s) => ({ ...s, head: leafOf(id, s.messages) })),
     reading,
@@ -872,7 +913,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
         const f = followups[Number(e.key) - 1];
         if (!f) return;
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent("kurai:prefill", { detail: f }));
+        prefillFollowup(f);
         return;
       }
       const key = e.key.toLowerCase();
@@ -1259,7 +1300,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
                           if (src) setCompare((c) => ({ ...c, [aid]: src }));
                         }
                       }}
-                      onFollowup={(f) => window.dispatchEvent(new CustomEvent("kurai:prefill", { detail: f }))}
+                      onFollowup={prefillFollowup}
                       onAnswer={(c) => answer(m.id, c)}
                       onOpenArtifact={() => {
                         const a = state.runs[m.id]?.artifact;

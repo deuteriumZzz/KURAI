@@ -1,3 +1,4 @@
+import { FOLLOWUPS } from "@/lib/live-plan";
 import type { Mode } from "@/types/api";
 import type { AgentTask, StreamEvent } from "@/lib/stream";
 import { fileKind, type FileMeta } from "@/lib/files";
@@ -123,15 +124,6 @@ const WEB = [
   ["https://vc.ru", "vc.ru", "Сколько стоят AI-подписки в 2026"],
   ["https://www.rbc.ru", "rbc.ru", "Рынок генеративного ИИ в России"],
 ] as const;
-
-const FOLLOWUPS: Record<string, string[]> = {
-  text: ["Сделай короче", "Оформи таблицей", "Нарисуй картинку к этому"],
-  research: ["Сделай из этого слайды", "Покажи только цифры", "Какие риски?"],
-  slides: ["Добавь слайд с графиком", "Сделай строже", "Напиши текст для выступления"],
-  image: ["Оживи первую в видео", "Ещё 4 варианта", "Сделай в стиле аниме"],
-  video: ["Сделай вертикальную версию", "Добавь озвучку", "Короче, 5 секунд"],
-  audio: ["Другой голос", "Помедленнее", "Сделай видео с этой озвучкой"],
-};
 
 const SCAN_LABELS = {
   image: ["ИЗОБРАЖЕНИЕ", "ТЕКСТ НА ФОТО", "ЛОГОТИП"],
