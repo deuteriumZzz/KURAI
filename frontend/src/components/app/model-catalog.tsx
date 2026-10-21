@@ -87,7 +87,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
     return <div aria-label="Загружаю модели" className="flex flex-col gap-px">{Array.from({ length: 6 }, (_, index) => <div key={index} className="h-16 animate-pulse bg-s1" />)}</div>;
   }
   if (state === "error") {
-    return <p role="alert" className="bg-err-soft px-4 py-3 text-[13.5px] text-err">Не удалось получить актуальный каталог. Проверьте подключение к API и попробуйте обновить страницу.</p>;
+    return <p role="alert" className="bg-err-soft px-4 py-3 text-[13.5px] text-err rounded-(--radius-md)">Не удалось получить актуальный каталог. Проверьте подключение к API и попробуйте обновить страницу.</p>;
   }
 
   return (
@@ -143,7 +143,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
         </section>
       )}
       {list.length === 0 ? (
-        <p className="border border-line px-4 py-8 text-center text-[13.5px] text-ink3">Для этого режима нет активных моделей.</p>
+        <p className="border border-line px-4 py-8 text-center text-[13.5px] text-ink3 rounded-(--radius-md)">Для этого режима нет активных моделей.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="kurai-model-registry w-full min-w-[700px] border-collapse text-left">

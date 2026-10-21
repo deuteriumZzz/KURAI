@@ -11,10 +11,10 @@ import type { Micro } from "@/types/api";
  */
 export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grantMicro: Micro }) {
   return (
-    <section id="top-up" aria-labelledby="top-up-title" className="kurai-balance-overview grid gap-4 bg-s1 p-4 md:grid-cols-2 md:p-5">
-      <div className="kurai-balance-overview__value flex flex-col gap-3 bg-s2 p-4 md:p-5">
+    <section id="top-up" aria-labelledby="top-up-title" className="kurai-balance-overview grid gap-4 bg-s1 p-4 md:grid-cols-2 md:p-5 rounded-(--radius-md)">
+      <div className="kurai-balance-overview__value flex flex-col gap-3 bg-s2 p-4 md:p-5 rounded-(--radius-sm)">
         <Label>Доступный баланс</Label>
-        <p className="font-display text-5xl font-normal tabular-nums">
+        <p className="font-display text-5xl font-medium tabular-nums">
           {formatCredits(initialMicro, { unit: false })} <span className="text-lg text-ink3">кредитов</span>
         </p>
         <Segments value={grantMicro > 0 ? Math.min(1, initialMicro / grantMicro) : 0} count={20} label="Баланс относительно стартового начисления" />

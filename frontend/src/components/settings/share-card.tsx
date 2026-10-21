@@ -10,7 +10,7 @@ export function ShareCard({ lines }: { lines: string[] }) {
   const [ready, setReady] = useState(false);
   return (
     <div className="flex flex-col gap-3">
-      <div ref={ref} className="fx-halftone relative flex aspect-[4/5] max-w-xs flex-col justify-between border border-line2 bg-g1 p-5">
+      <div ref={ref} className="fx-halftone relative flex aspect-[4/5] max-w-xs flex-col justify-between border border-line2 bg-g1 p-5 rounded-(--radius-md)">
         <Label className="text-acc">Мой месяц в KURAI</Label>
         <div className="flex flex-col gap-1.5">
           {lines.map((l) => (

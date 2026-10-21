@@ -29,12 +29,12 @@ const MODELS = ["Claude Sonnet 5", "GPT-5", "Gemini 2.5 Flash", "DeepSeek V3"];
 
 function Block({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <section className="border border-line bg-g1">
+    <section className="border border-line bg-g1 rounded-(--radius-md)">
       <header className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-3">
         <h2 className="text-sm font-semibold">{title}</h2>
         {note && <Label>{note}</Label>}
       </header>
-      <div className="flex flex-col gap-3 bg-bg p-4">{children}</div>
+      <div className="flex flex-col gap-3 bg-bg p-4 rounded-(--radius-md)">{children}</div>
     </section>
   );
 }
@@ -82,7 +82,7 @@ export default function KitPage() {
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <div>
           <Label className="text-acc">Витрина дизайн-системы · только для разработки</Label>
-          <h1 className="mt-2 font-display text-4xl font-normal tracking-wide">
+          <h1 className="mt-2 font-display text-4xl font-medium tracking-wide">
             KUR<span className="text-acc">A</span>I <span className="text-ink3">/ kit</span>
           </h1>
           <p className="mt-2 max-w-[62ch] text-ink2">
@@ -96,10 +96,10 @@ export default function KitPage() {
       </header>
 
       <Block title="Палитра · Kiroshi + Cyan" note="токены @theme">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-px border border-line bg-line">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-px border border-line bg-line rounded-(--radius-md) overflow-hidden">
           {SWATCHES.map(([token, name]) => (
             <div key={token} className="bg-g1 p-2.5">
-              <div className="mb-2 h-10 border border-line" style={{ background: `var(--color-${token})` }} />
+              <div className="mb-2 h-10 border border-line rounded-(--radius-md)" style={{ background: `var(--color-${token})` }} />
               <div className="text-[13px]">{name}</div>
               <Label className="tracking-normal normal-case">--color-{token}</Label>
             </div>
@@ -107,14 +107,14 @@ export default function KitPage() {
         </div>
       </Block>
 
-      <Block title="Типографика" note="Exo 2 · Geist · JetBrains Mono">
-        <p className="font-display text-5xl leading-none font-normal tracking-tight text-balance">
+      <Block title="Типографика" note="Sofia Sans Extra Condensed · Geologica · Martian Mono">
+        <p className="font-display text-6xl leading-none font-semibold text-balance">
           Нейросети — <span className="font-medium text-acc">в одном терминале</span>
         </p>
-        <p className="font-display text-2xl font-light">Заголовок раздела · Exo 2 Light</p>
+        <p className="font-display text-2xl font-medium">Заголовок раздела · Sofia Sans Extra Condensed</p>
         <p className="max-w-[65ch] text-ink2">
-          Интерфейс и ответы моделей — Geist. Нейтральный гротеск с хорошей кириллицей читается и в длинных ответах, и
-          мелким кеглем в настройках.
+          Интерфейс и ответы моделей — Geologica. У неё хорошая кириллица, и она одинаково читается в длинных ответах
+          и мелким кеглем в настройках. Значения — цены, коды, тайминги — Martian Mono.
         </p>
         <p className="font-mono text-[13px] tracking-wide tabular-nums">1 248 КР · 6,2 С · CLAUDE-SONNET-5 · #7F3A</p>
       </Block>
@@ -146,7 +146,7 @@ export default function KitPage() {
             Кликните в поле — угловые скобки «захватят» его
           </label>
           <div className="fx-brackets">
-            <div className="fx-chamfer border border-line2 bg-g1 px-3 py-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)]">
+            <div className="fx-chamfer border border-line2 bg-g1 px-3 py-2.5 [--ch:var(--chamfer-lg)] focus-within:border-acc-line focus-within:shadow-[0_0_0_3px_var(--color-acc-soft)] rounded-(--radius-md)">
               <input
                 id="kit-input"
                 className="w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink3"
@@ -168,7 +168,7 @@ export default function KitPage() {
                 type="button"
                 data-selected={selected === i}
                 onClick={() => setSelected(i)}
-                className="fx-brackets cursor-pointer border border-line bg-g1 p-3 text-left text-[13px] data-[selected=true]:border-acc-line"
+                className="fx-brackets cursor-pointer border border-line bg-g1 p-3 text-left text-[13px] data-[selected=true]:border-acc-line rounded-(--radius-md)"
               >
                 {m}
                 <Label className="mt-1 block">{selected === i ? "выбрана" : "выбрать"}</Label>
@@ -179,7 +179,7 @@ export default function KitPage() {
 
         <Block title="Расшифровка" note="Decode · Breach Protocol">
           <div className="flex items-center justify-between gap-3">
-            <Decode key={decodeKey} text={MODELS[model] ?? ""} className="font-display text-2xl font-light" />
+            <Decode key={decodeKey} text={MODELS[model] ?? ""} className="font-display text-2xl font-medium" />
             <Button
               size="sm"
               onClick={() => {
@@ -232,13 +232,13 @@ export default function KitPage() {
         </Block>
 
         <Block title="Мерцание, глитч, скан" note="Flicker · Glitch · Scanline">
-          <div ref={flickRef} className="border border-line2 bg-g1 px-3 py-2.5 text-[13px]">
+          <div ref={flickRef} className="border border-line2 bg-g1 px-3 py-2.5 text-[13px] rounded-(--radius-md)">
             Рамка поля при смене режима
           </div>
-          <div ref={glitchRef} className="border border-err bg-g1 px-3 py-2.5 text-[13px] text-err">
+          <div ref={glitchRef} className="border border-err bg-g1 px-3 py-2.5 text-[13px] text-err rounded-(--radius-md)">
             Ошибка: RGB-сдвиг только здесь
           </div>
-          <div className="relative h-20 overflow-hidden border border-line bg-g1 p-3">
+          <div className="relative h-20 overflow-hidden border border-line bg-g1 p-3 rounded-(--radius-md)">
             <Label>договор_аренды.pdf · 18 стр.</Label>
             <Scanline active={scan} />
           </div>

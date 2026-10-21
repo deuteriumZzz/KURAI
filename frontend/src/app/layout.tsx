@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, JetBrains_Mono, Sofia_Sans_Extra_Condensed } from "next/font/google";
+import { Geologica, Martian_Mono, Sofia_Sans_Extra_Condensed } from "next/font/google";
 import "./globals.css";
 
-// Три роли шрифта (docs/UX_PIPELINE.md → Typography): спокойный sans для чтения и
-// управления, узкий дисплей для редких якорей, моно — только для значений и провенанса.
-const sans = Geist({ variable: "--font-geist", subsets: ["latin", "cyrillic"] });
+// Три роли шрифта. Geologica — текст и управление: хорошая кириллица и ось «острота» (SHRP),
+// которой можно рубить концы букв в тон скошенным углам. Sofia Sans Extra Condensed — заголовки
+// страниц и документов: узкий дисплей в духе HUD. Martian Mono в узкой ширине — только значения:
+// цены, коды, тайминги.
+const sans = Geologica({ variable: "--font-geologica", subsets: ["latin", "cyrillic"], axes: ["SHRP"] });
 const cond = Sofia_Sans_Extra_Condensed({ variable: "--font-sofia-cond", subsets: ["latin", "cyrillic"], weight: "variable" });
-const mono = JetBrains_Mono({ variable: "--font-jbmono", subsets: ["latin", "cyrillic"], weight: ["400", "500"] });
+const mono = Martian_Mono({ variable: "--font-martian", subsets: ["latin", "cyrillic"], axes: ["wdth"] });
 
 export const metadata: Metadata = {
   title: "KURAI — нейросети в одном терминале",
@@ -33,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="kurai-app flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

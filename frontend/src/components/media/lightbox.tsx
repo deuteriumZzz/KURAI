@@ -93,12 +93,12 @@ export function Lightbox() {
               transition={{ type: "tween", duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
             />
             {state.index > 0 && (
-              <button type="button" onClick={() => go(-1)} aria-label="Предыдущее" className="absolute left-2 grid size-11 cursor-pointer place-items-center border border-line bg-g1/80 text-ink2 hover:text-ink sm:left-4">
+              <button type="button" onClick={() => go(-1)} aria-label="Предыдущее" className="absolute left-2 grid size-11 cursor-pointer place-items-center border border-line bg-g1/80 text-ink2 hover:text-ink sm:left-4 rounded-(--radius-sm)">
                 <ArrowLeft size={18} strokeWidth={1.5} />
               </button>
             )}
             {state.index < state.items.length - 1 && (
-              <button type="button" onClick={() => go(1)} aria-label="Следующее" className="absolute right-2 grid size-11 cursor-pointer place-items-center border border-line bg-g1/80 text-ink2 hover:text-ink sm:right-4">
+              <button type="button" onClick={() => go(1)} aria-label="Следующее" className="absolute right-2 grid size-11 cursor-pointer place-items-center border border-line bg-g1/80 text-ink2 hover:text-ink sm:right-4 rounded-(--radius-sm)">
                 <ArrowRight size={18} strokeWidth={1.5} />
               </button>
             )}

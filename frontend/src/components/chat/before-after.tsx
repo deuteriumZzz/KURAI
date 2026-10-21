@@ -9,7 +9,7 @@ export function BeforeAfter({ before, after, alt }: { before: string; after: str
   const id = useId();
   return (
     <figure className="flex max-w-lg flex-col gap-2">
-      <div className="relative aspect-square overflow-hidden border border-line select-none">
+      <div className="relative aspect-square overflow-hidden border border-line select-none rounded-(--radius-md)">
         {/* eslint-disable-next-line @next/next/no-img-element -- локальные превью */}
         <img src={after} alt={`После: ${alt}`} className="absolute inset-0 h-full w-full object-cover" />
         {/* eslint-disable-next-line @next/next/no-img-element -- локальные превью */}

@@ -71,7 +71,7 @@ export function LiveDemo() {
   const showAnswer = phase === "stream" || phase === "sources" || phase === "done";
 
   return (
-    <div ref={root} className="border border-line bg-g1">
+    <div ref={root} className="overflow-hidden rounded-(--radius-md) border border-line bg-g1">
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <Label>Сценарий · research</Label>
         <button
@@ -89,7 +89,7 @@ export function LiveDemo() {
       </div>
       <div className="relative flex min-h-[420px] flex-col gap-4 overflow-hidden bg-bg p-4 sm:p-5">
         <div aria-hidden="true" className="fx-live-orbit absolute -right-24 -bottom-24 size-64" />
-        <div className="ml-auto max-w-[85%] border border-line bg-g2 px-3.5 py-2.5 text-[14px]">
+        <div className="ml-auto max-w-[85%] border border-line bg-g2 px-3.5 py-2.5 text-[14px] rounded-(--radius-md)">
           {PROMPT.slice(0, typed) || <span className="text-ink3">…</span>}
           {phase === "typing" && <span className="fx-caret text-acc">▍</span>}
         </div>
@@ -104,7 +104,7 @@ export function LiveDemo() {
             <SysLine tone="acc" decode>
               Материалы к ответу
             </SysLine>
-            <div className="fx-reveal grid max-w-md gap-px border border-line bg-line sm:grid-cols-3">
+            <div className="fx-reveal grid max-w-md gap-px border border-line bg-line sm:grid-cols-3 rounded-(--radius-md) overflow-hidden">
               {SOURCES.map((source, index) => (
                 <div key={source} className="bg-g1 p-3">
                   <Label className="text-acc">0{index + 1}</Label>

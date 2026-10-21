@@ -10,7 +10,7 @@ export function DocPage({ eyebrow, title, lead, children }: { eyebrow: string; t
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-3">
           <Label className="text-acc">{eyebrow}</Label>
-          <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] leading-tight font-normal text-balance">{title}</h1>
+          <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] leading-tight font-medium text-balance">{title}</h1>
           {lead && <p className="max-w-[62ch] text-ink2">{lead}</p>}
         </div>
         {children}

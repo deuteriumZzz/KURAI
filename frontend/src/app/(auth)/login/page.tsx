@@ -21,11 +21,11 @@ export default function LoginPage() {
   if (!kuraiApi) {
     return (
       <>
-        <h1 className="font-display text-3xl font-light">Локальный просмотр</h1>
+        <h1 className="font-display text-4xl font-medium">Локальный просмотр</h1>
         <p className="mt-2 text-[14px] leading-6 text-ink2">
           Сервер аккаунтов не подключён, поэтому войти или создать учётную запись в этой сборке нельзя.
         </p>
-        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3 rounded-(--radius-sm)">
           Открыть интерфейсный просмотр
         </Link>
         <p className="mt-4 border-l border-acc pl-3 font-mono text-[11.5px] leading-5 text-ink3">
@@ -66,7 +66,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-light">Вход</h1>
+      <h1 className="font-display text-4xl font-medium">Вход</h1>
       <p className="mt-2 text-[14px] text-ink2">С возвращением — продолжите с того же места.</p>
       <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-4">
         <Field id="email" label="Email" type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
@@ -85,7 +85,7 @@ export default function LoginPage() {
           }
         />
         {errors.form && (
-          <p role="alert" className="border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err">
+          <p role="alert" className="border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">
             {errors.form}
           </p>
         )}

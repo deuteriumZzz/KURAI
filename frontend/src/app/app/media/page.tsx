@@ -66,14 +66,14 @@ export default function MediaPage() {
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 md:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <nav aria-label="Фильтр по типу" className="kurai-asset-filters flex flex-wrap gap-1 bg-s1 p-1">
+          <nav aria-label="Фильтр по типу" className="kurai-asset-filters flex flex-wrap gap-1 bg-s1 p-1 rounded-(--radius-sm)">
             {FILTERS.map((f) => (
               <Link
                 key={f.kind}
                 href={f.kind === "all" ? "/app/media" : `/app/media?kind=${f.kind}`}
                 aria-current={f.kind === kind ? "page" : undefined}
                 className={cn(
-                  "px-3.5 py-2 text-[13px] pointer-coarse:py-3",
+                  "px-3.5 py-2 text-[13px] pointer-coarse:py-3 rounded-(--radius-xs)",
                   f.kind === kind ? "bg-s3 text-ink" : "text-ink2 hover:bg-s2 hover:text-ink",
                 )}
               >
@@ -98,7 +98,7 @@ export default function MediaPage() {
         {items.length > 0 ? (
           <MediaLibrary items={items} lightbox={lightbox} visual={visual} showPrototypeCollections={state === "offline"} />
         ) : (
-          <div className="bg-s1">
+          <div className="rounded-(--radius-md) bg-s1">
             <EmptyState
               title={EMPTY[kind].title}
               hint={EMPTY[kind].hint}
@@ -111,7 +111,7 @@ export default function MediaPage() {
           </div>
         )}
         {state === "offline" && <p className="text-[12px] text-ink3">Офлайн-прототип · примеры работ и коллекции не относятся к вашему аккаунту.</p>}
-        {state === "failed" && <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err">Не удалось загрузить медиатеку. Повторите попытку позже.</p>}
+        {state === "failed" && <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">Не удалось загрузить медиатеку. Повторите попытку позже.</p>}
       </div>
     </main>
   );

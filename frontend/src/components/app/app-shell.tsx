@@ -267,7 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion={calm ? "always" : "user"}>
       <div
-        className="kurai-app flex h-dvh overflow-hidden"
+        className="flex h-dvh overflow-hidden"
         onTouchStart={(e) => {
           const t = e.touches[0];
           if (t) swipe.current = { x: t.clientX, y: t.clientY, t: performance.now(), edge: !drawer && t.clientX < 28 };

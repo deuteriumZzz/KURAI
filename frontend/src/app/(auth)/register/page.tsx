@@ -24,11 +24,11 @@ export default function RegisterPage() {
   if (!kuraiApi) {
     return (
       <>
-        <h1 className="font-display text-3xl font-light">Регистрация недоступна</h1>
+        <h1 className="font-display text-4xl font-medium">Регистрация недоступна</h1>
         <p className="mt-2 text-[14px] leading-6 text-ink2">
           В этой локальной сборке не подключён сервер аккаунтов. Мы не принимаем данные формы, пока не можем создать реальный аккаунт.
         </p>
-        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+        <Link href="/app" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3 rounded-(--radius-sm)">
           Открыть интерфейсный просмотр
         </Link>
         <Link href="/login" className="mt-5 text-[14px] text-ink2 hover:text-ink">
@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-light">Регистрация</h1>
+      <h1 className="font-display text-4xl font-medium">Регистрация</h1>
       <p className="mt-2 text-[14px] text-ink2">Создадим рабочий аккаунт после проверки данных.</p>
       <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-4">
         <Field id="name" label="Имя" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
@@ -114,7 +114,7 @@ export default function RegisterPage() {
               {errors.consent}
             </p>
         )}
-        {errors.form && <p role="alert" className="border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err">{errors.form}</p>}
+        {errors.form && <p role="alert" className="border border-err/45 bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">{errors.form}</p>}
         </div>
         <Button type="submit" variant="primary" size="lg" disabled={submitting} className="mt-1 w-full">
           {submitting ? "Создаём…" : "Создать аккаунт"}

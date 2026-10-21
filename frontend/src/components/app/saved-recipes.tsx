@@ -31,7 +31,7 @@ export function SavedRecipes() {
         <ul className="grid gap-px bg-line sm:grid-cols-2">
           {recipes.slice(0, 6).map((recipe) => (
             <li key={recipe.id} className="bg-g1">
-              <Link href={`/app?mode=${recipe.mode}&model=${encodeURIComponent(recipe.model)}&prompt=${encodeURIComponent(recipe.prompt)}`} className="group flex min-h-28 flex-col gap-2 p-3.5 transition-colors duration-(--dur-fast) hover:bg-s2">
+              <Link href={`/app?mode=${recipe.mode}&model=${encodeURIComponent(recipe.model)}&prompt=${encodeURIComponent(recipe.prompt)}`} className="group flex min-h-28 flex-col gap-2 p-3.5 transition-colors duration-(--dur-fast) hover:bg-s2 rounded-(--radius-md)">
                 <span className="flex items-center justify-between gap-3"><span className="truncate text-[14px] text-ink">{recipe.title}</span><ArrowUpRight size={14} strokeWidth={1.5} className="shrink-0 text-ink3 group-hover:text-acc" /></span>
                 <span className="line-clamp-2 text-[12.5px] leading-relaxed text-ink2">{recipe.prompt}</span>
                 <span className="mt-auto flex items-center gap-2"><Bookmark size={12} strokeWidth={1.5} className="text-violet" /><Label>{modeById(recipe.mode).label} · {recipe.model || "Авто"} · {formatCredits(recipe.sourceCostMicro)}</Label></span>

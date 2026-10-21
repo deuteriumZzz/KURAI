@@ -20,7 +20,7 @@ export function Calculator() {
   const plan = PLANS.find((p) => p.id === best.plan);
 
   return (
-    <div className="grid gap-6 border border-line bg-g1 p-5 md:grid-cols-[1.2fr_0.8fr] md:p-6">
+    <div className="grid gap-6 border border-line bg-g1 p-5 md:grid-cols-[1.2fr_0.8fr] md:p-6 rounded-(--radius-md)">
       <div className="flex flex-col gap-5">
         {ROWS.map((r) => (
           <div key={r.key} className="flex flex-col gap-2">
@@ -50,7 +50,7 @@ export function Calculator() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label className="text-acc">Выгоднее всего</Label>
-          <p className="font-display text-3xl font-light tabular-nums">{best.totalRub.toLocaleString("ru-RU")} ₽ / мес</p>
+          <p className="font-display text-3xl font-medium tabular-nums">{best.totalRub.toLocaleString("ru-RU")} ₽ / мес</p>
           <SysLine tone="acc">{`${plan?.name ?? ""}${best.topUpRub > 0 ? ` + докупка ${best.topUpRub.toLocaleString("ru-RU")} кр` : ""}`}</SysLine>
         </div>
         <p className="text-[12px] text-ink3">Оценка по средней цене запроса. Точная цена видна в поле ввода перед каждой отправкой.</p>

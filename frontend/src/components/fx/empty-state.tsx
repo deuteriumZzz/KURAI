@@ -43,7 +43,7 @@ export function EmptyState({ title, hint, action, compact = false }: { title: st
       </div>
       <Label className="k-draw-after text-acc">Пусто</Label>
       {/* К10 — заголовок пустого экрана собирается из кодов при первом показе */}
-      <Decode as="p" text={title} duration={draw ? 520 : 0} className={compact ? "text-[14px]" : "font-display text-xl font-light"} />
+      <Decode as="p" text={title} duration={draw ? 520 : 0} className={compact ? "text-[14px]" : "font-display text-xl font-medium"} />
       {hint && <p className="k-draw-after max-w-md text-[13.5px] text-ink2">{hint}</p>}
       {action && <div className="k-draw-after">{action}</div>}
     </div>

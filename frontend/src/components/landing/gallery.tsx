@@ -16,7 +16,7 @@ export function Gallery() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Label className="text-acc">Витрина</Label>
-          <h2 id="gal-title" className="mt-2 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
+          <h2 id="gal-title" className="mt-2 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">
             Из задачи в результат
           </h2>
         </div>
@@ -25,7 +25,7 @@ export function Gallery() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {WORKS.map((w, i) => (
           <Appear inView index={i} key={w.title}>
-            <figure className="fx-hover group border border-line bg-g1 hover:border-line2">
+            <figure className="fx-hover group border border-line bg-g1 hover:border-line2 rounded-(--radius-md)">
               <div className="aspect-[4/3] overflow-hidden border-b border-line">
                 <div className="h-full w-full transition-transform duration-(--dur-slow) ease-(--ease-out) group-hover:scale-[1.04]">
                   <Art kind={w.art} seed={80 + i} />

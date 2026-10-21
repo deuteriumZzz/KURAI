@@ -13,7 +13,7 @@ export function Activity({ days }: { days: { date: string; count: number }[] }) 
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" });
 
   return (
-    <figure className="flex flex-col gap-3 border border-line bg-g1 p-5">
+    <figure className="flex flex-col gap-3 border border-line bg-g1 p-5 rounded-(--radius-md)">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <figcaption className="text-[14px]">Активность · 12 недель</figcaption>
         <Label className="tabular-nums">{total.toLocaleString("ru-RU")} {pluralWord(total, ["запрос", "запроса", "запросов"])}</Label>

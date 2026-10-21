@@ -125,19 +125,19 @@ export function BillingDashboard() {
       {(!connected || ledger) ? (
         <TopUp initialMicro={balance} grantMicro={MOCK_BALANCE.monthlyGrantMicro} />
       ) : (
-        <section aria-busy="true" className="grid min-h-52 gap-4 bg-s1 p-4 md:grid-cols-2 md:p-5">
+        <section aria-busy="true" className="grid min-h-52 gap-4 bg-s1 p-4 md:grid-cols-2 md:p-5 rounded-(--radius-md)">
           <div className="bg-s2" />
           <div className="bg-s2" />
         </section>
       )}
       {connected && !ledger && !failed && <p role="status" className="font-mono text-[12px] text-ink3">Загружаем журнал операций…</p>}
-      {failed && <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err">Не удалось загрузить баланс. Обновите страницу или попробуйте позже.</p>}
+      {failed && <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">Не удалось загрузить баланс. Обновите страницу или попробуйте позже.</p>}
       <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-start [&>*]:min-w-0">
         {connected ? (
           hasSpend ? (
             <SpendChart days={days} />
           ) : (
-            <div className="flex min-h-40 items-center bg-g1 p-5 text-[13px] text-ink3">
+            <div className="flex min-h-40 items-center bg-g1 p-5 text-[13px] text-ink3 rounded-(--radius-md)">
               Аналитика расходов появится, когда накопится история операций. Журнал справа — источник текущих данных.
             </div>
           )
@@ -149,7 +149,7 @@ export function BillingDashboard() {
       <MonthReceipt entries={rows} />
       {!connected && <p className="text-[12px] text-ink3">Офлайн-прототип · суммы и история ниже служат только для демонстрации интерфейса.</p>}
       {connected ? (
-        <section className="bg-s1 p-5">
+        <section className="bg-s1 p-5 rounded-(--radius-md)">
           <h2 className="text-[15px] font-semibold">Тарифы и пополнения</h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink3">Цены, подписки и пополнения появятся только после подключения платёжного провайдера, правил расчёта и выдачи чеков. До этого KURAI показывает фактический серверный баланс и историю кредитов выше.</p>
         </section>

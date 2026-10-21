@@ -42,7 +42,7 @@ export function LiveStatus() {
   }
 
   return (
-    <section aria-label="Состояние сервисов" className="flex flex-col gap-px border border-line bg-line">
+    <section aria-label="Состояние сервисов" className="flex flex-col gap-px border border-line bg-line rounded-(--radius-md) overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 bg-g1 px-4 py-3">
         <span className="text-[14px]">KURAI API</span>
         <span className={cn("font-mono text-[12px]", status.status === "ok" ? "text-ok" : "text-warn")}>● {status.status === "ok" ? "работает" : "ограниченно"}</span>

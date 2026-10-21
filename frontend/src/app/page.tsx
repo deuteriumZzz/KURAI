@@ -35,7 +35,7 @@ export default function Landing() {
             <Label className="text-acc">
               <Decode text="KURAI / рабочее пространство для AI" duration={600} />
             </Label>
-            <h1 className="fx-weight-in max-w-[46rem] font-display text-[clamp(2.65rem,5.7vw,4.8rem)] leading-[0.98] font-normal tracking-[-0.03em] text-balance">
+            <h1 className="fx-weight-in max-w-[46rem] font-display text-[clamp(3rem,6.6vw,5.6rem)] leading-[0.95] font-semibold text-balance">
               Меньше шума.<br />
               {/* 45 — строка набирает вес по мере прокрутки (переменный шрифт, без картинок) */}
               <span className="k-weight-scroll text-ink3">Больше ясной работы.</span>
@@ -54,7 +54,7 @@ export default function Landing() {
               </Link>
               <Label>диалог · research · изображения · слайды</Label>
             </div>
-            <div className="fx-landing-readout mt-4 grid max-w-2xl grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3">
+            <div className="fx-landing-readout mt-4 grid max-w-2xl grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3 rounded-(--radius-md) overflow-hidden">
               <div className="bg-bg p-3"><Label className="text-acc">01 / контекст</Label><p>Ветки вместо потерянных идей</p></div>
               <div className="bg-bg p-3"><Label className="text-acc">02 / маршрут</Label><p>Модель и оценка до запуска</p></div>
               <div className="bg-bg p-3"><Label className="text-acc">03 / результат</Label><p>Следующий шаг уже рядом</p></div>
@@ -75,7 +75,7 @@ export default function Landing() {
         <section id="workflow" className="mx-auto grid max-w-6xl scroll-mt-20 gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div className="fx-rise flex flex-col gap-4">
             <Label className="text-acc">Как это работает</Label>
-            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-normal text-balance">
+            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
               От вопроса к обоснованной работе — в одном потоке
             </h2>
             <p className="max-w-[52ch] text-ink2">
@@ -94,7 +94,7 @@ export default function Landing() {
 
         {/* features */}
         <section aria-label="Возможности" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-          <div className="grid gap-px border border-line bg-line md:grid-cols-2">
+          <div className="grid gap-px border border-line bg-line md:grid-cols-2 rounded-(--radius-md) overflow-hidden">
             {LANDING_MODES.map((f, i) => (
               <Appear inView index={i} key={f.id} className="bg-g1">
               <article className="fx-hover h-full p-6">
@@ -116,7 +116,7 @@ export default function Landing() {
             { v: "04", l: "результат остаётся частью работы" },
           ].map((n) => (
             <div key={n.l} className="flex flex-col gap-1 bg-bg p-5 sm:p-6">
-              <span className="font-display text-4xl font-normal text-acc">{n.v}</span>
+              <span className="font-display text-4xl font-medium text-acc">{n.v}</span>
               <span className="text-[13px] text-ink2">{n.l}</span>
             </div>
           ))}
@@ -142,12 +142,12 @@ export default function Landing() {
         {/* capability boundary */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Система развивается контурами, а не обещаниями</h2>
+            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Система развивается контурами, а не обещаниями</h2>
             <Link href="/status" className="inline-flex min-h-6 items-center text-[14px] text-acc hover:underline pointer-coarse:min-h-11">
               Статус сервисов →
             </Link>
           </div>
-          <div className="grid gap-px border border-line bg-line md:grid-cols-[1.35fr_0.65fr]">
+          <div className="grid gap-px border border-line bg-line md:grid-cols-[1.35fr_0.65fr] rounded-(--radius-md) overflow-hidden">
             <div className="bg-g1 p-6">
               <Label className="text-acc">в работе</Label>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -169,9 +169,9 @@ export default function Landing() {
         <Faq />
 
         {/* final cta */}
-        <section className="fx-landing-final fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl">
+        <section className="fx-landing-final fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl rounded-(--radius-md)">
           <div className="relative flex flex-col items-start gap-5 p-8 sm:p-12">
-            <h2 className="max-w-2xl font-display text-[clamp(1.8rem,3.4vw,2.6rem)] leading-tight font-normal text-balance">
+            <h2 className="max-w-2xl font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
               Пространство, в котором AI помогает думать, а не отвлекает от работы.
             </h2>
             <Link href="/register" className="fx-chamfer bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">

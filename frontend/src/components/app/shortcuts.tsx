@@ -25,7 +25,7 @@ export function Shortcuts({ open, onClose }: { open: boolean; onClose: () => voi
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-label="Горячие клавиши"
-      className="fx-dialog m-auto w-[min(640px,calc(100vw-32px))] border border-line2 bg-g1 p-0 text-ink"
+      className="fx-dialog m-auto w-[min(640px,calc(100vw-32px))] border border-line2 bg-g1 p-0 text-ink rounded-(--radius-md)"
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <Label className="text-acc">Горячие клавиши</Label>

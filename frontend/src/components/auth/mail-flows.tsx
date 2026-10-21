@@ -8,7 +8,7 @@ import { emailError, passwordError } from "@/lib/auth-validate";
 import { kuraiApi, KuraiApiError } from "@/lib/kurai-api";
 
 const BACK = (
-  <Link href="/login" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+  <Link href="/login" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3 rounded-(--radius-sm)">
     Вернуться ко входу
   </Link>
 );
@@ -16,7 +16,7 @@ const BACK = (
 function Screen({ title, children, tag }: { title: string; children: ReactNode; tag?: string }) {
   return (
     <>
-      <h1 className="font-display text-3xl font-light">{title}</h1>
+      <h1 className="font-display text-4xl font-medium">{title}</h1>
       <div className="mt-2 text-[14px] leading-6 text-ink2">{children}</div>
       {tag && <p className="mt-4 border-l border-acc pl-3 font-mono text-[11.5px] leading-5 text-ink3">{tag}</p>}
     </>
@@ -72,7 +72,7 @@ export function ResetFlow({ uid, token }: { uid?: string; token?: string }) {
     return (
       <Screen title="Ссылка устарела">
         <p>{error}</p>
-        <Link href="/reset" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3">
+        <Link href="/reset" className="mt-7 block border border-line2 bg-s2 px-4 py-3 text-center text-[14px] font-medium text-ink transition-colors hover:bg-s3 rounded-(--radius-sm)">
           Запросить новую ссылку
         </Link>
       </Screen>
@@ -109,7 +109,7 @@ export function ResetFlow({ uid, token }: { uid?: string; token?: string }) {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-light">{withLink ? "Новый пароль" : "Восстановление пароля"}</h1>
+      <h1 className="font-display text-4xl font-medium">{withLink ? "Новый пароль" : "Восстановление пароля"}</h1>
       <p className="mt-2 text-[14px] text-ink2">{withLink ? "Придумайте новый пароль — от 12 символов." : "Пришлём на почту ссылку, по которой можно задать новый пароль."}</p>
       <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-4">
         {withLink ? (
@@ -204,7 +204,7 @@ export function VerifyFlow({ token }: { token?: string }) {
     return (
       <Screen title="Адрес подтверждён" tag="EMAIL · ПОДТВЕРЖДЁН">
         <p>Теперь на эту почту можно восстановить пароль и получать письма о важных событиях.</p>
-        <Link href="/app" className="mt-7 block bg-acc px-4 py-3 text-center text-[14px] font-semibold text-acc-ink">
+        <Link href="/app" className="mt-7 block bg-acc px-4 py-3 text-center text-[14px] font-semibold text-acc-ink fx-chamfer fx-sheen rounded-(--radius-sm)">
           Открыть кабинет
         </Link>
       </Screen>

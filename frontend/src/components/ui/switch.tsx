@@ -18,7 +18,7 @@ export function Switch({ label, hint, checked, onChange }: { label: string; hint
         onChange(!checked);
         flick();
       }}
-      className="flex w-full cursor-pointer items-center justify-between gap-4 border border-line bg-g1 px-4 py-3 text-left hover:border-line2"
+      className="flex w-full cursor-pointer items-center justify-between gap-4 border border-line bg-g1 px-4 py-3 text-left hover:border-line2 rounded-(--radius-md)"
     >
       <span className="flex flex-col gap-0.5">
         <span className="text-[14px]">{label}</span>

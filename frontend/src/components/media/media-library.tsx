@@ -82,7 +82,7 @@ export function MediaLibrary({ items, lightbox, visual, showPrototypeCollections
           </>
         )}
       </div>
-      {shown.length === 0 && <p className="border border-dashed border-line2 px-4 py-10 text-center text-[13.5px] text-ink3">Здесь пусто — отметьте работы звёздочкой или выберите другую коллекцию.</p>}
+      {shown.length === 0 && <p className="border border-dashed border-line2 px-4 py-10 text-center text-[13.5px] text-ink3 rounded-(--radius-md)">Здесь пусто — отметьте работы звёздочкой или выберите другую коллекцию.</p>}
       {Object.entries(byDay).map(([day, list]) => (
         <section key={day} aria-label={day} className="kurai-asset-day flex flex-col gap-3">
           <div className="flex items-baseline justify-between gap-3">

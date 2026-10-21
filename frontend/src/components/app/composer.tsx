@@ -672,7 +672,7 @@ export function Composer({
                 </span>
                 <span className="flex items-center gap-2">
                   <button type="button" onClick={() => setConfirm(null)} className="k-tool h-8 text-[12.5px]">Отмена</button>
-                  <button type="button" autoFocus disabled={left === 0} onClick={() => dispatch(confirm.msg)} className="k-tool h-8 bg-acc text-[12.5px] text-acc-ink hover:bg-acc hover:text-acc-ink disabled:opacity-50">Запустить</button>
+                  <button type="button" autoFocus disabled={left === 0} onClick={() => dispatch(confirm.msg)} className="k-tool k-chamfer h-8 bg-acc text-[12.5px] text-acc-ink hover:bg-acc hover:text-acc-ink disabled:opacity-50">Запустить</button>
                 </span>
                 <i aria-hidden="true" key={confirm.deadline} className="k-fix-bar" style={{ animationDuration: `${confirm.ttl}s` }} />
               </>

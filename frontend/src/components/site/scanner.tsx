@@ -23,7 +23,7 @@ export function Scanner() {
         const r = e.currentTarget.getBoundingClientRect();
         setPos({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
       }}
-      className="relative h-40 w-full max-w-md overflow-hidden border border-line bg-g1"
+      className="relative h-40 w-full max-w-md overflow-hidden border border-line bg-g1 rounded-(--radius-md)"
       style={{
         backgroundImage: "linear-gradient(var(--color-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-line) 1px, transparent 1px)",
         backgroundSize: "20px 20px",

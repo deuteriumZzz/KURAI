@@ -38,7 +38,7 @@ export function ProfileDashboard() {
     };
   }, []);
 
-  if (failed) return <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err">Не удалось загрузить сводку профиля. Обновите страницу или попробуйте позже.</p>;
+  if (failed) return <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">Не удалось загрузить сводку профиля. Обновите страницу или попробуйте позже.</p>;
   if (!profile) return <div aria-busy="true" className="min-h-80 bg-s1" />;
 
   const images = profile.media.filter((item) => item.kind === "image").length;
@@ -63,7 +63,7 @@ export function ProfileDashboard() {
             <h2 id="stats" className="text-[15px] font-semibold">Ваше рабочее пространство</h2>
             <p className="mt-1 text-[13px] text-ink3">Сводка по объектам, которые доступны в аккаунте сейчас.</p>
           </div>
-          <dl className="flex flex-col gap-4 border border-line bg-g1 p-5">
+          <dl className="flex flex-col gap-4 border border-line bg-g1 p-5 rounded-(--radius-md)">
             {stats.map((stat) => (
               // в группе списка допустимы только dt/dd: шкала — второе значение под строкой
               <div key={stat.label} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 gap-y-1.5 text-[13.5px]">
@@ -81,7 +81,7 @@ export function ProfileDashboard() {
             <h2 id="media-summary" className="text-[15px] font-semibold">Создано</h2>
             <p className="mt-1 text-[13px] text-ink3">Материалы остаются привязаны к чатам, где они были созданы.</p>
           </div>
-          <dl className="grid grid-cols-3 gap-px border border-line bg-line">
+          <dl className="grid grid-cols-3 gap-px border border-line bg-line rounded-(--radius-md) overflow-hidden">
             {[{ label: "Изображения", value: images }, { label: "Видео", value: videos }, { label: "Аудио", value: audio }].map((item) => (
               <div key={item.label} className="bg-g1 px-3 py-4">
                 <dt className="text-[11px] text-ink3">{item.label}</dt>
@@ -89,7 +89,7 @@ export function ProfileDashboard() {
               </div>
             ))}
           </dl>
-          <p className="bg-s1 p-4 text-[13px] leading-6 text-ink2">Публичная карточка профиля и расчёт экономии появятся после утверждения тарифной политики. Сейчас KURAI не публикует вашу активность и не строит вымышленные сравнения.</p>
+          <p className="bg-s1 p-4 text-[13px] leading-6 text-ink2 rounded-(--radius-md)">Публичная карточка профиля и расчёт экономии появятся после утверждения тарифной политики. Сейчас KURAI не публикует вашу активность и не строит вымышленные сравнения.</p>
         </section>
       </div>
       {!kuraiApi && <p className="mx-auto w-full max-w-5xl px-4 pb-6 text-[12px] text-ink3 md:px-6">Офлайн-прототип · значения на этом экране демонстрационные.</p>}

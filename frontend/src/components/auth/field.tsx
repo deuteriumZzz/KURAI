@@ -33,7 +33,7 @@ export function Field({ id, label, error, hint, className, type, ...rest }: Prop
           aria-invalid={!!error}
           aria-describedby={describedBy}
           className={cn(
-            cn(isPassword && "pr-11"), "h-11 w-full border bg-g1 px-3 text-[15px] text-ink outline-none placeholder:text-ink3 focus:border-ink3 focus:shadow-[0_0_0_3px_var(--color-s2)]",
+            cn(isPassword && "pr-11"), "h-11 w-full rounded-(--radius-sm) border bg-g1 px-3 text-[15px] text-ink outline-none placeholder:text-ink3 focus:border-ink3 focus:shadow-[0_0_0_3px_var(--color-s2)]",
             error ? "border-err" : "border-line",
             className,
           )}

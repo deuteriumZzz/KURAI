@@ -27,7 +27,7 @@ export function ModeTabs() {
   return (
     <section aria-labelledby="modes-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Режимы</Label>
-      <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">
+      <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">
         Один контекст — четыре готовых режима
       </h2>
       <div role="tablist" aria-label="Режимы" className="isolate flex flex-wrap gap-2">
@@ -39,15 +39,15 @@ export function ModeTabs() {
             aria-selected={tab === t.id}
             aria-controls="mode-panel"
             onClick={() => setTab(t.id)}
-            className={cn("relative inline-flex cursor-pointer items-center gap-2 border px-3.5 py-2 text-[13.5px]", tab === t.id ? "border-acc-line text-acc" : "border-line text-ink2 hover:text-ink")}
+            className={cn("relative inline-flex cursor-pointer items-center gap-2 border px-3.5 py-2 text-[13.5px] rounded-(--radius-sm)", tab === t.id ? "border-acc-line text-acc" : "border-line text-ink2 hover:text-ink")}
           >
-            {tab === t.id && <motion.span layoutId="landing-tab" aria-hidden="true" className="absolute inset-0 -z-10 bg-acc-soft" />}
+            {tab === t.id && <motion.span layoutId="landing-tab" aria-hidden="true" className="absolute inset-0 -z-10 bg-acc-soft rounded-(--radius-sm)" />}
             <ModeIcon mode={t.id} size={14} />
             {t.label}
           </button>
         ))}
       </div>
-      <div id="mode-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="mt-4 border border-line bg-g1">
+      <div id="mode-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="mt-4 border border-line bg-g1 rounded-(--radius-md)">
         <div className="border-b border-line px-4 py-3 text-[14px]">
           <span className="mr-2 font-mono text-acc">›</span>
           {cur.prompt}
@@ -64,7 +64,7 @@ export function ModeTabs() {
               </div>
             )}
             {tab === "research" && (
-              <div className="grid max-w-2xl gap-px border border-line bg-line sm:grid-cols-[0.9fr_1.1fr]">
+              <div className="grid max-w-2xl gap-px border border-line bg-line sm:grid-cols-[0.9fr_1.1fr] rounded-(--radius-md) overflow-hidden">
                 <div className="bg-g1 p-4">
                   <Label className="text-acc">контур вопроса</Label>
                   <p className="mt-5 text-[14px] leading-relaxed text-ink2">Границы темы, допущения и нужный формат результата остаются видимыми рядом с ходом работы.</p>
@@ -82,7 +82,7 @@ export function ModeTabs() {
             {tab === "image" && (
               <div className="grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-4">
                 {(["sun", "rings", "grid", "city"] as const).map((a, i) => (
-                  <div key={a} className="aspect-square overflow-hidden border border-line">
+                  <div key={a} className="aspect-square overflow-hidden border border-line rounded-(--radius-md)">
                     <Art kind={a} seed={40 + i} />
                   </div>
                 ))}
@@ -91,9 +91,9 @@ export function ModeTabs() {
             {tab === "slides" && (
               <div className="grid gap-2 sm:grid-cols-3">
                 {["Кофейня «Нейрон»", "Рынок и спрос", "Экономика точки"].map((t, i) => (
-                  <div key={t} className="relative flex aspect-video flex-col justify-between border border-line bg-bg p-3">
+                  <div key={t} className="relative flex aspect-video flex-col justify-between border border-line bg-bg p-3 rounded-(--radius-md)">
                     <Label className="text-acc">0{i + 1}</Label>
-                    <p className="font-display text-base font-light">{t}</p>
+                    <p className="text-[15px] font-medium">{t}</p>
                     <span aria-hidden="true" className="absolute right-3 bottom-3 h-px w-10 bg-acc" />
                   </div>
                 ))}

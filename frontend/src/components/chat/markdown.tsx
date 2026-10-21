@@ -22,7 +22,7 @@ const components: Components = {
     className ? (
       <code className={className}>{children}</code>
     ) : (
-      <code className="border border-line bg-g2 px-1 font-mono text-[13px]">{children}</code>
+      <code className="border border-line bg-g2 px-1 font-mono text-[13px] rounded-(--radius-xs)">{children}</code>
     ),
   pre: ({ children }) => {
     const child = Array.isArray(children) ? children[0] : children;

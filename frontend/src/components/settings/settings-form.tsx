@@ -62,19 +62,19 @@ export function SettingsForm({ user }: { user: User }) {
   return (
     <div className="flex flex-col gap-10">
       <Section title="Профиль">
-        <div className="flex items-center gap-4 bg-s1 p-4">
+        <div className="flex items-center gap-4 bg-s1 p-4 rounded-(--radius-md)">
           <Initials name={user.name} className="size-14 text-[16px]" />
           <div className="flex flex-col gap-1">
             <p className="text-[14px]">Инициалы из имени</p>
             <p className="text-[12.5px] text-ink3">Загрузка своего фото появится вместе с медиахранилищем.</p>
           </div>
         </div>
-        <div className="grid gap-px bg-hair sm:grid-cols-2">
-          <div className="bg-s1 px-4 py-3">
+        <div className="grid gap-px overflow-hidden rounded-(--radius-md) bg-hair sm:grid-cols-2">
+          <div className="bg-s1 px-4 py-3 rounded-(--radius-md)">
             <Label>Имя</Label>
             <p className="mt-1 text-[14px]">{user.name}</p>
           </div>
-          <div className="bg-s1 px-4 py-3">
+          <div className="bg-s1 px-4 py-3 rounded-(--radius-md)">
             <Label>Email</Label>
             <p className="mt-1 text-[14px]">{user.email}</p>
           </div>
@@ -91,7 +91,7 @@ export function SettingsForm({ user }: { user: User }) {
               aria-checked={prefs.model === m.id}
               data-selected={prefs.model === m.id}
               onClick={() => set({ model: m.id })}
-              className={cn("fx-brackets cursor-pointer bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast)", prefs.model === m.id ? "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]" : "hover:bg-s2")}
+              className={cn("fx-brackets cursor-pointer rounded-(--radius-md) bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast)", prefs.model === m.id ? "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]" : "hover:bg-s2")}
             >
               <span className="block text-[14px]">{m.label}</span>
               <span className="text-[12.5px] text-ink3">{m.note}</span>
@@ -115,7 +115,7 @@ export function SettingsForm({ user }: { user: User }) {
               onFocus={() => setHoverTheme(v === "system" ? null : v)}
               onBlur={() => setHoverTheme(null)}
               onClick={(e) => revealFrom(() => set({ theme: v }), { x: e.clientX, y: e.clientY })}
-              className={cn("cursor-pointer bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast) hover:bg-s2", prefs.theme === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
+              className={cn("cursor-pointer rounded-(--radius-md) bg-s1 px-4 py-3 text-left transition-colors duration-(--dur-fast) hover:bg-s2", prefs.theme === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
             >
               <span className="block text-[14px]">{l}</span>
               <span className="text-[12.5px] text-ink3">{h}</span>
@@ -149,7 +149,7 @@ export function SettingsForm({ user }: { user: User }) {
           checked={prefs.calm}
           onChange={(calm) => set({ calm })}
         />
-        <div className="flex flex-col gap-2 bg-s1 px-4 py-3">
+        <div className="flex flex-col gap-2 bg-s1 px-4 py-3 rounded-(--radius-md)">
           {/* 83 — ползунки: колонка плавно меняет ширину, текст — размер, видно до сохранения */}
           <label className="flex flex-col gap-1.5">
             <span className="flex items-center justify-between text-[14px]">
@@ -170,9 +170,9 @@ export function SettingsForm({ user }: { user: User }) {
             </p>
           </div>
           <span className="mt-2 text-[14px]">Плотность</span>
-          <div role="radiogroup" aria-label="Плотность интерфейса" className="flex w-max gap-1 bg-s2 p-1">
+          <div role="radiogroup" aria-label="Плотность интерфейса" className="flex w-max gap-1 bg-s2 p-1 rounded-(--radius-sm)">
             {([["comfortable", "Свободно"], ["compact", "Компактно"]] as const).map(([v, l]) => (
-              <button key={v} type="button" role="radio" aria-checked={prefs.density === v} onClick={() => set({ density: v })} className={cn("cursor-pointer px-3 py-1.5 text-[13px]", prefs.density === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
+              <button key={v} type="button" role="radio" aria-checked={prefs.density === v} onClick={() => set({ density: v })} className={cn("cursor-pointer px-3 py-1.5 text-[13px] rounded-(--radius-xs)", prefs.density === v ? "bg-acc-soft text-acc" : "text-ink2 hover:text-ink")}>
                 {l}
               </button>
             ))}
@@ -187,7 +187,7 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Расходы">
-        <label className="flex flex-wrap items-center justify-between gap-3 bg-s1 px-4 py-3">
+        <label className="flex flex-wrap items-center justify-between gap-3 bg-s1 px-4 py-3 rounded-(--radius-md)">
           <span className="flex flex-col">
             <span className="text-[14px]">Лимит расходов в месяц</span>
             <span className="text-[12.5px] text-ink3">На 80% — тихое предупреждение, сверх лимита запуск спросит подтверждение. Хранится в этом браузере; 0 — без лимита.</span>
@@ -209,8 +209,8 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Язык">
-        <div role="radiogroup" aria-label="Язык интерфейса" className="flex w-max gap-1 bg-s2 p-1">
-          <button type="button" role="radio" aria-checked="true" className="bg-acc-soft px-4 py-2 text-[13px] text-acc">
+        <div role="radiogroup" aria-label="Язык интерфейса" className="flex w-max gap-1 bg-s2 p-1 rounded-(--radius-sm)">
+          <button type="button" role="radio" aria-checked="true" className="bg-acc-soft px-4 py-2 text-[13px] text-acc rounded-(--radius-xs)">
             Русский
           </button>
           <button type="button" role="radio" aria-checked="false" disabled className="px-4 py-2 text-[13px] text-ink3">
@@ -232,7 +232,7 @@ export function SettingsForm({ user }: { user: User }) {
             set({ notifyBrowser: v });
           }}
         />
-        <div className="border border-line bg-g1 px-4 py-3">
+        <div className="border border-line bg-g1 px-4 py-3 rounded-(--radius-md)">
           <p className="text-[14px]">Письма о балансе и чеках</p>
           <p className="mt-0.5 text-[12.5px] text-ink3">Не включены: рассылка и чековый контур появятся вместе с платёжным провайдером.</p>
         </div>
@@ -249,7 +249,7 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Сеансы и устройства">
-        <div className="bg-s1 px-4 py-3">
+        <div className="bg-s1 px-4 py-3 rounded-(--radius-md)">
           <p className="text-[14px]">Текущий веб-сеанс активен</p>
           <p className="mt-0.5 text-[12.5px] text-ink3">История устройств и удалённое завершение сеансов будут добавлены после отдельной модели device sessions. Сейчас для выхода используйте меню аккаунта.</p>
         </div>
@@ -262,7 +262,7 @@ export function SettingsForm({ user }: { user: User }) {
       </Section>
 
       <Section title="Данные">
-        <div className="flex flex-col gap-3 bg-s1 p-4">
+        <div className="flex flex-col gap-3 bg-s1 p-4 rounded-(--radius-md)">
           <p className="text-[14px]">Экспорт истории</p>
           <p className="text-[13px] text-ink2">Скачайте приватный ZIP с профилем, проектами, чатами, сообщениями и историей баланса. Содержимое загруженных файлов и ключи в архив не включаются.</p>
           {exportState === "done" ? (

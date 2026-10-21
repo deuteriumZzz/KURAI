@@ -13,7 +13,7 @@ function Wordmark() {
 /** Вход: слева спокойный якорь бренда (на телефоне скрыт), справа форма. Без телеметрии и декоративных сеток. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="kurai-app grid min-h-dvh md:grid-cols-2">
+    <div className="grid min-h-dvh md:grid-cols-2">
       <aside aria-hidden="true" className="k-rail relative hidden flex-col justify-between p-10 md:flex">
         <Link href="/" aria-label="KURAI — на главную" tabIndex={-1}>
           <Wordmark />

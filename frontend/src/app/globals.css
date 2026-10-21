@@ -2,8 +2,8 @@
 
 /* ─────────────────────────────────────────────────────────────
    KURAI tokens — Night Ops / Paper System. Единственный источник вида.
-   Правила: /docs/UX_PIPELINE.md. Лендинг — отдельный поток работ: он берёт
-   корневые токены; кабинет (.kurai-app) переопределяет их своим материалом.
+   Правила: /docs/UX_PIPELINE.md. Материал .kurai-app стоит на <body>: лендинг,
+   вход и кабинет — одна палитра и одна геометрия. Корневые токены ниже — запасные.
    ───────────────────────────────────────────────────────────── */
 @theme {
   /* surfaces */
@@ -46,11 +46,13 @@
   --color-hair: rgb(255 255 255 / 0.07);
 
   /* type roles: sans — чтение и управление, cond — редкие якоря, mono — значения */
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geologica), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-sofia-cond), "Arial Narrow", "Roboto Condensed", ui-sans-serif, sans-serif;
   --font-cond: var(--font-sofia-cond), "Arial Narrow", "Roboto Condensed", ui-sans-serif, sans-serif;
-  --font-brand: var(--font-geist), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jbmono), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  --font-brand: var(--font-geologica), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-martian), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  /* Martian Mono — в узкой ширине: значения компактны и не спорят с текстом */
+  --font-mono--font-variation-settings: "wdth" 87.5;
 
   /* geometry: минимальные радиусы */
   --radius-xs: 1px;
@@ -120,9 +122,6 @@
   --color-s3: rgb(17 19 17 / 0.1);
   --color-hair: rgb(17 19 17 / 0.08);
   --shadow-float: 0 16px 40px -20px rgb(17 19 17 / 0.28), 0 0 0 1px rgb(17 19 17 / 0.1);
-}
-:root[data-theme="light"] .fx-chamfer {
-  clip-path: none;
 }
 :root[data-theme="light"] .fx-brackets::before,
 :root[data-theme="light"] .fx-brackets::after {
@@ -340,6 +339,7 @@ textarea {
 /* Индексная система KURAI: K/01, ROUTE, SOURCE — всегда рядом с реальными данными */
 .k-index {
   font-family: var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   font-size: 10.5px;
   font-weight: 500;
   line-height: 1;
@@ -350,6 +350,7 @@ textarea {
 /* Технические значения: модель, цена, время, id */
 .k-meta {
   font-family: var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   color: var(--color-ink3);
@@ -559,6 +560,7 @@ textarea {
   border-radius: var(--radius-sm);
   background: var(--color-s1);
   font: 500 11px/1 var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   color: var(--color-ink3);
 }
 
@@ -694,6 +696,7 @@ textarea {
   background: var(--color-violet-soft);
 }
 .k-cite {
+  border-radius: var(--radius-xs);
   color: var(--color-violet);
   border: 1px solid var(--color-violet-line);
   background: var(--color-violet-soft);
@@ -724,6 +727,7 @@ textarea {
 
 /* Hatch — необратимые действия и блокировки */
 .fx-hatch {
+  border-radius: var(--radius-md);
   background: repeating-linear-gradient(135deg, var(--color-warn-soft) 0 6px, transparent 6px 12px);
   border: 1px solid color-mix(in srgb, var(--color-warn) 45%, transparent);
   color: var(--color-warn);
@@ -789,6 +793,7 @@ textarea {
 .kurai-app .kurai-asset-filters,
 .kurai-app .kurai-balance-overview {
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
 }
 .kurai-app .kurai-registry-filters,
 .kurai-app .kurai-recipes-filters,
@@ -819,6 +824,7 @@ textarea {
 .kurai-app .kurai-model-card__favorite,
 .kurai-app .kurai-model-card__compare {
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out);
@@ -838,6 +844,8 @@ textarea {
 }
 .kurai-app .kurai-asset-card {
   position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-line);
   border-top: 2px solid var(--color-signal);
   transition: border-color var(--dur-fast) var(--ease-out);
@@ -849,15 +857,13 @@ textarea {
   position: relative;
   border-top: 1px solid var(--color-line);
 }
-.kurai-app .kurai-balance-overview__value {
-  border-left: 2px solid var(--color-acc);
-}
 .kurai-app .kurai-ledger {
   border-top: 1px solid var(--color-line);
   padding-top: 1rem;
 }
 .kurai-app .kurai-source-net {
   border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
 }
 .kurai-app .kurai-source-net__line { stroke: rgb(var(--kurai-violet-rgb) / 0.44); }
 .kurai-app .kurai-source-net__origin { fill: rgb(var(--kurai-violet-rgb)); }
@@ -886,13 +892,21 @@ textarea {
   color: var(--color-acc-text);
 }
 
-/* HUD-примитивы лендинга (срез угла, блик, скобки захвата) в кабинете не используются:
-   здесь они становятся спокойными минимальными радиусами и обычной рамкой выбора. */
+/* Одна геометрия на весь сайт: срез угла и скобки захвата сводятся к радиусу и обычной рамке
+   выбора. Блик при наведении остаётся — только на главной кнопке экрана. */
 .kurai-app .fx-chamfer {
-  clip-path: none;
   border-radius: var(--radius-sm);
+  clip-path: polygon(0 0, calc(100% - var(--ch)) 0, 100% var(--ch), 100% 100%, 0 100%);
 }
-.kurai-app .fx-sheen::after,
+.kurai-app .fx-cut {
+  border-radius: var(--radius-lg);
+}
+/* срез обрезает и внешнее кольцо фокуса — у таких кнопок кольцо внутри */
+.fx-chamfer:focus-visible,
+.k-chamfer:focus-visible {
+  outline-color: var(--color-acc-ink);
+  outline-offset: -4px;
+}
 .kurai-app .fx-brackets::before,
 .kurai-app .fx-brackets::after {
   display: none;
@@ -905,7 +919,7 @@ textarea {
    Общие примитивы (лендинг и кабинет)
    ═══════════════════════════════════════════════════════════════ */
 
-/* Chamfer — срез угла. На лендинге: главная кнопка. */
+/* Chamfer — засечка: срез одного угла у залитой лаймовой кнопки (в .kurai-app — поверх скругления). */
 .fx-chamfer {
   --ch: var(--chamfer-md);
   clip-path: polygon(var(--ch) 0, 100% 0, 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, 0 100%, 0 var(--ch));
@@ -1036,6 +1050,7 @@ textarea {
   display: none;
   padding: 0 5px;
   font: 500 10px/16px var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   background: var(--color-acc);
   color: var(--color-acc-ink);
   pointer-events: none;
@@ -1046,6 +1061,7 @@ textarea {
 
 /* native <dialog>: ⌘K, горячие клавиши */
 dialog.fx-dialog {
+  border-radius: var(--radius-lg);
   transition:
     opacity var(--dur-base) var(--ease-out),
     transform var(--dur-base) var(--ease-out),
@@ -1221,8 +1237,8 @@ dialog.fx-dialog::backdrop {
   to { transform: none; }
 }
 @keyframes fx-weight {
-  from { font-weight: 100; letter-spacing: 0.02em; }
-  to { font-weight: 250; letter-spacing: -0.01em; }
+  from { font-weight: 250; letter-spacing: 0.02em; }
+  to { font-weight: 600; letter-spacing: 0; }
 }
 .fx-halftone {
   background-image: radial-gradient(var(--color-line2) 1px, transparent 1.3px);
@@ -1305,6 +1321,7 @@ dialog.fx-dialog::backdrop {
 /* 88 — коды объектов: моноширинные, табличные цифры, перечёркнутый ноль (не спутать с «O») */
 .k-code {
   font-family: var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "zero" 1;
   letter-spacing: 0.02em;
@@ -1367,6 +1384,7 @@ dialog.fx-dialog::backdrop {
 .k-rail-idx {
   margin-left: auto;
   font: 500 10px/1 var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   letter-spacing: 0.1em;
   color: var(--color-acc-text);
   opacity: 0;
@@ -1497,6 +1515,7 @@ dialog.fx-dialog::backdrop {
 }
 /* К4 — срезанный угол у главной кнопки: деталь Night City, только у залитой кнопки */
 .k-chamfer {
+  border-radius: var(--radius-sm);
   clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
 }
 /* К14 — полоса фиксации цены истекает вместе с котировкой */
@@ -1792,6 +1811,7 @@ li[data-bookmark]::before {
   padding: 0 0.35em;
   border-radius: 3px;
   font-family: var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   font-size: 10.5px;
   white-space: nowrap;
   color: var(--color-violet);
@@ -1914,6 +1934,7 @@ li[data-bookmark]::before {
   background: var(--color-g2);
   color: var(--color-ink);
   font-family: var(--font-mono);
+  font-variation-settings: "wdth" 87.5;
   font-size: 12px;
   white-space: nowrap;
   box-shadow: var(--shadow-float);
@@ -1925,6 +1946,7 @@ li[data-bookmark]::before {
 /* К20 — срезанный ярлык осколка-артефакта */
 .k-shard-tag {
   padding: 2px 10px 2px 6px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--color-violet-line);
   background: var(--color-violet-soft);
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);

@@ -43,7 +43,7 @@ export function SpendChart({ days }: { days: Day[] }) {
       </div>
 
       {table ? (
-        <div className="max-h-72 overflow-auto border border-line">
+        <div className="max-h-72 overflow-auto border border-line rounded-(--radius-md)">
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-line bg-g1 text-left font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase">
@@ -64,7 +64,7 @@ export function SpendChart({ days }: { days: Day[] }) {
           </table>
         </div>
       ) : (
-        <div className="relative border border-line bg-g1 p-3 pt-4">
+        <div className="relative border border-line bg-g1 p-3 pt-4 rounded-(--radius-md)">
           {/* подсказка над графиком — не перекрывает столбики */}
           <div className="mb-2 flex h-10 items-start justify-between gap-3" aria-live="polite">
             {cur ? (

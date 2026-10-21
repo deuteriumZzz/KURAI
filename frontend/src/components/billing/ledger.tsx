@@ -29,7 +29,7 @@ export function Ledger({ entries, fresh }: { entries: LedgerEntry[]; fresh?: Set
         <h2 id="ledger-title" className="text-[15px] font-semibold">
           Операции
         </h2>
-        <div role="radiogroup" aria-label="Фильтр операций" className="flex border border-line">
+        <div role="radiogroup" aria-label="Фильтр операций" className="flex border border-line rounded-(--radius-sm) overflow-hidden">
           {FILTERS.map((f) => (
             <button
               key={f.id}
@@ -44,7 +44,7 @@ export function Ledger({ entries, fresh }: { entries: LedgerEntry[]; fresh?: Set
           ))}
         </div>
       </div>
-      <div className="overflow-x-auto border border-line">
+      <div className="overflow-x-auto border border-line rounded-(--radius-md)">
         <table className="w-full min-w-[480px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line bg-g1 text-left font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase">
@@ -64,7 +64,7 @@ export function Ledger({ entries, fresh }: { entries: LedgerEntry[]; fresh?: Set
                 transition={{ delay: i * 0.03, duration: 0.2 }}
                 className={cn("border-b border-line last:border-b-0 hover:bg-g1", fresh?.has(e.id) && "k-row-new")}
               >
-                <td className="px-3 py-2.5 font-mono text-[12px] text-ink3 tabular-nums">{when(e.at)}</td>
+                <td className="px-3 py-2.5 font-mono text-[12px] whitespace-nowrap text-ink3 tabular-nums">{when(e.at)}</td>
                 <td className="px-3 py-2.5">
                   {e.chatId ? (
                     <Link href={`/app/c/${e.chatId}`} className="hover:text-acc">

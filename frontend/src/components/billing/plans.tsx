@@ -13,7 +13,7 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
   const [annual, setAnnual] = useState(false);
   return (
     <div className="flex flex-col gap-4">
-      <div role="radiogroup" aria-label="Период оплаты" className="flex w-max border border-line">
+      <div role="radiogroup" aria-label="Период оплаты" className="flex w-max border border-line rounded-(--radius-sm) overflow-hidden">
         {[false, true].map((a) => (
           <button
             key={String(a)}
@@ -32,12 +32,12 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
           const isCurrent = current === p.id;
           const featured = current ? isCurrent : p.id === "pro";
           return (
-            <div key={p.id} data-selected={featured} className="fx-brackets flex flex-col gap-4 border border-line bg-g1 p-5 data-[selected=true]:border-acc-line">
+            <div key={p.id} data-selected={featured} className="fx-brackets flex flex-col gap-4 border border-line bg-g1 p-5 data-[selected=true]:border-acc-line rounded-(--radius-md)">
               <Label className={featured ? "text-acc" : undefined}>
                 {p.name}
                 {isCurrent && " · текущий"}
               </Label>
-              <p className="font-display text-3xl font-light tabular-nums">
+              <p className="font-display text-3xl font-medium tabular-nums">
                 <span className="inline-block overflow-hidden align-bottom">
                   <motion.span key={`${p.id}-${annual}`} initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }} className="inline-block">
                     {planPrice(p.priceRub, annual).toLocaleString("ru-RU")} ₽
@@ -53,7 +53,7 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
                 ))}
               </ul>
               {isCurrent ? (
-                <span className="border border-line px-3 py-2 text-center text-[13px] text-ink3">Ваш тариф</span>
+                <span className="border border-line px-3 py-2 text-center text-[13px] text-ink3 rounded-(--radius-md)">Ваш тариф</span>
               ) : (
                 <Link
                   href={cta === "register" ? "/register" : "/app/billing#top-up"}

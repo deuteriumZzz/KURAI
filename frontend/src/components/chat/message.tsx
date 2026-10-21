@@ -224,7 +224,7 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING.snappy} className="mt-2 flex items-center justify-end gap-2">
               <span className="mr-auto text-[12px] text-ink3">Исходная реплика сохранится в прошлой ветке</span>
               <button type="button" onClick={onCancel} className="k-tool">Отмена</button>
-              <button type="submit" className="k-tool bg-acc text-acc-ink hover:bg-acc hover:text-acc-ink">Отправить новой веткой</button>
+              <button type="submit" className="k-tool k-chamfer bg-acc text-acc-ink hover:bg-acc hover:text-acc-ink">Отправить новой веткой</button>
             </motion.div>
           </form>
         ) : (

@@ -50,7 +50,7 @@ export default function ArtifactsPage() {
         {state === "loading" && <p className="flex items-center gap-2 text-[13px] text-ink3"><LoaderCircle size={14} className="animate-spin" /> Загружаю приватную библиотеку…</p>}
         {state === "offline" && <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5"><p className="max-w-xl text-[13.5px] leading-relaxed text-ink3">Офлайн-прототип не создаёт фиктивные сохранения. Подключите API, чтобы работать с личной библиотекой.</p><Link href="/app/c/r4k2" className="k-tool border border-line text-ink">Открыть пример задачи</Link></div>}
         {state === "error" && <p role="alert" className="border-l border-err pl-3 text-[13px] text-err">Не удалось получить артефакты. Проверьте подключение и обновите страницу.</p>}
-        {state === "ready" && artifacts.length === 0 && <section className="border border-dashed border-line p-6 text-[13.5px] text-ink3">Пока ничего не сохранено. Откройте полезный ответ в чате и выберите «Сохранить как артефакт».</section>}
+        {state === "ready" && artifacts.length === 0 && <section className="border border-dashed border-line p-6 text-[13.5px] text-ink3 rounded-(--radius-md)">Пока ничего не сохранено. Откройте полезный ответ в чате и выберите «Сохранить как артефакт».</section>}
         {state === "ready" && artifacts.length > 0 && (
           <ol className="divide-y divide-line border-y border-line">
             {artifacts.map((artifact, index) => (
@@ -75,8 +75,8 @@ export default function ArtifactsPage() {
                   <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-ink3"><span>{artifact.provenance.model ?? "модель не указана"}</span><span>{formatCredits(artifact.provenance.costMicro)}</span>{artifact.provenance.sources.length > 0 && <span className="text-violet">источники: {artifact.provenance.sources.length}</span>}</div>
                 </div>
                 <div className="flex items-center gap-2 md:justify-end">
-                  <Link href={`/app/c/${artifact.chatId}`} className="inline-flex h-9 items-center gap-1.5 bg-s2 px-2.5 text-[12px] text-ink2 transition-colors duration-(--dur-fast) hover:bg-s3 hover:text-ink"><FileText size={14} strokeWidth={1.5} /> Чат</Link>
-                  <Link href={`/app?prompt=${encodeURIComponent(`Продолжи работу с артефактом «${artifact.title}»:\n${artifact.body.slice(0, 1400)}`)}`} className="inline-flex h-9 items-center gap-1.5 bg-acc px-2.5 text-[12px] text-acc-ink transition-transform duration-(--dur-fast) hover:-translate-y-px">Продолжить <ArrowUpRight size={14} strokeWidth={1.5} /></Link>
+                  <Link href={`/app/c/${artifact.chatId}`} className="inline-flex h-9 items-center gap-1.5 bg-s2 px-2.5 text-[12px] text-ink2 transition-colors duration-(--dur-fast) hover:bg-s3 hover:text-ink rounded-(--radius-sm)"><FileText size={14} strokeWidth={1.5} /> Чат</Link>
+                  <Link href={`/app?prompt=${encodeURIComponent(`Продолжи работу с артефактом «${artifact.title}»:\n${artifact.body.slice(0, 1400)}`)}`} className="inline-flex h-9 items-center gap-1.5 bg-acc px-2.5 text-[12px] text-acc-ink transition-transform duration-(--dur-fast) hover:-translate-y-px k-chamfer rounded-(--radius-sm)">Продолжить <ArrowUpRight size={14} strokeWidth={1.5} /></Link>
                 </div>
               </motion.li>
             ))}

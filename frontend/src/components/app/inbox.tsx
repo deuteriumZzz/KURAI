@@ -76,7 +76,7 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
             animate={{ opacity: 1, transform: "translateX(0) scale(1)" }}
             exit={calm ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, transform: "translateX(-3px) scale(0.995)", transition: { duration: 0.12 } }}
             transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] origin-top-left bg-g1 shadow-(--shadow-float) md:absolute md:top-0 md:left-full md:ml-2"
+            className="fixed top-16 left-4 z-50 w-[min(340px,calc(100vw-32px))] origin-top-left rounded-(--radius-md) bg-g1 shadow-(--shadow-float) md:absolute md:top-0 md:left-full md:ml-2"
           >
             <div className="flex items-center justify-between border-b border-line px-3 py-2">
               <Label className="text-acc">Входящие</Label>
@@ -101,7 +101,7 @@ export function Inbox({ collapsed, onNavigate }: { collapsed: boolean; onNavigat
                       setOpen(false);
                       onNavigate?.();
                     }}
-                    className="flex items-baseline gap-3 px-3 py-2.5 text-[13px] hover:bg-g2"
+                    className="flex items-baseline gap-3 px-3 py-2.5 text-[13px] hover:bg-g2 rounded-(--radius-sm)"
                   >
                     <span className={cn("flex-1", it.tone === "warn" ? "text-warn" : it.unread ? "text-ink" : "text-ink2")}>{it.title}</span>
                     <span className="shrink-0 font-mono text-[11px] text-ink3">{it.at}</span>

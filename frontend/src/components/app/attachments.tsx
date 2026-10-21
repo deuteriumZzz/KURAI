@@ -32,7 +32,7 @@ export function AttachmentChips({ items, onRemove }: { items: Attachment[]; onRe
           >
             {a.previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- локальное превью blob:
-              <img src={a.previewUrl} alt="" className="size-7 shrink-0 border border-line object-cover" />
+              <img src={a.previewUrl} alt="" className="size-7 shrink-0 border border-line object-cover rounded-(--radius-xs)" />
             ) : (
               <Icon size={16} strokeWidth={1.5} className="shrink-0 text-ink2" aria-hidden="true" />
             )}

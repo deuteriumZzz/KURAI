@@ -22,7 +22,7 @@ export function AccountSettings() {
     };
   }, []);
 
-  if (failed) return <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err">Не удалось загрузить данные профиля. Обновите страницу или попробуйте позже.</p>;
+  if (failed) return <p role="status" className="bg-err-soft px-3 py-2 text-[13px] text-err rounded-(--radius-md)">Не удалось загрузить данные профиля. Обновите страницу или попробуйте позже.</p>;
   if (!user) return <div aria-busy="true" className="min-h-56 bg-s1" />;
 
   return (

@@ -30,11 +30,11 @@ export function Scenarios() {
   return (
     <section aria-labelledby="sc-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Сценарии</Label>
-      <h2 id="sc-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Под вашу работу</h2>
+      <h2 id="sc-title" className="mt-2 mb-8 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Под вашу работу</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {SCENARIOS.map((s, i) => (
           <Appear inView index={i} key={s.who}>
-            <article className="fx-hover h-full border border-line bg-g1 p-5 hover:border-line2">
+            <article className="fx-hover h-full border border-line bg-g1 p-5 hover:border-line2 rounded-(--radius-md)">
               <p className="font-mono text-[11px] tracking-[0.12em] text-ink3 uppercase">0{i + 1}</p>
               <h3 className="mt-3 text-lg">{s.who}</h3>
               <ul className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink2">
@@ -62,9 +62,9 @@ export function Compare() {
   return (
     <section aria-labelledby="cmp-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Сравнение</Label>
-      <h2 id="cmp-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">KURAI против трёх отдельных подписок</h2>
+      <h2 id="cmp-title" className="mt-2 mb-8 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">KURAI против трёх отдельных подписок</h2>
       {/* прокрутка вбок доступна и с клавиатуры: область получает фокус и имя */}
-      <div tabIndex={0} role="region" aria-labelledby="cmp-title" className="overflow-x-auto border border-line">
+      <div tabIndex={0} role="region" aria-labelledby="cmp-title" className="overflow-x-auto border border-line rounded-(--radius-md)">
         <table className="w-full min-w-[560px] border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-line bg-g1 text-left font-mono text-[11px] tracking-[0.1em] text-ink3 uppercase">
@@ -97,7 +97,7 @@ export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="mx-auto max-w-3xl scroll-mt-20 px-4 pb-20 sm:px-6">
       <Label className="text-acc">Вопросы и ответы</Label>
-      <h2 id="faq-title" className="mt-2 mb-8 font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-normal">Коротко о главном</h2>
+      <h2 id="faq-title" className="mt-2 mb-8 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Коротко о главном</h2>
       <div className="flex flex-col border-t border-line">
         {FAQ.map(([q, a]) => (
           <details key={q} className="fx-faq group border-b border-line">

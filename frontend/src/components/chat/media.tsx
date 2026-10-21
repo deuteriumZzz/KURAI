@@ -285,7 +285,7 @@ export function AudioCard({ audio }: { audio: Extract<MessagePart, { type: "audi
   if (!peaks) {
     return (
       <div className="flex max-w-lg items-center gap-3 rounded-(--radius-md) border border-line bg-g1 p-3">
-        <span aria-hidden="true" className="grid size-8 place-items-center border border-signal-line text-signal"><Volume2 size={15} strokeWidth={1.5} /></span>
+        <span aria-hidden="true" className="grid size-8 place-items-center border border-signal-line text-signal rounded-(--radius-xs)"><Volume2 size={15} strokeWidth={1.5} /></span>
         <audio controls preload="metadata" src={audio.url} className="min-w-0 flex-1" aria-label="Сгенерированное аудио" />
       </div>
     );

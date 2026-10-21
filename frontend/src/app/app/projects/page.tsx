@@ -82,13 +82,13 @@ export default function ProjectsPage() {
         </section>
 
         {projects.length === 0 ? (
-          <section className="border border-dashed border-line p-6 text-[13.5px] text-ink3">Проектов пока нет. Создайте первый через блок «Проекты» в боковой панели.</section>
+          <section className="border border-dashed border-line p-6 text-[13.5px] text-ink3 rounded-(--radius-md)">Проектов пока нет. Создайте первый через блок «Проекты» в боковой панели.</section>
         ) : (
-          <ol className="kurai-project-map grid gap-px bg-line lg:grid-cols-2">
+          <ol className="kurai-project-map grid gap-px overflow-hidden rounded-(--radius-md) bg-line lg:grid-cols-2">
             {projects.map((project, projectIndex) => {
               const outline = projectChatOutline(project, chats);
               return (
-                <li key={project.id} className="kurai-project-card min-w-0 bg-g1 p-5">
+                <li key={project.id} className="kurai-project-card min-w-0 bg-g1 p-5 rounded-(--radius-md)">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <span aria-hidden="true" className="grid size-9 place-items-center bg-g2 text-ink2"><FolderKanban size={17} strokeWidth={1.5} /></span>
@@ -104,7 +104,7 @@ export default function ProjectsPage() {
                     {outline.length > 0 ? outline.map((chat, index) => (
                       <li key={chat.id} className="kurai-project-branch">
                         <Link href={`/app/c/${chat.id}`} className="group flex min-w-0 items-center gap-3 py-2.5">
-                          <span className="grid size-6 shrink-0 place-items-center border border-line font-mono text-[10px] text-ink3">{String(index + 1).padStart(2, "0")}</span>
+                          <span className="grid size-6 shrink-0 place-items-center border border-line font-mono text-[10px] text-ink3 rounded-(--radius-xs)">{String(index + 1).padStart(2, "0")}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[13.5px] text-ink2 group-hover:text-ink">{chat.title}</span>
                             {chat.preview && <span className="mt-0.5 block truncate text-[12px] text-ink3">{chat.preview}</span>}
