@@ -125,3 +125,38 @@ def test_capabilities_and_public_status_reflect_a_configured_image_catalog(db):
     assert status.status_code == 200
     assert status.json()["data"]["modelsOnline"] >= 2
     assert {capability["id"]: capability for capability in status.json()["data"]["capabilities"]} == modes
+
+
+def test_catalog_is_readable_without_signing_in(db):
+    CatalogModel.objects.create(
+        id="acme/chat-pro",
+        name="Chat Pro",
+        provider="Acme",
+        input_modalities=["text"],
+        output_modalities=["text"],
+        prompt_price_usd_per_token="0.000001",
+        completion_price_usd_per_token="0.000002",
+    )
+
+    response = Client().get("/api/v1/models?mode=text")
+
+    assert response.status_code == 200
+    models = {model["id"]: model for model in response.json()["data"]}
+    assert models["acme/chat-pro"]["priceKnown"] is True
+
+
+def test_price_hint_is_available_without_signing_in(db):
+    CatalogModel.objects.create(
+        id="acme/chat-pro",
+        name="Chat Pro",
+        provider="Acme",
+        input_modalities=["text"],
+        output_modalities=["text"],
+        prompt_price_usd_per_token="0.000001",
+        completion_price_usd_per_token="0.000002",
+    )
+
+    response = Client().post("/api/v1/runs/estimate", {"mode": "text", "modelId": "acme/chat-pro", "chars": 500}, content_type="application/json")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["estimatedCostMicro"] > 0

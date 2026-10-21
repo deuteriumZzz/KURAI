@@ -344,8 +344,10 @@ lime/magenta/violet signals and precise motion — never role-play telemetry.
 
 ### Fixed rules
 
-1. The public landing remains a separate workstream and is not redesigned by
-   this plan.
+1. The public landing shares the workspace material (2026-10-21): the same
+   palette, fonts, geometry and `k-index` + `.k-display` page header. Its hero is
+   the real composer with a server-priced estimate; landing data comes from the
+   public catalog API, never from mocks.
 2. `/app/*` uses one family of layouts; no individual feature gets a separate
    visual world.
 3. The central canvas is always the primary task: write, read, inspect or

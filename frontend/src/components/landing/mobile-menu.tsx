@@ -6,9 +6,9 @@ import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 const LINKS = [
-  ["/#models", "Модели"],
-  ["/pricing", "Тарифы"],
-  ["/#faq", "Вопросы и ответы"],
+  ["/models", "Модели"],
+  ["/pricing", "Стоимость"],
+  ["/#faq", "Вопросы"],
   ["/status", "Статус"],
   ["/login", "Войти"],
 ] as const;
@@ -53,13 +53,13 @@ export function MobileMenu() {
                 <motion.div key={href} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 + i * 0.05, duration: 0.22 }}>
                   <Link href={href} onClick={() => setOpen(false)} className="flex items-center justify-between border-b border-line py-4 font-display text-2xl font-medium">
                     {label}
-                    <span className="font-mono text-[12px] text-ink3">0{i + 1}</span>
+                    <span className="k-index">0{i + 1}</span>
                   </Link>
                 </motion.div>
               ))}
             </nav>
-            <Link href="/register" onClick={() => setOpen(false)} className="fx-chamfer fx-sheen mt-auto bg-acc py-3.5 text-center text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
-              Создать аккаунт · 5 запросов бесплатно
+            <Link href="/register" onClick={() => setOpen(false)} className="fx-chamfer fx-sheen mt-auto rounded-(--radius-sm) bg-acc py-3.5 text-center text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+              Создать аккаунт · 10 кредитов
             </Link>
           </motion.div>
         )}

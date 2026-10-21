@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Label } from "@/components/fx/primitives";
 import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 
 export const metadata: Metadata = {
@@ -13,8 +12,8 @@ export default function PricingPage() {
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-3">
-          <Label className="text-acc">Стоимость</Label>
-          <h1 className="max-w-3xl font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-tight font-medium text-balance">
+          <p className="k-index">K/06 · Стоимость</p>
+          <h1 className="max-w-4xl k-display text-[clamp(2.8rem,6.4vw,5rem)] text-balance text-ink">
             Цена каждого запроса видна до отправки
           </h1>
           <p className="max-w-[60ch] text-ink2">Каждый запрос стоит кредиты: цена зависит от модели и длины переписки и видна до отправки. Пакеты кредитов и цены в рублях опубликуем вместе с подключением оплаты.</p>
@@ -26,7 +25,7 @@ export default function PricingPage() {
             ["03 / журнал", "Списывается фактическая цена. Она видна в квитанции ответа и в журнале операций."],
           ].map(([label, text]) => (
             <article key={label} className="bg-g1 p-6">
-              <Label className="text-acc">{label}</Label>
+              <p className="k-index text-acc">{label}</p>
               <p className="mt-5 text-[14px] leading-relaxed text-ink2">{text}</p>
             </article>
           ))}

@@ -2,6 +2,8 @@ from datetime import timedelta
 
 from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
 from django.utils import timezone
@@ -95,6 +97,15 @@ class ServiceStatusView(APIView):
         )
 
 
+class PublicReadThrottle(AnonRateThrottle):
+    """Anonymous catalog and price-hint reads (landing, public model page) are bounded; members are not throttled."""
+
+    scope = "public_read"
+
+    def get_rate(self):
+        return api_settings.DEFAULT_THROTTLE_RATES[self.scope]
+
+
 class KuraiAPIView(APIView):
     """Stable public error envelope for authenticated API resources."""
 
@@ -175,7 +186,11 @@ class EstimateRequestSerializer(serializers.Serializer):
 
 
 class EstimateView(KuraiAPIView):
-    """Live price hint by the quote's own formula. It stores nothing, so the composer never spends the quote limit."""
+    """Live price hint by the quote's own formula. It stores nothing, so the composer never spends the quote limit.
+    Public: the landing shows the same price a member would see before sending."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PublicReadThrottle]
 
     @extend_schema(request=EstimateRequestSerializer, responses=None)
     def post(self, request):

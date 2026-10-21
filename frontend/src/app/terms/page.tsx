@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Условия использова�
 
 export default function Page() {
   return (
-    <DocPage eyebrow="Документы" title="Условия использования" lead="Версия 0.1 · проект для заполнения перед запуском.">
+    <DocPage eyebrow="K/09 · Документы" title="Условия использования" lead="Версия 0.1 · проект для заполнения перед запуском.">
       <LegalDraftNotice />
       <LegalSection title="1. О сервисе">
         <p>KURAI — рабочее пространство для доступа к совместимым AI-моделям через серверную маршрутизацию. Оператор: <OperatorFields />.</p>

@@ -10,12 +10,11 @@ export function SiteHeader() {
         <KuraiLogo />
       </Link>
       <nav aria-label="Основное" className="flex items-center gap-5 text-[13.5px] text-ink2">
-        <Link href="/#models" className="hidden hover:text-ink sm:inline">Режимы</Link>
-        <Link href="/#workflow" className="hidden hover:text-ink md:inline">Как работает</Link>
-        <Link href="/#faq" className="hidden hover:text-ink md:inline">Вопросы</Link>
+        <Link href="/models" className="hidden hover:text-ink sm:inline">Модели</Link>
         <Link href="/pricing" className="hidden hover:text-ink sm:inline">Стоимость</Link>
+        <Link href="/#faq" className="hidden hover:text-ink md:inline">Вопросы</Link>
         <Link href="/login" className="hidden hover:text-ink sm:inline">Войти</Link>
-        <Link href="/register" className="fx-chamfer fx-sheen bg-acc px-3.5 py-2 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+        <Link href="/register" className="fx-chamfer fx-sheen inline-flex h-9 items-center rounded-(--radius-sm) bg-acc px-3.5 text-[13px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
           Начать
         </Link>
         <MobileMenu />
@@ -28,7 +27,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-6 text-[12.5px] text-ink3 sm:px-6">
-        <span className="font-mono tracking-[0.1em]">© 2026 KURAI</span>
+        <span className="k-code">© 2026 KURAI</span>
         <nav aria-label="Документы" className="flex flex-wrap gap-x-5 gap-y-2 [&>a]:inline-flex [&>a]:min-h-6 [&>a]:items-center pointer-coarse:gap-y-0 pointer-coarse:[&>a]:min-h-11">
           <Link href="/status" className="hover:text-ink">Статус</Link>
           <Link href="/changelog" className="hover:text-ink">Что нового</Link>

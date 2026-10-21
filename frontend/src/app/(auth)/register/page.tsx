@@ -8,6 +8,7 @@ import { TelegramLogin } from "@/components/auth/telegram-login";
 import { Button } from "@/components/ui/button";
 import { Segments, useFx } from "@/components/fx/primitives";
 import { emailError, passwordError, passwordScore, SCORE_LABEL } from "@/lib/auth-validate";
+import { afterAuthHref } from "@/lib/landing-draft";
 import { kuraiApi } from "@/lib/kurai-api";
 
 export default function RegisterPage() {
@@ -56,7 +57,7 @@ export default function RegisterPage() {
         // К3 — после входа кабинет один раз показывает короткую загрузку сеанса
         sessionStorage.setItem("kurai:boot", "1");
       } catch {}
-      router.push("/app");
+      router.push(afterAuthHref());
     } catch (error) {
       setErrors({ form: error instanceof Error ? error.message : "Не удалось создать аккаунт." });
       glitch();

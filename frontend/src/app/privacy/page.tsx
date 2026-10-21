@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Политика конфиденц�
 
 export default function Page() {
   return (
-    <DocPage eyebrow="Документы" title="Политика обработки персональных данных" lead="Версия 0.1 · проект для заполнения перед запуском.">
+    <DocPage eyebrow="K/09 · Документы" title="Политика обработки персональных данных" lead="Версия 0.1 · проект для заполнения перед запуском.">
       <LegalDraftNotice />
       <LegalSection title="1. Оператор">
         <p>Оператор KURAI: <OperatorFields />. Оператор определяет цели обработки данных и отвечает на обращения пользователей.</p>

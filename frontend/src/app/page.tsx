@@ -1,172 +1,132 @@
-import { Appear } from "@/components/fx/motion";
 import Link from "next/link";
+import { SignalField } from "@/components/app/signal-field";
+import { Appear } from "@/components/fx/motion";
 import { Decode } from "@/components/fx/decode";
-import { KeyHint, Label, SysLine } from "@/components/fx/primitives";
-import { LiveDemo } from "@/components/landing/live-demo";
-import { NeuralCore } from "@/components/landing/neural-core";
-import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
-import { Compare, Faq, Scenarios } from "@/components/landing/sections";
-import { ModeTabs } from "@/components/landing/mode-tabs";
-import { Gallery } from "@/components/landing/gallery";
-import { Magnetic } from "@/components/landing/magnetic";
+import { Faq } from "@/components/landing/faq";
+import { ModelMarquee } from "@/components/landing/model-marquee";
 import { ScrollStory } from "@/components/landing/scroll-story";
-import { LANDING_CAPABILITIES, LANDING_MODES } from "@/lib/landing-content";
+import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
+import { TryComposer } from "@/components/landing/try-composer";
+import { plural } from "@/lib/format";
+import { publicCatalog, type PublicCatalog } from "@/lib/public-catalog";
+import type { Mode } from "@/types/api";
 
-const FUTURE_CAPABILITIES = LANDING_CAPABILITIES.filter((capability) => !capability.available);
+/** Состояние режима из живого каталога; без сервера — ничего не утверждаем. */
+function ModeState({ catalog, mode, label }: { catalog: PublicCatalog | null; mode: Mode; label: string }) {
+  const state = catalog?.modes.find((m) => m.id === mode);
+  if (!state) return null;
+  return (
+    <li className="flex items-center justify-between gap-3 border-t border-line py-2 text-[13px]">
+      <span className="text-ink2">{label}</span>
+      <span className={state.available ? "k-code text-ok" : "k-code text-ink3"}>{state.available ? "работает" : "скоро"}</span>
+    </li>
+  );
+}
 
-const PRINCIPLES = [
-  { line: "модель выбираете вы", text: "Оставьте «Авто» или откройте каталог: у каждой модели видно назначение и цену. Можно отправить один запрос трём моделям и сравнить ответы." },
-  { line: "цена — до запуска", text: "Под полем ввода видна оценка в кредитах. После ответа точная сумма попадает в квитанцию сообщения и в журнал операций." },
-  { line: "один чат на всю задачу", text: "Исследование, картинка и слайды продолжают тот же разговор. Модель видит, что обсуждали выше, и ничего не нужно копировать." },
-];
-
-export default function Landing() {
+/**
+ * Лендинг по плану: шапка → первый экран с настоящим полем ввода → три карточки → как это работает →
+ * вопросы → призыв → бегущая строка каталога → подвал. Материал, шрифты и геометрия — те же, что в кабинете.
+ */
+export default async function Landing() {
+  const catalog = await publicCatalog();
+  const providers = catalog?.providers ?? [];
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-
-      <main>
-        {/* hero */}
-        <section className="fx-landing-stage relative -mt-[76px] overflow-hidden pt-[76px]">
-          <div aria-hidden="true" className="fx-landing-vertical absolute top-36 right-[max(1rem,calc((100vw-80rem)/2))] hidden h-96 w-96 lg:block">
-            <NeuralCore />
-          </div>
-          <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 pt-24 pb-28 sm:px-6 sm:pt-32 sm:pb-40">
-            <Label className="text-acc">
-              <Decode text="KURAI / рабочее пространство для AI" duration={600} />
-            </Label>
-            <h1 className="fx-weight-in max-w-[46rem] font-display text-[clamp(3rem,6.6vw,5.6rem)] leading-[0.95] font-semibold text-balance">
-              Сотни нейросетей в одном чате,<br />
-              {/* 45 — строка набирает вес по мере прокрутки (переменный шрифт, без картинок) */}
-              <span className="k-weight-scroll text-ink3">цена видна до отправки</span>
+      <main id="k-main">
+        {/* первый экран — как главная кабинета: индекс, заголовок, поле ввода */}
+        <section className="relative overflow-hidden">
+          <SignalField />
+          <div className="relative mx-auto flex w-full max-w-[60rem] flex-col px-4 pt-[clamp(3rem,9vh,6.5rem)] pb-20 sm:px-6">
+            <p className="k-index mb-5">K/00 · {catalog ? `${plural(catalog.textModels, ["модель", "модели", "моделей"])} в каталоге` : "Нейросети в одном чате"}</p>
+            <h1 className="k-display text-[clamp(3.1rem,8.4vw,6.6rem)] text-ink">
+              {/* К2 — заголовок собирается из кодов один раз */}
+              <Decode text="Сотни нейросетей" duration={520} />
+              <br />
+              {/* 45 — вторая строка набирает вес по мере прокрутки */}
+              <span className="k-weight-scroll">в одном чате</span>
             </h1>
-            <p className="max-w-[53ch] text-[17px] leading-relaxed text-ink2">
-              Напишите задачу как есть: KURAI подберёт модель или даст выбрать самому. Каждый вариант ответа сохраняется веткой, к нему можно вернуться.
+            <p className="mt-6 max-w-[36rem] text-[16px] leading-relaxed text-ink2">
+              Текст, исследования и слайды. KURAI подберёт модель сам или даст выбрать, а цена каждого запроса видна до отправки.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Magnetic>
-                <Link href="/register" className="fx-chamfer fx-sheen inline-block bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
-                  Создать аккаунт
-                </Link>
-              </Magnetic>
-              <Link href="/login" className="inline-flex min-h-6 items-center text-[14px] text-ink2 hover:text-ink pointer-coarse:min-h-11">
-                Войти
-              </Link>
-              <Label>текст · research · изображения · слайды</Label>
-            </div>
-            <div className="fx-landing-readout mt-4 grid max-w-2xl grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3 rounded-(--radius-md) overflow-hidden">
-              <div className="bg-bg p-3"><Label className="text-acc">01 / ветки</Label><p>Каждый вариант ответа сохраняется</p></div>
-              <div className="bg-bg p-3"><Label className="text-acc">02 / модель</Label><p>Сами или «Авто», с ценой до запуска</p></div>
-              <div className="bg-bg p-3"><Label className="text-acc">03 / журнал</Label><p>Каждое списание видно в балансе</p></div>
+            <div className="mt-10">
+              <TryComposer modes={catalog?.modes ?? null} />
             </div>
           </div>
         </section>
 
-        <section id="models" aria-label="Готовые режимы" className="border-y border-line bg-g1">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4 sm:px-6">
-            <Label>готово сейчас</Label>
-            {LANDING_MODES.map((mode, index) => (
-              <span key={mode.id} className="font-mono text-[12px] tracking-[0.08em] text-ink2"><span className="mr-2 text-acc">0{index + 1}</span>{mode.label}</span>
-            ))}
+        {/* три карточки из плана: текст, медиа, работа */}
+        <section aria-labelledby="cap-title" className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
+          <p className="k-index">K/01 · Возможности</p>
+          <h2 id="cap-title" className="mt-3 mb-8 font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium">
+            Что можно поручить
+          </h2>
+          <div className="grid gap-3 md:grid-cols-[1.15fr_0.85fr_1fr]">
+            <Appear inView index={0} className="flex flex-col gap-4 rounded-(--radius-md) border border-line bg-g1 p-6">
+              <p className="k-index text-acc">01 / Текст и research</p>
+              <h3 className="text-lg font-medium">Разговор и исследование</h3>
+              <p className="text-[14px] leading-relaxed text-ink2">
+                Спрашивайте, уточняйте, просите новую версию другой моделью — прежняя останется в ветке. Research ищет и читает источники и даёт ссылки на них.
+              </p>
+              {providers.length > 0 && (
+                <p className="mt-auto text-[13px] text-ink3">
+                  {providers
+                    .slice(0, 4)
+                    .map((p) => p.name)
+                    .join(", ")}{" "}
+                  и другие
+                </p>
+              )}
+            </Appear>
+            <Appear inView index={1} className="flex flex-col gap-4 rounded-(--radius-md) border border-line bg-g1 p-6">
+              <p className="k-index text-acc">02 / Медиа</p>
+              <h3 className="text-lg font-medium">Изображения, видео и голос</h3>
+              <p className="text-[14px] leading-relaxed text-ink2">Опишите картинку словами или сошлитесь на сообщение выше. Готовые работы собираются в медиатеке.</p>
+              <ul className="mt-auto">
+                <ModeState catalog={catalog} mode="image" label="Изображения" />
+                <ModeState catalog={catalog} mode="video" label="Видео" />
+                <ModeState catalog={catalog} mode="audio" label="Озвучка" />
+              </ul>
+            </Appear>
+            <Appear inView index={2} className="flex flex-col gap-4 rounded-(--radius-md) border border-line bg-g1 p-6">
+              <p className="k-index text-acc">03 / Работа</p>
+              <h3 className="text-lg font-medium">Слайды и артефакты</h3>
+              <p className="text-[14px] leading-relaxed text-ink2">
+                Попросите презентацию из того, что уже обсудили: структура и текст слайдов появятся рядом с чатом. Удачный ответ сохраните артефактом, чтобы вернуться к нему позже.
+              </p>
+              <ul className="mt-auto">
+                <ModeState catalog={catalog} mode="slides" label="Слайды" />
+                <ModeState catalog={catalog} mode="research" label="Deep Research" />
+              </ul>
+            </Appear>
           </div>
-        </section>
-
-        {/* demo */}
-        <section id="workflow" className="mx-auto grid max-w-6xl scroll-mt-20 gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="fx-rise flex flex-col gap-4">
-            <Label className="text-acc">Как это работает</Label>
-            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
-              Запрос, модель и цена — на одном экране
-            </h2>
-            <p className="max-w-[52ch] text-ink2">
-              Пишите задачу в поле ввода. Слеш-команды переключают режим, модель можно оставить на «Авто». Цена видна до отправки, ход работы — в ответе.
-            </p>
-            <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink3">
-              <span><KeyHint>/i</KeyHint> изображение</span>
-              <span><KeyHint>/r</KeyHint> research</span>
-              <span><KeyHint>/s</KeyHint> слайды</span>
-            </p>
-          </div>
-          <LiveDemo />
         </section>
 
         <ScrollStory />
-
-        {/* features */}
-        <section aria-label="Возможности" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-          <div className="grid gap-px border border-line bg-line md:grid-cols-2 rounded-(--radius-md) overflow-hidden">
-            {LANDING_MODES.map((f, i) => (
-              <Appear inView index={i} key={f.id} className="bg-g1">
-              <article className="fx-hover h-full p-6">
-                <Label className="text-acc">{f.eyebrow}</Label>
-                <h3 className="mt-5 text-lg font-medium">{f.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink2">{f.description}</p>
-              </article>
-              </Appear>
-            ))}
-          </div>
-        </section>
-
-
-        {/* why */}
-        <section className="border-y border-line bg-g1">
-          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-3">
-            {PRINCIPLES.map((w, i) => (
-              <Appear inView index={i} key={w.line} className="flex flex-col gap-3">
-                <SysLine tone="acc">{w.line}</SysLine>
-                <p className="text-[14.5px] leading-relaxed text-ink2">{w.text}</p>
-              </Appear>
-            ))}
-          </div>
-        </section>
-
-        <ModeTabs />
-        <Gallery />
-        <Scenarios />
-        <Compare />
-
-        {/* capability boundary */}
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Что работает сейчас</h2>
-            <Link href="/status" className="inline-flex min-h-6 items-center text-[14px] text-acc hover:underline pointer-coarse:min-h-11">
-              Статус сервисов
-            </Link>
-          </div>
-          <div className="grid gap-px border border-line bg-line md:grid-cols-[1.35fr_0.65fr] rounded-(--radius-md) overflow-hidden">
-            <div className="bg-g1 p-6">
-              <Label className="text-acc">в работе</Label>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {LANDING_MODES.map((mode, index) => (
-                  <div key={mode.id} className="border-t border-line pt-3 text-[14px] text-ink2"><span className="mr-2 font-mono text-acc">0{index + 1}</span>{mode.label}</div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-bg p-6">
-              <Label>скоро</Label>
-              <div className="mt-5 flex flex-col gap-3">
-                {FUTURE_CAPABILITIES.map((capability) => <p key={capability.id} className="text-[14px] text-ink3"><span className="mr-2 text-warn">◇</span>{capability.label} · скоро</p>)}
-              </div>
-            </div>
-          </div>
-          <p className="mt-4 text-[12.5px] text-ink3">Видео и аудио включатся, когда в каталоге OpenRouter появятся подходящие модели. Актуальное состояние — на странице статуса.</p>
-        </section>
-
         <Faq />
 
-        {/* final cta */}
-        <section className="fx-landing-final fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl rounded-(--radius-md)">
-          <div className="relative flex flex-col items-start gap-5 p-8 sm:p-12">
-            <h2 className="max-w-2xl font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
-              Начните с одного запроса. Первые кредиты — при регистрации.
+        <section aria-labelledby="cta-title" className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
+          <div className="flex flex-col items-start gap-5 rounded-(--radius-lg) border border-line bg-g1 p-8 sm:p-12">
+            <p className="k-index">K/04 · Начать</p>
+            <h2 id="cta-title" className="k-display text-[clamp(2.6rem,6vw,4.4rem)] text-ink">
+              Начните с 10 кредитов
             </h2>
-            <Link href="/register" className="fx-chamfer bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
-              Создать аккаунт
-            </Link>
+            <p className="max-w-[40rem] text-[15px] leading-relaxed text-ink2">
+              Регистрация по email. Кредиты приходят на баланс сразу, их хватит на несколько первых запросов.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link href="/register" className="fx-chamfer fx-sheen inline-flex h-12 items-center rounded-(--radius-sm) bg-acc px-5 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">
+                Создать аккаунт
+              </Link>
+              <Link href="/login" className="inline-flex min-h-11 items-center text-[14px] text-ink2 hover:text-ink">
+                Войти
+              </Link>
+            </div>
           </div>
         </section>
-      </main>
 
+        <ModelMarquee providers={providers} />
+      </main>
       <SiteFooter />
     </div>
   );

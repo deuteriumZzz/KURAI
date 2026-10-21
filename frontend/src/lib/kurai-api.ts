@@ -31,6 +31,8 @@ export type KuraiCatalogModel = {
   outputModalities: string[];
   supportedModes: Mode[];
   priceHintMicro: number;
+  /** false — у медиамодели нет цены в снимке каталога; priceHintMicro тогда лишь минимальная заглушка. */
+  priceKnown?: boolean;
 };
 export type KuraiCapability = { id: Mode; available: boolean; modelCount: number };
 export type KuraiServiceStatus = { status: "ok" | "degraded"; modelsOnline: number; capabilities: KuraiCapability[]; reasons: string[] };

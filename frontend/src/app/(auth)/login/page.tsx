@@ -7,6 +7,7 @@ import { Field } from "@/components/auth/field";
 import { TelegramLogin } from "@/components/auth/telegram-login";
 import { Button } from "@/components/ui/button";
 import { emailError, loginPasswordError } from "@/lib/auth-validate";
+import { afterAuthHref } from "@/lib/landing-draft";
 import { kuraiApi, KuraiApiError } from "@/lib/kurai-api";
 import { useFx } from "@/components/fx/primitives";
 
@@ -52,7 +53,7 @@ export default function LoginPage() {
         // К3 — после входа кабинет один раз показывает короткую загрузку сеанса
         sessionStorage.setItem("kurai:boot", "1");
       } catch {}
-      router.push("/app");
+      router.push(afterAuthHref());
     } catch (error) {
       const message = error instanceof Error ? error.message : "Не удалось войти. Попробуйте ещё раз.";
       // 65 — неверные данные показываются у поля пароля: оно качается, рамка краснеет, причина под ним

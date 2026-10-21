@@ -12,7 +12,7 @@ const RELEASES = [
 
 export default function ChangelogPage() {
   return (
-    <DocPage eyebrow="Что нового" title="Обновления KURAI" lead="Что изменилось в KURAI, по датам выпуска.">
+    <DocPage eyebrow="K/08 · Что нового" title="Обновления KURAI" lead="Что изменилось в KURAI, по датам выпуска.">
       <ol className="flex flex-col gap-6">
         {RELEASES.map((r) => (
           <li key={r.date} className="border-l border-acc-line pl-5">
