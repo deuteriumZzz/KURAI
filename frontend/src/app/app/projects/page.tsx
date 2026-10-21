@@ -77,8 +77,8 @@ export default function ProjectsPage() {
       </header>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
         <section className="kurai-projects-intro">
-          <p className="text-[17px] text-ink">Проект сохраняет связанные решения, а не просто собирает чаты в папку.</p>
-          <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-ink2">Выберите ветку, чтобы продолжить конкретный ход работы. Состав проекта не создаётся автоматически и не скрывает обычную историю.</p>
+          <p className="text-[17px] text-ink">Проект объединяет чаты на одну тему и общие инструкции для модели.</p>
+          <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-ink2">Чат попадает в проект, когда вы его туда перенесёте. В общей истории он тоже остаётся.</p>
         </section>
 
         {projects.length === 0 ? (

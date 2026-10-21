@@ -4,7 +4,7 @@ import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 
 export const metadata: Metadata = {
   title: "Стоимость запусков KURAI",
-  description: "KURAI показывает оценку стоимости до запуска и итог операции после завершения.",
+  description: "Оплата за запросы в кредитах. Цена видна до отправки, списание — в журнале операций.",
 };
 
 export default function PricingPage() {
@@ -15,15 +15,15 @@ export default function PricingPage() {
         <div className="flex flex-col gap-3">
           <Label className="text-acc">Стоимость</Label>
           <h1 className="max-w-3xl font-display text-[clamp(2rem,4.5vw,3.4rem)] leading-tight font-medium text-balance">
-            Стоимость должна быть понятна до того, как работа началась
+            Цена каждого запроса видна до отправки
           </h1>
-          <p className="max-w-[60ch] text-ink2">KURAI создаёт оценку для конкретного запроса, сохраняет статус запуска и фиксирует итог в журнале операций. Мы не показываем вымышленные тарифы до подключения платёжного контура.</p>
+          <p className="max-w-[60ch] text-ink2">Каждый запрос стоит кредиты: цена зависит от модели и длины переписки и видна до отправки. Пакеты кредитов и цены в рублях опубликуем вместе с подключением оплаты.</p>
         </div>
         <section aria-label="Как устроена стоимость" className="grid gap-px border border-line bg-line md:grid-cols-3 rounded-(--radius-md) overflow-hidden">
           {[
-            ["01 / оценка", "Перед отправкой система проверяет доступный маршрут и создаёт оценку стоимости."],
-            ["02 / запуск", "Сумма резервируется только на время работы — состояние задачи остаётся наблюдаемым."],
-            ["03 / журнал", "После завершения итог отражается в журнале операций вместе с результатом и причиной статуса."],
+            ["01 / оценка", "Под полем ввода видна оценка в кредитах для выбранной модели."],
+            ["02 / резерв", "На время работы оценка резервируется на балансе. Если модель не ответила, резерв возвращается."],
+            ["03 / журнал", "Списывается фактическая цена. Она видна в квитанции ответа и в журнале операций."],
           ].map(([label, text]) => (
             <article key={label} className="bg-g1 p-6">
               <Label className="text-acc">{label}</Label>
@@ -31,7 +31,7 @@ export default function PricingPage() {
             </article>
           ))}
         </section>
-        <p className="max-w-[62ch] text-[13px] leading-relaxed text-ink3">Подписки, способы оплаты, фискализация и условия возвратов появятся здесь только после согласования юридической модели и подключения провайдера платежей.</p>
+        <p className="max-w-[62ch] text-[13px] leading-relaxed text-ink3">Способы оплаты, чеки и правила возврата денег появятся здесь вместе с подключением оплаты.</p>
       </main>
       <SiteFooter />
     </div>

@@ -28,7 +28,7 @@ export function ModeTabs() {
     <section aria-labelledby="modes-title" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <Label className="text-acc">Режимы</Label>
       <h2 id="modes-title" className="mt-2 mb-6 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">
-        Один контекст — четыре готовых режима
+        Четыре режима в одном чате
       </h2>
       <div role="tablist" aria-label="Режимы" className="isolate flex flex-wrap gap-2">
         {TABS.map((t) => (
@@ -58,16 +58,16 @@ export function ModeTabs() {
               <div className="flex max-w-2xl flex-col gap-3 text-[14.5px] leading-relaxed">
                 <SysLine>Режим: текст · модель выбираете вы</SysLine>
                 <p>
-                  Соберите задачу в одном месте, выберите модель под неё и продолжайте разговор без потери контекста. Перед запуском KURAI показывает оценку работы.
+                  Задайте вопрос и продолжайте разговор: модель помнит всё, что было выше. Перед отправкой видно, сколько кредитов уйдёт.
                 </p>
-                <Label>ответ · ветка · следующий шаг</Label>
+                <Label>ответ · версии · продолжение</Label>
               </div>
             )}
             {tab === "research" && (
               <div className="grid max-w-2xl gap-px border border-line bg-line sm:grid-cols-[0.9fr_1.1fr] rounded-(--radius-md) overflow-hidden">
                 <div className="bg-g1 p-4">
-                  <Label className="text-acc">контур вопроса</Label>
-                  <p className="mt-5 text-[14px] leading-relaxed text-ink2">Границы темы, допущения и нужный формат результата остаются видимыми рядом с ходом работы.</p>
+                  <Label className="text-acc">план</Label>
+                  <p className="mt-5 text-[14px] leading-relaxed text-ink2">В ответе видно, на каком шаге работа: подбор модели, чтение источников или отчёт.</p>
                 </div>
                 <div className="bg-bg p-4">
                   <Label>опоры</Label>

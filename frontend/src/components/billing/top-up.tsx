@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Label, Segments, SysLine } from "@/components/fx/primitives";
+import { Label, Segments } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
 import type { Micro } from "@/types/api";
 
@@ -18,13 +18,12 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
           {formatCredits(initialMicro, { unit: false })} <span className="text-lg text-ink3">кредитов</span>
         </p>
         <Segments value={grantMicro > 0 ? Math.min(1, initialMicro / grantMicro) : 0} count={20} label="Баланс относительно стартового начисления" />
-        <p className="text-[13px] text-ink3">Баланс формируется только серверным журналом операций.</p>
+        <p className="text-[13px] text-ink3">Баланс считается по журналу операций ниже.</p>
       </div>
       <div className="flex flex-col justify-center gap-3 p-1 md:p-2">
         <h2 id="top-up-title" className="text-[15px] font-semibold">Пополнение</h2>
-        <p className="max-w-md text-[13px] leading-6 text-ink2">Платёжный контур ещё не подключён. Мы не имитируем карту, СБП, чек или зачисление, пока операция не может быть проведена и подтверждена.</p>
+        <p className="max-w-md text-[13px] leading-6 text-ink2">Оплата картой и через СБП ещё не подключена. Как только подключим, пополнить баланс можно будет здесь.</p>
         <Button variant="secondary" size="lg" disabled className="w-full sm:w-max">Пополнение скоро</Button>
-        <SysLine tone="warn">Текущий баланс и журнал ниже остаются доступными.</SysLine>
       </div>
     </section>
   );

@@ -20,13 +20,13 @@ export default async function ModelsPage(props: PageProps<"/app/models">) {
     <main className="kurai-registry-page flex min-h-0 flex-1 flex-col overflow-y-auto">
       <header className="kurai-registry-page__header flex h-14 shrink-0 items-center justify-between gap-3 px-4 pl-16 md:pl-6">
         <PageTitle title="Все модели" />
-        <Label>каталог · модель всегда выбирается до запуска</Label>
+        <Label>каталог</Label>
       </header>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 md:px-6">
         <section className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="k-index mb-3">Реестр маршрутов</p>
-            <p className="max-w-2xl text-[15px] leading-relaxed text-ink2">Модель выбирается до запуска и видна в каждом ответе. В поле ввода можно оставить «Авто» — или закрепить маршрут здесь, сравнить до трёх и открыть задачу.</p>
+            <p className="max-w-2xl text-[15px] leading-relaxed text-ink2">Выберите модель для поля ввода или сравните до трёх на одном запросе. «Авто» подбирает модель сам; в каждом ответе видно, какая отвечала.</p>
           </div>
           <Link href="/app" className="k-tool border border-line text-ink">Открыть рабочее поле</Link>
         </section>

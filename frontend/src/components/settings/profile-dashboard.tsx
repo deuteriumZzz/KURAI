@@ -89,7 +89,7 @@ export function ProfileDashboard() {
               </div>
             ))}
           </dl>
-          <p className="bg-s1 p-4 text-[13px] leading-6 text-ink2 rounded-(--radius-md)">Публичная карточка профиля и расчёт экономии появятся после утверждения тарифной политики. Сейчас KURAI не публикует вашу активность и не строит вымышленные сравнения.</p>
+          <p className="bg-s1 p-4 text-[13px] leading-6 text-ink2 rounded-(--radius-md)">Публичная карточка профиля и расчёт экономии появятся вместе с тарифами.</p>
         </section>
       </div>
       {!kuraiApi && <p className="mx-auto w-full max-w-5xl px-4 pb-6 text-[12px] text-ink3 md:px-6">Офлайн-прототип · значения на этом экране демонстрационные.</p>}

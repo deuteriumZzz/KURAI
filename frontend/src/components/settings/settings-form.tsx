@@ -234,7 +234,7 @@ export function SettingsForm({ user }: { user: User }) {
         />
         <div className="border border-line bg-g1 px-4 py-3 rounded-(--radius-md)">
           <p className="text-[14px]">Письма о балансе и чеках</p>
-          <p className="mt-0.5 text-[12.5px] text-ink3">Не включены: рассылка и чековый контур появятся вместе с платёжным провайдером.</p>
+          <p className="mt-0.5 text-[12.5px] text-ink3">Появятся вместе с оплатой.</p>
         </div>
         <Switch
           label="Звуки интерфейса"
@@ -251,7 +251,7 @@ export function SettingsForm({ user }: { user: User }) {
       <Section title="Сеансы и устройства">
         <div className="bg-s1 px-4 py-3 rounded-(--radius-md)">
           <p className="text-[14px]">Текущий веб-сеанс активен</p>
-          <p className="mt-0.5 text-[12.5px] text-ink3">История устройств и удалённое завершение сеансов будут добавлены после отдельной модели device sessions. Сейчас для выхода используйте меню аккаунта.</p>
+          <p className="mt-0.5 text-[12.5px] text-ink3">Список устройств появится позже. Выйти из аккаунта можно в меню профиля внизу боковой панели.</p>
         </div>
       </Section>
 
@@ -277,8 +277,8 @@ export function SettingsForm({ user }: { user: User }) {
         </div>
         <Hatch tone="err">
           <div className="flex flex-col gap-3">
-            <p>Удаление данных пока не активировано: перед запуском нужна утверждённая политика хранения, срок отмены и юридически корректный процесс подтверждения.</p>
-            <p className="text-[13px] text-ink2">Не показываем кнопку «удалить» для вида — до включения процесса можно скачать архив выше.</p>
+            <p>Удалить аккаунт из интерфейса пока нельзя.</p>
+            <p className="text-[13px] text-ink2">Скачать все свои данные можно выше, в разделе экспорта.</p>
           </div>
         </Hatch>
       </Section>

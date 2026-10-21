@@ -11,8 +11,8 @@ const cond = Sofia_Sans_Extra_Condensed({ variable: "--font-sofia-cond", subsets
 const mono = Martian_Mono({ variable: "--font-martian", subsets: ["latin", "cyrillic"], axes: ["wdth"] });
 
 export const metadata: Metadata = {
-  title: "KURAI — нейросети в одном терминале",
-  description: "Текст, изображения, видео и голос от ведущих нейросетей в едином чате. Цена каждого запроса видна до отправки.",
+  title: "KURAI — нейросети в одном чате",
+  description: "Сотни моделей через один чат: текст, исследования, изображения и слайды. Цена каждого запроса видна до отправки.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 

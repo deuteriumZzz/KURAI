@@ -93,7 +93,7 @@ export default function MediaPage() {
           </div>
         </div>
 
-        {quotaBytes && used > 0.9 && <Hatch>Хранилище почти заполнено — удалите старые работы или перейдите на тариф Ultra.</Hatch>}
+        {quotaBytes && used > 0.9 && <Hatch>Хранилище почти заполнено: удалите старые работы, чтобы освободить место.</Hatch>}
 
         {items.length > 0 ? (
           <MediaLibrary items={items} lightbox={lightbox} visual={visual} showPrototypeCollections={state === "offline"} />

@@ -67,7 +67,7 @@ export default function LoginPage() {
   return (
     <>
       <h1 className="font-display text-4xl font-medium">Вход</h1>
-      <p className="mt-2 text-[14px] text-ink2">С возвращением — продолжите с того же места.</p>
+      <p className="mt-2 text-[14px] text-ink2">Войдите, чтобы открыть свои чаты.</p>
       <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-4">
         <Field id="email" label="Email" type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
         <Field

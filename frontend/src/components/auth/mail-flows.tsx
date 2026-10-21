@@ -24,8 +24,8 @@ function Screen({ title, children, tag }: { title: string; children: ReactNode; 
 }
 
 const Unavailable = () => (
-  <Screen title="Восстановление недоступно" tag="ПОЧТА · НЕ ПОДКЛЮЧЕНА">
-    <p>На этом сервере ещё не подключена отправка писем. Мы не принимаем email, пока не можем отправить настоящее письмо для сброса.</p>
+  <Screen title="Восстановление недоступно">
+    <p>На этом сервере не настроена отправка писем, поэтому восстановить пароль по почте пока нельзя.</p>
     {BACK}
   </Screen>
 );
@@ -54,8 +54,8 @@ export function ResetFlow({ uid, token }: { uid?: string; token?: string }) {
 
   if (phase === "sent")
     return (
-      <Screen title="Проверьте почту" tag="ССЫЛКА · ОДНОРАЗОВАЯ · СРОК — В ПИСЬМЕ">
-        <p>Если адрес {email.trim()} зарегистрирован, письмо со ссылкой для сброса уже в пути. Не пришло за несколько минут — проверьте «Спам» или запросите ещё раз.</p>
+      <Screen title="Проверьте почту">
+        <p>Если адрес {email.trim()} зарегистрирован, мы отправили на него ссылку для сброса. Она одноразовая, срок указан в письме. Письма нет через несколько минут — проверьте «Спам» или запросите ещё раз.</p>
         {BACK}
       </Screen>
     );
@@ -202,7 +202,7 @@ export function VerifyFlow({ token }: { token?: string }) {
   if (phase === "checking") return <Screen title="Проверяем ссылку…"><p>Секунду.</p></Screen>;
   if (phase === "done")
     return (
-      <Screen title="Адрес подтверждён" tag="EMAIL · ПОДТВЕРЖДЁН">
+      <Screen title="Адрес подтверждён">
         <p>Теперь на эту почту можно восстановить пароль и получать письма о важных событиях.</p>
         <Link href="/app" className="mt-7 block bg-acc px-4 py-3 text-center text-[14px] font-semibold text-acc-ink fx-chamfer fx-sheen rounded-(--radius-sm)">
           Открыть кабинет

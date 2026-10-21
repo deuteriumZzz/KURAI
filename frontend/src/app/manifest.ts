@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "KURAI — нейросети в одном терминале",
+    name: "KURAI — нейросети в одном чате",
     short_name: "KURAI",
-    description: "Текст, изображения, видео и голос от ведущих нейросетей в едином чате.",
+    description: "Сотни моделей через один чат. Цена каждого запроса видна до отправки.",
     start_url: "/app",
     display: "standalone",
     background_color: "#151515",

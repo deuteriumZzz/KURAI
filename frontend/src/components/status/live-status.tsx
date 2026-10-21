@@ -18,7 +18,7 @@ const REASONS: Record<string, string> = {
   catalog_empty: "каталог моделей ещё не синхронизирован",
   catalog_stale: "каталог моделей требует обновления",
   provider_not_configured: "ключ провайдера не настроен",
-  mail_unconfigured: "почта не подключена: сброс пароля и подтверждение адреса недоступны",
+  mail_unconfigured: "почта не настроена: сброс пароля и подтверждение адреса не работают",
 };
 
 /** Status surface backed only by the deployment's live capability contract. */

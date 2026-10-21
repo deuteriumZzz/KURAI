@@ -138,7 +138,7 @@ export function BillingDashboard() {
             <SpendChart days={days} />
           ) : (
             <div className="flex min-h-40 items-center bg-g1 p-5 text-[13px] text-ink3 rounded-(--radius-md)">
-              Аналитика расходов появится, когда накопится история операций. Журнал справа — источник текущих данных.
+              График появится, когда накопится история списаний.
             </div>
           )
         ) : (
@@ -151,7 +151,7 @@ export function BillingDashboard() {
       {connected ? (
         <section className="bg-s1 p-5 rounded-(--radius-md)">
           <h2 className="text-[15px] font-semibold">Тарифы и пополнения</h2>
-          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink3">Цены, подписки и пополнения появятся только после подключения платёжного провайдера, правил расчёта и выдачи чеков. До этого KURAI показывает фактический серверный баланс и историю кредитов выше.</p>
+          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink3">Тарифы и пополнение появятся вместе с оплатой. Баланс и журнал выше — настоящие данные вашего аккаунта.</p>
         </section>
       ) : (
         <>

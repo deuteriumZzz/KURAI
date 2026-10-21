@@ -17,7 +17,7 @@ export function Gallery() {
         <div>
           <Label className="text-acc">Витрина</Label>
           <h2 id="gal-title" className="mt-2 font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">
-            Из задачи в результат
+            Примеры задач
           </h2>
         </div>
         <Label>сценарии</Label>
@@ -34,7 +34,7 @@ export function Gallery() {
               <figcaption className="flex flex-col gap-1 p-3">
                 <span className="text-[13.5px]">{w.title}</span>
                 <Label>
-                  {w.mode} · пример потока
+                  {w.mode} · пример
                 </Label>
               </figcaption>
             </figure>

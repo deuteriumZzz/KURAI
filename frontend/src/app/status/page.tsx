@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Статус KURAI", description: "�
 
 export default function StatusPage() {
   return (
-    <DocPage eyebrow="Статус" title="Состояние сервисов" lead="Здесь отображается только фактическая доступность подключённых возможностей, без выдуманного uptime или неактивных интеграций.">
+    <DocPage eyebrow="Статус" title="Состояние сервисов" lead="Что работает прямо сейчас — по данным сервера.">
       <LiveStatus />
     </DocPage>
   );

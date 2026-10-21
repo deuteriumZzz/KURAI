@@ -44,11 +44,11 @@ export default function ArtifactsPage() {
       </header>
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-7 md:px-6">
         <section className="max-w-2xl">
-          <p className="text-[17px] text-ink">Ответ становится рабочим объектом, когда его нужно вернуть в контекст.</p>
-          <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">Каждый артефакт хранит срез ответа, модель, стоимость и ссылки — исходный чат остаётся доступен отдельно.</p>
+          <p className="text-[17px] text-ink">Ответы, которые вы сохранили, чтобы вернуться к ним позже.</p>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">Артефакт хранит текст ответа, модель и стоимость. Исходный чат остаётся на месте.</p>
         </section>
         {state === "loading" && <p className="flex items-center gap-2 text-[13px] text-ink3"><LoaderCircle size={14} className="animate-spin" /> Загружаю приватную библиотеку…</p>}
-        {state === "offline" && <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5"><p className="max-w-xl text-[13.5px] leading-relaxed text-ink3">Офлайн-прототип не создаёт фиктивные сохранения. Подключите API, чтобы работать с личной библиотекой.</p><Link href="/app/c/r4k2" className="k-tool border border-line text-ink">Открыть пример задачи</Link></div>}
+        {state === "offline" && <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5"><p className="max-w-xl text-[13.5px] leading-relaxed text-ink3">В офлайн-прототипе артефакты не сохраняются. Подключите API, чтобы видеть свою библиотеку.</p><Link href="/app/c/r4k2" className="k-tool border border-line text-ink">Открыть пример задачи</Link></div>}
         {state === "error" && <p role="alert" className="border-l border-err pl-3 text-[13px] text-err">Не удалось получить артефакты. Проверьте подключение и обновите страницу.</p>}
         {state === "ready" && artifacts.length === 0 && <section className="border border-dashed border-line p-6 text-[13.5px] text-ink3 rounded-(--radius-md)">Пока ничего не сохранено. Откройте полезный ответ в чате и выберите «Сохранить как артефакт».</section>}
         {state === "ready" && artifacts.length > 0 && (

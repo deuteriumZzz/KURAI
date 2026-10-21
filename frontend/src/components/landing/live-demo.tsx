@@ -93,7 +93,7 @@ export function LiveDemo() {
           {PROMPT.slice(0, typed) || <span className="text-ink3">…</span>}
           {phase === "typing" && <span className="fx-caret text-acc">▍</span>}
         </div>
-        {phase !== "idle" && phase !== "typing" && <SysLine decode>Маршрут определён · оценка до запуска</SysLine>}
+        {phase !== "idle" && phase !== "typing" && <SysLine decode>Модель выбрана · цена посчитана</SysLine>}
         {showAnswer && (
           <div className="text-[14px] leading-relaxed">
             <StreamText text={ANSWER.slice(0, streamed)} done={streamed >= ANSWER.length} />

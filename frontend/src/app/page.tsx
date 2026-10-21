@@ -15,9 +15,9 @@ import { LANDING_CAPABILITIES, LANDING_MODES } from "@/lib/landing-content";
 const FUTURE_CAPABILITIES = LANDING_CAPABILITIES.filter((capability) => !capability.available);
 
 const PRINCIPLES = [
-  { line: "выбор остаётся за вами", text: "KURAI не прячет модель за красивой кнопкой: сравнивайте доступные варианты и выбирайте тот, который подходит текущей задаче." },
-  { line: "цена — до запуска", text: "Перед работой создаётся оценка. Статус запуска и итог остаются видимыми в контексте чата, а не растворяются в фоне." },
-  { line: "каждый шаг связан", text: "Ответ, исследование, изображение и структура презентации растут из одной ветки — без копирования между десятком окон." },
+  { line: "модель выбираете вы", text: "Оставьте «Авто» или откройте каталог: у каждой модели видно назначение и цену. Можно отправить один запрос трём моделям и сравнить ответы." },
+  { line: "цена — до запуска", text: "Под полем ввода видна оценка в кредитах. После ответа точная сумма попадает в квитанцию сообщения и в журнал операций." },
+  { line: "один чат на всю задачу", text: "Исследование, картинка и слайды продолжают тот же разговор. Модель видит, что обсуждали выше, и ничего не нужно копировать." },
 ];
 
 export default function Landing() {
@@ -36,12 +36,12 @@ export default function Landing() {
               <Decode text="KURAI / рабочее пространство для AI" duration={600} />
             </Label>
             <h1 className="fx-weight-in max-w-[46rem] font-display text-[clamp(3rem,6.6vw,5.6rem)] leading-[0.95] font-semibold text-balance">
-              Меньше шума.<br />
+              Сотни нейросетей в одном чате,<br />
               {/* 45 — строка набирает вес по мере прокрутки (переменный шрифт, без картинок) */}
-              <span className="k-weight-scroll text-ink3">Больше ясной работы.</span>
+              <span className="k-weight-scroll text-ink3">цена видна до отправки</span>
             </h1>
             <p className="max-w-[53ch] text-[17px] leading-relaxed text-ink2">
-              KURAI объединяет выбор модели, живой контекст и понятный путь от вопроса к результату. Точно, спокойно, с вниманием к настоящей работе.
+              Напишите задачу как есть: KURAI подберёт модель или даст выбрать самому. Каждый вариант ответа сохраняется веткой, к нему можно вернуться.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Magnetic>
@@ -50,14 +50,14 @@ export default function Landing() {
                 </Link>
               </Magnetic>
               <Link href="/login" className="inline-flex min-h-6 items-center text-[14px] text-ink2 hover:text-ink pointer-coarse:min-h-11">
-                Войти →
+                Войти
               </Link>
-              <Label>диалог · research · изображения · слайды</Label>
+              <Label>текст · research · изображения · слайды</Label>
             </div>
             <div className="fx-landing-readout mt-4 grid max-w-2xl grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3 rounded-(--radius-md) overflow-hidden">
-              <div className="bg-bg p-3"><Label className="text-acc">01 / контекст</Label><p>Ветки вместо потерянных идей</p></div>
-              <div className="bg-bg p-3"><Label className="text-acc">02 / маршрут</Label><p>Модель и оценка до запуска</p></div>
-              <div className="bg-bg p-3"><Label className="text-acc">03 / результат</Label><p>Следующий шаг уже рядом</p></div>
+              <div className="bg-bg p-3"><Label className="text-acc">01 / ветки</Label><p>Каждый вариант ответа сохраняется</p></div>
+              <div className="bg-bg p-3"><Label className="text-acc">02 / модель</Label><p>Сами или «Авто», с ценой до запуска</p></div>
+              <div className="bg-bg p-3"><Label className="text-acc">03 / журнал</Label><p>Каждое списание видно в балансе</p></div>
             </div>
           </div>
         </section>
@@ -76,10 +76,10 @@ export default function Landing() {
           <div className="fx-rise flex flex-col gap-4">
             <Label className="text-acc">Как это работает</Label>
             <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
-              От вопроса к обоснованной работе — в одном потоке
+              Запрос, модель и цена — на одном экране
             </h2>
             <p className="max-w-[52ch] text-ink2">
-              Начните с задачи, выберите подходящую модель и продолжайте в том же контексте. KURAI показывает путь запуска и удерживает ход работы — от первой формулировки до результата.
+              Пишите задачу в поле ввода. Слеш-команды переключают режим, модель можно оставить на «Авто». Цена видна до отправки, ход работы — в ответе.
             </p>
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink3">
               <span><KeyHint>/i</KeyHint> изображение</span>
@@ -107,20 +107,6 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* numbers */}
-        <section aria-label="Контур KURAI" className="mx-auto grid max-w-6xl grid-cols-2 gap-px border-y border-line bg-line sm:grid-cols-4">
-          {[
-            { v: "01", l: "контекст сохраняется в ветках" },
-            { v: "02", l: "модель выбирается под задачу" },
-            { v: "03", l: "оценка создаётся до запуска" },
-            { v: "04", l: "результат остаётся частью работы" },
-          ].map((n) => (
-            <div key={n.l} className="flex flex-col gap-1 bg-bg p-5 sm:p-6">
-              <span className="font-display text-4xl font-medium text-acc">{n.v}</span>
-              <span className="text-[13px] text-ink2">{n.l}</span>
-            </div>
-          ))}
-        </section>
 
         {/* why */}
         <section className="border-y border-line bg-g1">
@@ -142,9 +128,9 @@ export default function Landing() {
         {/* capability boundary */}
         <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Система развивается контурами, а не обещаниями</h2>
+            <h2 className="font-display text-[clamp(2.1rem,4vw,3.1rem)] font-medium">Что работает сейчас</h2>
             <Link href="/status" className="inline-flex min-h-6 items-center text-[14px] text-acc hover:underline pointer-coarse:min-h-11">
-              Статус сервисов →
+              Статус сервисов
             </Link>
           </div>
           <div className="grid gap-px border border-line bg-line md:grid-cols-[1.35fr_0.65fr] rounded-(--radius-md) overflow-hidden">
@@ -157,13 +143,13 @@ export default function Landing() {
               </div>
             </div>
             <div className="bg-bg p-6">
-              <Label>по конфигурации</Label>
+              <Label>скоро</Label>
               <div className="mt-5 flex flex-col gap-3">
-                {FUTURE_CAPABILITIES.map((capability) => <p key={capability.id} className="text-[14px] text-ink3"><span className="mr-2 text-warn">◇</span>{capability.label} · проверяйте в статусе</p>)}
+                {FUTURE_CAPABILITIES.map((capability) => <p key={capability.id} className="text-[14px] text-ink3"><span className="mr-2 text-warn">◇</span>{capability.label} · скоро</p>)}
               </div>
             </div>
           </div>
-          <p className="mt-4 text-[12.5px] text-ink3">Доступность каждого режима определяется живым каталогом, ключом провайдера и готовностью приватного контура хранения результата.</p>
+          <p className="mt-4 text-[12.5px] text-ink3">Видео и аудио включатся, когда в каталоге OpenRouter появятся подходящие модели. Актуальное состояние — на странице статуса.</p>
         </section>
 
         <Faq />
@@ -172,7 +158,7 @@ export default function Landing() {
         <section className="fx-landing-final fx-cut relative mx-4 mb-16 overflow-hidden border border-line bg-g1 sm:mx-6 lg:mx-auto lg:max-w-6xl rounded-(--radius-md)">
           <div className="relative flex flex-col items-start gap-5 p-8 sm:p-12">
             <h2 className="max-w-2xl font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium text-balance">
-              Пространство, в котором AI помогает думать, а не отвлекает от работы.
+              Начните с одного запроса. Первые кредиты — при регистрации.
             </h2>
             <Link href="/register" className="fx-chamfer bg-acc px-5 py-3 text-[15px] font-semibold text-acc-ink [--ch:var(--chamfer-lg)]">
               Создать аккаунт
