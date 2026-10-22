@@ -128,3 +128,21 @@ def test_image_run_without_a_provider_key_releases_its_hold(db):
     assert run.output_message.parts[0]["status"] == "failed"
     assert available_balance_micro(member.credit_account) == 50_000
     assert run.events.last().payload["code"] == "provider_unavailable"
+
+
+@override_settings(OPENROUTER_API_KEY="test-key")
+def test_image_response_keeps_the_format_openrouter_reports():
+    import io
+    import json
+    from base64 import b64encode
+
+    from runs.providers.openrouter import generate_openrouter_image
+
+    body = {"data": [{"b64_json": b64encode(b"\xff\xd8jpeg-bytes").decode(), "media_type": "image/jpeg"}], "usage": {"cost": 0.04}}
+    # BytesIO сам умеет with — как ответ urlopen
+    reply = io.BytesIO(json.dumps(body).encode())
+    with patch("runs.providers.openrouter.urlopen", return_value=reply):
+        image = generate_openrouter_image(model_id="acme/painter", prompt="Маяк на рассвете", user_id="u-1")
+
+    assert image.content_type == "image/jpeg"
+    assert image.cost_usd == Decimal("0.04")

@@ -652,7 +652,7 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
         const payload = JSON.parse(event.data) as { type?: string; text?: string; model?: string; costMicro?: number; code?: string; url?: string; title?: string; quote?: string; readAt?: string };
         switch (payload.type) {
           case "routed":
-            apply(outputId, { type: "route", model: payload.model ?? routeName, node: "OpenRouter", latencyMs: 0 });
+            apply(outputId, { type: "route", model: payload.model ?? routeName, node: "KURAI", latencyMs: 0 });
             stepTo(`маршрут · ${routeLabel(payload.model ?? routeName)}`);
             plan("routed");
             act(`маршрут → ${routeLabel(payload.model ?? routeName)}`);

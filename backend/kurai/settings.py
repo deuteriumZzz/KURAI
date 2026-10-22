@@ -6,6 +6,12 @@ from urllib.parse import urlparse
 from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Локальные секреты (ключ OpenRouter) — в backend/.env, он не попадает в git; настоящее окружение важнее файла.
+if (BASE_DIR / ".env").is_file():
+    for _line in (BASE_DIR / ".env").read_text(encoding="utf-8").splitlines():
+        _key, _sep, _value = _line.strip().partition("=")
+        if _sep and _key and not _key.startswith("#"):
+            os.environ.setdefault(_key.strip(), _value.strip().strip("\"'"))
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-key")
 if not DEBUG and SECRET_KEY == "development-only-key":
@@ -129,6 +135,8 @@ KURAI_WEB_MAX_USES = int(os.getenv("KURAI_WEB_MAX_USES", "1"))
 KURAI_RESEARCH_DEEP_MAX_USES = int(os.getenv("KURAI_RESEARCH_DEEP_MAX_USES", "4"))
 KURAI_THINK_COMPLETION_MULTIPLIER = int(os.getenv("KURAI_THINK_COMPLETION_MULTIPLIER", "2"))
 KURAI_VIDEO_POLL_SECONDS = int(os.getenv("KURAI_VIDEO_POLL_SECONDS", "30"))
+# OpenRouter prices a generated image by output tokens; ~4k tokens covers one 1K image across providers.
+KURAI_IMAGE_OUTPUT_TOKENS = int(os.getenv("KURAI_IMAGE_OUTPUT_TOKENS", "4200"))
 KURAI_MEDIA_MAX_VIDEO_BYTES = int(os.getenv("KURAI_MEDIA_MAX_VIDEO_BYTES", str(500 * 1024 * 1024)))
 KURAI_MEDIA_MAX_AUDIO_BYTES = int(os.getenv("KURAI_MEDIA_MAX_AUDIO_BYTES", str(50 * 1024 * 1024)))
 KURAI_CATALOG_MAX_AGE_SECONDS = int(os.getenv("KURAI_CATALOG_MAX_AGE_SECONDS", "43200"))

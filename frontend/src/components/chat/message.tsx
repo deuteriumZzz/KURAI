@@ -535,7 +535,7 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
             </summary>
             <dl className="mt-2 grid max-w-md grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-(--radius-md) border border-line bg-g1 px-3 py-2.5">
               <dt className="text-ink3">Запрошено</dt>
-              <dd className="text-ink2">«Авто» — маршрутизатор OpenRouter</dd>
+              <dd className="text-ink2">«Авто» — KURAI подбирает модель под запрос</dd>
               <dt className="text-ink3">Выбрано</dt>
               <dd className="text-ink2">{routeLabel(m.model)}{info ? ` · ${info.provider}` : ""}</dd>
               {info && info.contextK > 0 && (

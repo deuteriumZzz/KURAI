@@ -1,16 +1,18 @@
+import threading
 from decimal import Decimal, ROUND_CEILING
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 
 from ledger.services import consume_hold, release_hold
 from runs.events import append_event
 from runs.models import Run, RunAttempt, RunEvent, RunSource
 from runs.options import completion_tokens, prompt_directives, search_uses
-from runs.services import append_run_notice
+from runs.services import append_run_notice, video_seconds
 from media.models import GeneratedAsset
+from model_catalog.models import CatalogModel
 from runs.providers.openrouter import (
     OpenRouterProviderError,
     download_openrouter_video,
@@ -24,6 +26,18 @@ from runs.providers.openrouter import (
 
 
 MEDIA_MODES = {"image", "video", "audio"}
+
+
+def video_request(model_id: str, options: dict) -> dict:
+    """Clip length, resolution and frame exactly as the quote priced them; a model gone from the catalog keeps the asked length."""
+    model = CatalogModel.objects.filter(id=model_id).first()
+    spec = model.media_spec if model else {}
+    aspect = options.get("aspect")
+    return {
+        "duration": video_seconds(model, options) if model else options.get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS),
+        "resolution": spec.get("resolution"),
+        "aspect_ratio": aspect if aspect in (spec.get("aspects") or ()) else None,
+    }
 
 
 def local_text_result(prompt: str) -> str:
@@ -370,7 +384,7 @@ def complete_binary_media_run(
                 parts = [{"type": "audio", "assetId": str(asset.id), "url": url}]
                 text = "Аудио готово."
             else:
-                duration = (run.quote.options or {}).get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS)
+                duration = video_request(run.quote.resolved_model, run.quote.options or {})["duration"]
                 parts = [{"type": "video", "assetId": str(asset.id), "url": url, "durationSec": duration}]
                 text = "Видео готово."
             run.output_message.text = text
@@ -401,6 +415,18 @@ def schedule_video_poll(run_id: str, attempt_id: str) -> None:
 
     if settings.KURAI_QUEUE_RUNS:
         poll_video_run_task.apply_async(args=[run_id, attempt_id], countdown=settings.KURAI_VIDEO_POLL_SECONDS)
+    elif settings.KURAI_LOCAL_EXECUTE_RUNS:
+        # ponytail: локальная разработка без Celery — таймер на каждый шаг опроса; в проде шаги идут через очередь выше
+        timer = threading.Timer(settings.KURAI_VIDEO_POLL_SECONDS, poll_video_locally, args=(run_id, attempt_id))
+        timer.daemon = True
+        timer.start()
+
+
+def poll_video_locally(run_id: str, attempt_id: str) -> None:
+    try:
+        poll_video_run(run_id, attempt_id)
+    finally:
+        connection.close()
 
 
 def poll_video_run(run_id: str, attempt_id: str) -> None:
@@ -473,7 +499,9 @@ def process_run(run_id: str) -> None:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
         try:
-            audio = generate_openrouter_audio(model_id=model_id, text=prompt, user_id=user_id)
+            voices = CatalogModel.objects.filter(id=model_id).values_list("media_spec", flat=True).first() or {}
+            # ponytail: голос — первый объявленный моделью; выбор голоса в интерфейсе — когда появится его UI
+            audio = generate_openrouter_audio(model_id=model_id, text=prompt, user_id=user_id, voice=next(iter(voices.get("voices") or ()), None))
         except OpenRouterProviderError:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
@@ -493,7 +521,7 @@ def process_run(run_id: str) -> None:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return
         try:
-            video = submit_openrouter_video(model_id=model_id, prompt=prompt, user_id=user_id, duration=options.get("duration"))
+            video = submit_openrouter_video(model_id=model_id, prompt=prompt, user_id=user_id, **video_request(model_id, options))
         except OpenRouterProviderError:
             fail_run(run_id, attempt_id, "provider_unavailable")
             return

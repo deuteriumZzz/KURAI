@@ -56,7 +56,7 @@ const SOURCES = [
   ["https://vc.ru", "vc.ru"],
   ["https://www.rbc.ru", "rbc.ru"],
   ["https://www.tadviser.ru", "tadviser.ru"],
-  ["https://openrouter.ai", "openrouter.ai"],
+  ["https://www.kommersant.ru", "kommersant.ru"],
   ["https://www.cnews.ru", "cnews.ru"],
   ["https://www.forbes.ru", "forbes.ru"],
 ] as const;

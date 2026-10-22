@@ -109,7 +109,7 @@ export function Inspector({ branch, runs, totalMicro, contextChars, onJump, onFo
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] text-ink">{routeLabel(lastRouted.model)}</span>
-                <span className="block text-[12.5px] text-ink3">{info ? `${GROUP_LABEL[info.group]} · ${info.provider}` : "Модель из каталога OpenRouter"}</span>
+                <span className="block text-[12.5px] text-ink3">{info ? `${GROUP_LABEL[info.group]} · ${info.provider}` : "Модель из каталога KURAI"}</span>
               </span>
               <button
                 type="button"

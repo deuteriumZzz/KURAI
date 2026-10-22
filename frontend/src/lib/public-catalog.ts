@@ -42,7 +42,7 @@ export async function publicModels(): Promise<PublicModel[] | null> {
   const list = models.map((m) => ({
     ...fromCatalogModel(m),
     name: m.id === "openrouter/auto" ? "Авто" : shortName(m),
-    provider: m.id.startsWith("openrouter/") ? "OpenRouter" : providerOf(m),
+    provider: m.id.startsWith("openrouter/") ? "KURAI" : providerOf(m),
     priceKnown: m.priceKnown !== false,
   }));
   const size = new Map<string, number>();

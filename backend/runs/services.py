@@ -18,7 +18,7 @@ def estimate_parts_usd(*, model, text: str, mode: str = "text", options: dict | 
     if mode == "image":
         return {"generation": as_decimal(model.image_price_usd_per_generation) * options.get("count", 1)}
     if mode == "video":
-        return {"generation": as_decimal(model.video_price_usd_per_second) * options.get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS)}
+        return {"generation": as_decimal(model.video_price_usd_per_second) * video_seconds(model, options)}
     if mode == "audio":
         return {"generation": as_decimal(model.audio_price_usd_per_character) * len(text)}
     input_tokens = max(1, (len(text) + 3) // 4)
@@ -38,6 +38,11 @@ def estimate_parts_usd(*, model, text: str, mode: str = "text", options: dict | 
     if search:
         parts["search"] = search
     return parts
+
+
+def video_seconds(model, options: dict) -> int:
+    """The clip length that is quoted, submitted and shown — snapped to what the model accepts."""
+    return model.video_seconds(options.get("duration", settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS))
 
 
 def usd_to_micro(amount_usd: Decimal) -> int:

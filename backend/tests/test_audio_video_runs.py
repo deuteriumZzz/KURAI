@@ -1,6 +1,7 @@
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.test.utils import override_settings
@@ -10,6 +11,7 @@ from media.models import GeneratedAsset
 from model_catalog.models import CatalogModel
 from runs.models import Run
 from runs.providers.openrouter import AudioGeneration, VideoGeneration, VideoGenerationStatus
+from runs.services import usd_to_micro
 from runs.worker import poll_video_run, process_run
 from workspace.models import Chat
 
@@ -53,7 +55,9 @@ def create_run(client, member, *, mode: str, model_id: str, prompt: str):
 @patch("runs.worker.generate_openrouter_audio")
 def test_audio_run_persists_private_audio_and_settles_its_hold(generate, db):
     member, client = signed_in_client()
-    media_model("acme/voice", "speech", price="0.000100000000000")
+    voice = media_model("acme/voice", "speech", price="0.000100000000000")
+    voice.media_spec = {"voices": ["nadine", "bram"]}
+    voice.save(update_fields=("media_spec",))
     created = create_run(client, member, mode="audio", model_id="acme/voice", prompt="Добрый вечер, команда")
     generate.return_value = AudioGeneration(
         data=b"ID3test-audio", content_type="audio/mpeg", model_id="acme/voice-v2", provider_request_id="audio-1",
@@ -64,6 +68,8 @@ def test_audio_run_persists_private_audio_and_settles_its_hold(generate, db):
     run = Run.objects.select_related("output_message", "hold").get(id=created["runId"])
     part = run.output_message.parts[0]
     assert run.status == Run.Status.COMPLETED
+    # без голоса часть моделей отклоняет запрос — уходит первый объявленный
+    assert generate.call_args.kwargs["voice"] == "nadine"
     assert part["type"] == "audio"
     assert part["url"].startswith("/api/v1/media/")
     assert run.attempts.get().resolved_model == "acme/voice-v2"
@@ -118,3 +124,23 @@ def test_audio_and_video_are_listed_only_for_compatible_models(db):
     modes = {item["id"]: item for item in capabilities.json()["data"]["modes"]}
     assert modes["audio"]["available"] is True
     assert modes["video"]["available"] is True
+
+
+@override_settings(OPENROUTER_API_KEY="test-key")
+@patch("runs.worker.schedule_video_poll")
+@patch("runs.worker.submit_openrouter_video")
+def test_video_quote_and_submit_use_the_length_the_model_accepts(submit_video, schedule_poll, db):
+    member, client = signed_in_client()
+    model = media_model("acme/veo", "video", price="0.010000000000000")
+    model.media_spec = {"durations": [4, 6, 8], "resolution": "720p", "aspects": ["16:9", "9:16"]}
+    model.save(update_fields=("media_spec",))
+    created = create_run(client, member, mode="video", model_id="acme/veo", prompt="Рассвет над морем")
+    submit_video.return_value = VideoGeneration(job_id="video-job-2")
+
+    process_run(created["runId"])
+
+    # по умолчанию просили 5 с, модель умеет 4/6/8 — и резерв, и запрос идут за 6 с
+    assert submit_video.call_args.kwargs["duration"] == 6
+    assert submit_video.call_args.kwargs["resolution"] == "720p"
+    assert submit_video.call_args.kwargs["aspect_ratio"] == "16:9"
+    assert Run.objects.get(id=created["runId"]).estimated_cost_micro == max(settings.KURAI_MIN_RUN_COST_MICRO, usd_to_micro(Decimal("0.06")))

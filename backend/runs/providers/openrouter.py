@@ -230,7 +230,9 @@ def generate_openrouter_image(*, model_id: str, prompt: str, user_id: str) -> Im
         raise OpenRouterProviderError("OpenRouter image payload was invalid") from error
     if not image_data or len(image_data) > 25 * 1024 * 1024:
         raise OpenRouterProviderError("OpenRouter image size was invalid")
-    content_type = item.get("content_type") if isinstance(item.get("content_type"), str) else "image/png"
+    # OpenRouter называет тип media_type и опускает его, только если формат не определился
+    declared = item.get("media_type") or item.get("content_type")
+    content_type = declared if isinstance(declared, str) else "image/png"
     if content_type not in {"image/png", "image/jpeg", "image/webp"}:
         raise OpenRouterProviderError("OpenRouter image type was invalid")
     usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
@@ -243,7 +245,7 @@ def generate_openrouter_image(*, model_id: str, prompt: str, user_id: str) -> Im
     )
 
 
-def generate_openrouter_audio(*, model_id: str, text: str, user_id: str) -> AudioGeneration:
+def generate_openrouter_audio(*, model_id: str, text: str, user_id: str, voice: str | None = None) -> AudioGeneration:
     """Synthesize a private MP3. The provider's raw stream is never exposed to a browser."""
     if not settings.OPENROUTER_API_KEY:
         raise OpenRouterProviderError("OpenRouter is not configured")
@@ -257,6 +259,8 @@ def generate_openrouter_audio(*, model_id: str, text: str, user_id: str) -> Audi
     if settings.OPENROUTER_SITE_URL:
         headers["HTTP-Referer"] = settings.OPENROUTER_SITE_URL
     body = {"model": model_id, "input": text, "response_format": "mp3", "user": user_id}
+    if voice:
+        body["voice"] = voice
     request = Request(
         f"{settings.OPENROUTER_BASE_URL.rstrip('/')}/audio/speech",
         data=json.dumps(body).encode("utf-8"), headers=headers, method="POST",
@@ -278,7 +282,9 @@ def generate_openrouter_audio(*, model_id: str, text: str, user_id: str) -> Audi
     )
 
 
-def submit_openrouter_video(*, model_id: str, prompt: str, user_id: str, duration: int | None = None) -> VideoGeneration:
+def submit_openrouter_video(
+    *, model_id: str, prompt: str, user_id: str, duration: int | None = None, resolution: str | None = None, aspect_ratio: str | None = None,
+) -> VideoGeneration:
     """Submit an asynchronous video job. Completion must be polled in a worker task."""
     if not settings.OPENROUTER_API_KEY:
         raise OpenRouterProviderError("OpenRouter is not configured")
@@ -292,6 +298,11 @@ def submit_openrouter_video(*, model_id: str, prompt: str, user_id: str, duratio
     if settings.OPENROUTER_SITE_URL:
         headers["HTTP-Referer"] = settings.OPENROUTER_SITE_URL
     body = {"model": model_id, "prompt": prompt, "duration": duration or settings.KURAI_VIDEO_DEFAULT_DURATION_SECONDS, "user": user_id}
+    # разрешение — то, по которому посчитана цена; формат кадра — только объявленный моделью
+    if resolution:
+        body["resolution"] = resolution
+    if aspect_ratio:
+        body["aspect_ratio"] = aspect_ratio
     request = Request(
         f"{settings.OPENROUTER_BASE_URL.rstrip('/')}/videos",
         data=json.dumps(body).encode("utf-8"), headers=headers, method="POST",

@@ -1,2 +1,4 @@
 .DS_Store
 .playwright-mcp/
+# local secrets (OpenRouter key)
+.env

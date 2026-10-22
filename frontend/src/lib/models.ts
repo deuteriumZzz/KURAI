@@ -50,8 +50,8 @@ export const MODELS: ModelInfo[] = [
   { id: "kling-2", name: "Kling 2", provider: "Kuaishou", emblem: "K", group: "video", modes: ["video"], priceHintMicro: 720_000, contextK: 0, stats: { speed: 6, quality: 9, value: 6, context: 5 }, note: "Динамика и движение камеры" },
   { id: "seedance", name: "Seedance", provider: "ByteDance", emblem: "B", group: "video", modes: ["video"], priceHintMicro: 600_000, contextK: 0, stats: { speed: 7, quality: 8, value: 7, context: 5 }, note: "Оживление картинок" },
   { id: "hailuo", name: "Hailuo", provider: "MiniMax", emblem: "M", group: "video", modes: ["video"], priceHintMicro: 500_000, contextK: 0, stats: { speed: 7, quality: 7, value: 8, context: 5 }, note: "Дешевле всего для коротких роликов" },
-  { id: "tts-nova", name: "TTS · Нова", provider: "OpenRouter", emblem: "N", group: "audio", modes: ["audio"], priceHintMicro: 30_000, contextK: 0, stats: { speed: 9, quality: 8, value: 8, context: 5 }, note: "Спокойный женский голос" },
-  { id: "tts-orion", name: "TTS · Орион", provider: "OpenRouter", emblem: "N", group: "audio", modes: ["audio"], priceHintMicro: 30_000, contextK: 0, stats: { speed: 9, quality: 8, value: 8, context: 5 }, note: "Низкий мужской голос" },
+  { id: "tts-nova", name: "TTS · Нова", provider: "KURAI", emblem: "N", group: "audio", modes: ["audio"], priceHintMicro: 30_000, contextK: 0, stats: { speed: 9, quality: 8, value: 8, context: 5 }, note: "Спокойный женский голос" },
+  { id: "tts-orion", name: "TTS · Орион", provider: "KURAI", emblem: "N", group: "audio", modes: ["audio"], priceHintMicro: 30_000, contextK: 0, stats: { speed: 9, quality: 8, value: 8, context: 5 }, note: "Низкий мужской голос" },
 ];
 
 export const GROUP_LABEL: Record<ModelGroup, string> = {
@@ -136,6 +136,6 @@ export function fromCatalogModel(model: CatalogRecord): ModelInfo {
       value: group === "cheap" ? 10 : 7,
       context: model.contextLength >= 1_000_000 ? 10 : model.contextLength >= 128_000 ? 8 : 6,
     },
-    note: group === "auto" ? "Один запрос — KURAI подбирает подходящую модель под задачу" : plainDescription(model.description) || "Доступна через OpenRouter",
+    note: group === "auto" ? "Один запрос — KURAI подбирает подходящую модель под задачу" : plainDescription(model.description) || "Модель из каталога KURAI",
   };
 }
