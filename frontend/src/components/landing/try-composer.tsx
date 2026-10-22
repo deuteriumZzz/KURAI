@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ModeIcon } from "@/components/brand/mode-icons";
+import { ModelGlyph } from "@/components/brand/model-glyph";
 import { useFx } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
 import { kuraiApi } from "@/lib/kurai-api";
@@ -79,8 +80,13 @@ export function TryComposer({ modes }: { modes: PublicMode[] | null }) {
           className="block min-h-[5.5rem] w-full resize-none bg-transparent text-[16px] leading-relaxed text-ink outline-none placeholder:text-ink3"
         />
         <div className="mt-3 flex flex-wrap items-center justify-end gap-3 border-t border-line pt-3">
-          <span className="k-code mr-auto text-[12px] text-ink3" aria-live="polite">
-            Авто{priced ? ` · ≈ ${formatCredits(price)}` : ""}
+          {/* сюда слетаются названия провайдеров с первого экрана */}
+          <span id="k-auto-chip" className="k-auto-chip mr-auto inline-flex h-9 items-center gap-2 rounded-(--radius-sm) border border-line2 px-3 text-[13px] text-ink">
+            <ModelGlyph id="openrouter/auto" kind="auto" size={16} />
+            Авто
+          </span>
+          <span className="k-code text-[12px] text-ink3" aria-live="polite">
+            {priced ? formatCredits(price, { approx: true }) : ""}
           </span>
           <button type="submit" className="k-ignite k-chamfer inline-flex h-11 cursor-pointer items-center gap-2 border border-acc bg-acc px-4 text-[13.5px] font-semibold text-acc-ink active:translate-y-px">
             <span className="k-kbd border-acc-ink/25 bg-transparent text-acc-ink">↵</span>

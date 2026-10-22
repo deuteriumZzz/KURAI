@@ -10,7 +10,7 @@ export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="mx-auto w-full max-w-3xl scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="k-index">K/03 · Вопросы</p>
-      <h2 id="faq-title" className="mt-3 mb-8 font-display text-[clamp(2.1rem,4vw,3.1rem)] leading-tight font-medium">
+      <h2 id="faq-title" className="mt-3 mb-8 text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] font-semibold tracking-[-0.025em]">
         Частые вопросы
       </h2>
       <div className="flex flex-col border-t border-line">

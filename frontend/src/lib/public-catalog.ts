@@ -3,7 +3,13 @@ import type { KuraiCatalogModel } from "@/lib/kurai-api";
 import type { Mode } from "@/types/api";
 
 export type PublicMode = { id: Mode; available: boolean; modelCount: number };
-export type PublicCatalog = { modes: PublicMode[]; textModels: number; providers: { name: string; count: number }[] };
+export type PublicCatalog = {
+  modes: PublicMode[];
+  textModels: number;
+  providers: { name: string; count: number }[];
+  /** Ориентир цены типового запроса в «Авто» — тот же, что в выборе модели в кабинете. */
+  autoPriceMicro: ModelInfo["priceHintMicro"] | null;
+};
 
 const BASE = process.env.NEXT_PUBLIC_KURAI_API_BASE_URL?.replace(/\/$/, "");
 
@@ -59,5 +65,6 @@ export async function publicCatalog(): Promise<PublicCatalog | null> {
     modes: caps.modes,
     textModels: caps.modes.find((m) => m.id === "text")?.modelCount ?? 0,
     providers: [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 16),
+    autoPriceMicro: models?.find((m) => m.id === "openrouter/auto")?.priceHintMicro ?? null,
   };
 }

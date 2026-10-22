@@ -1203,6 +1203,314 @@ dialog.fx-dialog::backdrop {
 @keyframes k-marquee {
   to { transform: translateX(-50%); }
 }
+
+/* первый экран: лучи одного лаймового света сверху. В кабинете тот же свет живёт только в активных состояниях */
+.k-beams {
+  position: absolute;
+  inset: 0 0 auto;
+  height: min(1500px, 170vh);
+  pointer-events: none;
+  overflow: hidden;
+  mask: linear-gradient(transparent 0, #000 140px, #000 55%, transparent);
+}
+.k-beams::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -260px;
+  width: min(900px, 140vw);
+  height: 520px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgb(216 236 152 / 0.2), transparent);
+  filter: blur(10px);
+}
+.k-beams i {
+  position: absolute;
+  left: 50%;
+  top: -12%;
+  height: 150%;
+  width: var(--w);
+  margin-left: calc(var(--w) / -2);
+  transform-origin: 50% 0;
+  transform: rotate(var(--r));
+  background: linear-gradient(var(--c), transparent 72%);
+  filter: blur(44px);
+  mix-blend-mode: screen;
+  opacity: var(--o);
+}
+.k-beams i:nth-child(1) { --w: 13vw; --r: -31deg; --c: rgb(236 240 228 / 0.5); --o: 0.35; --d: 0.15s; }
+.k-beams i:nth-child(2) { --w: 9vw; --r: -11deg; --c: rgb(216 236 152 / 0.9); --o: 0.6; --d: 0s; }
+.k-beams i:nth-child(3) { --w: 16vw; --r: 7deg; --c: rgb(216 236 152 / 0.65); --o: 0.6; --d: 0.3s; }
+.k-beams i:nth-child(4) { --w: 11vw; --r: 29deg; --c: rgb(216 236 152 / 0.55); --o: 0.35; --d: 0.45s; }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not(.calm) .k-beams i {
+    opacity: 0;
+    animation:
+      k-beam-in 2.2s var(--ease-out) var(--d) forwards,
+      k-beam-sway 16s ease-in-out calc(var(--d) + 2.2s) infinite alternate;
+  }
+}
+@media (max-width: 640px) {
+  .k-beams i { filter: blur(30px); width: calc(var(--w) * 2.2); margin-left: calc(var(--w) * -1.1); }
+}
+:root[data-theme="light"] .k-beams { opacity: 0.45; }
+@keyframes k-beam-in {
+  from { opacity: 0; transform: rotate(var(--r)) scaleY(0.6); }
+  to { opacity: var(--o); transform: rotate(var(--r)); }
+}
+@keyframes k-beam-sway {
+  from { opacity: var(--o); transform: rotate(calc(var(--r) - 2.5deg)); }
+  to { opacity: var(--o); transform: rotate(calc(var(--r) + 2.5deg)); }
+}
+
+/* названия провайдеров слетаются в «Авто»; «Авто» загорается, когда долетело последнее */
+.k-swarm {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+.k-swarm span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-hair);
+  border-radius: 999px;
+  background: rgb(22 22 22 / 0.6);
+  backdrop-filter: blur(6px);
+  color: var(--color-ink2);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.k-auto-chip {
+  transition:
+    border-color 0.4s var(--ease-out),
+    box-shadow 0.4s var(--ease-out);
+}
+.k-auto-chip[data-lit] {
+  border-color: var(--color-acc-line);
+  box-shadow: 0 0 0 3px var(--color-acc-soft), 0 0 28px rgb(216 236 152 / 0.22);
+}
+/* на телефоне подсказка ↵ не нужна, а «Авто», цена и кнопка должны уместиться в одну строку */
+@media (max-width: 640px) {
+  #k-auto-chip ~ button .k-kbd { display: none; }
+}
+
+/* интерфейс собирается из слоёв по мере прокрутки: --k = 1 разобран, 0 собран */
+.k-stage {
+  position: relative;
+  perspective: 2200px;
+}
+.k-frame {
+  --k: 1;
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: 50% 45%;
+  transform: rotateX(calc(var(--k) * 54deg)) rotateZ(calc(var(--k) * -28deg)) scale(calc(1 - var(--k) * 0.2));
+}
+:root.calm .k-frame { --k: 0 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .k-frame { --k: 0 !important; }
+}
+.k-frame-plate {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: var(--radius-lg);
+  background: var(--color-g1);
+  opacity: calc(1 - var(--k));
+  box-shadow:
+    0 50px 140px -30px rgb(0 0 0 / 0.9),
+    0 -30px 90px -40px rgb(216 236 152 / 0.35);
+}
+.k-frame-base {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius-lg) - 1px);
+  opacity: 0;
+}
+.k-stage[data-flat] .k-frame-base { opacity: 1; }
+.k-stage[data-flat] .k-slices { visibility: hidden; }
+.k-frame::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 8%;
+  right: 8%;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-acc), transparent);
+  opacity: calc(0.9 - var(--k));
+}
+.k-slices {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.k-slice {
+  position: absolute;
+  overflow: hidden;
+  background: var(--color-g1);
+  transform: translate3d(calc(var(--ex) * var(--k)), calc(var(--ey) * var(--k)), calc(var(--ez) * var(--k)));
+}
+.k-slice img {
+  position: absolute;
+  max-width: none;
+  height: auto;
+}
+.k-slice::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(216 236 152 / 0.5);
+  border-radius: inherit;
+  opacity: var(--k);
+}
+.k-slice b {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  top: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-acc-line);
+  border-radius: var(--radius-sm);
+  background: rgb(14 14 14 / 0.88);
+  color: var(--color-acc);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: calc(var(--k) * 1.6 - 0.4);
+}
+@media (max-width: 640px) {
+  .k-slice b { display: none; }
+}
+/* подписи на собранном экране: точка у реального элемента, подпись уходит в пустое поле */
+.k-pin {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.5s var(--ease-out);
+}
+.k-pin[data-side="left"] { flex-direction: row-reverse; translate: -100% 0; }
+.k-pin i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px;
+  border-radius: 50%;
+  background: var(--color-acc);
+  box-shadow: 0 0 0 3px rgb(216 236 152 / 0.18), 0 0 14px var(--color-acc);
+}
+.k-pin::before {
+  content: "";
+  order: 1;
+  width: 26px;
+  height: 1px;
+  margin: 0 4.5px;
+  background: var(--color-acc-line);
+}
+.k-pin b {
+  order: 2;
+  padding: 7px 10px;
+  border: 1px solid var(--color-acc-line);
+  border-radius: var(--radius-sm);
+  background: rgb(14 14 14 / 0.86);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.k-stage[data-flat] .k-pin,
+.k-shot[data-on] .k-pin { opacity: 1; transform: none; }
+@media (max-width: 900px) {
+  .k-pin b,
+  .k-pin::before { display: none; }
+}
+
+/* тур: шаг в центре экрана выбирает картинку; свет тот же лаймовый */
+.k-shot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(18px) scale(0.97);
+  transition:
+    opacity 0.6s var(--ease-out),
+    transform 0.7s var(--ease-out);
+}
+.k-shot[data-on] { opacity: 1; transform: none; }
+.k-tour-glow {
+  position: absolute;
+  inset: -6% -8%;
+  background: radial-gradient(closest-side, rgb(216 236 152 / 0.16), transparent 75%);
+  filter: blur(36px);
+  pointer-events: none;
+}
+.k-window {
+  position: relative;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-lg);
+  background: var(--color-g1);
+  box-shadow: 0 40px 100px -30px rgb(0 0 0 / 0.9);
+}
+.k-window::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 10%;
+  right: 10%;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-acc), transparent);
+}
+
+/* финал: строки каталога сходятся к одной линии, из неё появляется вход */
+.k-fin-row {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--color-ink3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.3;
+  transition: color 0.35s;
+}
+.k-fin-row[data-hot] { color: var(--color-acc); }
+.k-bus {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 100vw;
+  height: 1px;
+  margin-left: -50vw;
+  background: var(--color-acc);
+  box-shadow: 0 0 12px 1px rgb(216 236 152 / 0.7), 0 0 40px 4px rgb(216 236 152 / 0.25);
+  transform: scaleX(var(--bx, 0.18));
+  opacity: var(--bo, 1);
+}
 .fx-halftone {
   background-image: radial-gradient(var(--color-line2) 1px, transparent 1.3px);
   background-size: 7px 7px;
