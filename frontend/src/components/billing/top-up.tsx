@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Label, Segments } from "@/components/fx/primitives";
 import { formatCredits } from "@/lib/format";
 import type { Micro } from "@/types/api";
@@ -23,7 +22,6 @@ export function TopUp({ initialMicro, grantMicro }: { initialMicro: Micro; grant
       <div className="flex flex-col justify-center gap-3 p-1 md:p-2">
         <h2 id="top-up-title" className="text-[15px] font-semibold">Пополнение</h2>
         <p className="max-w-md text-[13px] leading-6 text-ink2">Оплата картой и через СБП ещё не подключена. Как только подключим, пополнить баланс можно будет здесь.</p>
-        <Button variant="secondary" size="lg" disabled className="w-full sm:w-max">Пополнение скоро</Button>
       </div>
     </section>
   );

@@ -39,7 +39,7 @@ export function Decode({ text, duration, as: Tag = "span", className }: DecodePr
   const shown = useDecode(text, duration);
   return (
     <Tag className={className}>
-      <span aria-hidden="true">{shown}</span>
+      <span aria-hidden="true" className="select-none">{shown}</span>
       <span className="fx-sr">{text}</span>
     </Tag>
   );

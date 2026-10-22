@@ -1,5 +1,3 @@
-from django.conf import settings
-
 from model_catalog.models import CatalogModel
 
 
@@ -7,10 +5,11 @@ CAPABILITY_MODES = ("text", "research", "slides", "image", "video", "audio")
 
 
 def capability_payloads() -> list[dict]:
-    """Describe only modes this deployment can actually execute.
+    """A mode is offered when the catalog has models for it.
 
-    The catalog identifies model support, while media modes additionally
-    require the server-only OpenRouter key and a private asset pipeline.
+    The upstream key is not checked here: outside development the server
+    refuses to start without it (settings.py), so the catalog is the only
+    thing that can make a mode empty.
     """
     active_models = list(CatalogModel.objects.filter(active=True).only("id", "input_modalities", "output_modalities", "is_router"))
     text_count = sum(model.supports_chat for model in active_models)
@@ -21,7 +20,7 @@ def capability_payloads() -> list[dict]:
         {"id": "text", "available": bool(text_count), "modelCount": text_count},
         {"id": "research", "available": bool(text_count), "modelCount": text_count},
         {"id": "slides", "available": bool(text_count), "modelCount": text_count},
-        {"id": "image", "available": bool(image_count and settings.OPENROUTER_API_KEY), "modelCount": image_count},
-        {"id": "video", "available": bool(video_count and settings.OPENROUTER_API_KEY), "modelCount": video_count},
-        {"id": "audio", "available": bool(audio_count and settings.OPENROUTER_API_KEY), "modelCount": audio_count},
+        {"id": "image", "available": bool(image_count), "modelCount": image_count},
+        {"id": "video", "available": bool(video_count), "modelCount": video_count},
+        {"id": "audio", "available": bool(audio_count), "modelCount": audio_count},
     ]

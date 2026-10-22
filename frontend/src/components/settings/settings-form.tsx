@@ -213,9 +213,6 @@ export function SettingsForm({ user }: { user: User }) {
           <button type="button" role="radio" aria-checked="true" className="bg-acc-soft px-4 py-2 text-[13px] text-acc rounded-(--radius-xs)">
             Русский
           </button>
-          <button type="button" role="radio" aria-checked="false" disabled className="px-4 py-2 text-[13px] text-ink3">
-            English · скоро
-          </button>
         </div>
       </Section>
 

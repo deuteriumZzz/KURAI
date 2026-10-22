@@ -535,22 +535,19 @@ export function Composer({
   // режимы — компактный горизонтальный ряд под полем главной (не стена карточек)
   const modeRow = (
     <div role="radiogroup" aria-label="Режим задачи" className="flex flex-wrap items-center justify-center gap-1">
-      {MODES.map((m) => {
+      {MODES.filter((m) => !(kuraiApi && capabilities && m.id !== "text" && !capabilities.find((capability) => capability.id === m.id)?.available)).map((m) => {
         const on = m.id === mode;
-        const unavailable = Boolean(kuraiApi && capabilities && m.id !== "text" && !capabilities.find((capability) => capability.id === m.id)?.available);
         return (
           <button
             key={m.id}
             type="button"
             role="radio"
             aria-checked={on}
-            aria-disabled={unavailable}
             onClick={() => switchMode(m.id)}
             className="k-tool h-9 px-3 text-[13px]"
           >
             <ModeIcon mode={m.id} size={15} className={on ? undefined : "text-ink3"} />
             {m.label}
-            {unavailable && <span className="k-index">скоро</span>}
           </button>
         );
       })}

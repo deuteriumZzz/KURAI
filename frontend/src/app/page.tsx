@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { getImageProps } from "next/image";
 import { SignalField } from "@/components/app/signal-field";
-import { Decode } from "@/components/fx/decode";
 import { Faq } from "@/components/landing/faq";
 import { FinalCall } from "@/components/landing/final-call";
+import { landingFonts } from "@/components/landing/fonts";
 import { HeroSwarm } from "@/components/landing/hero-swarm";
+import { HeroTitle } from "@/components/landing/hero-title";
 import { ModelMarquee } from "@/components/landing/model-marquee";
 import { ProductStage } from "@/components/landing/product-stage";
 import { ProductTour } from "@/components/landing/product-tour";
@@ -32,7 +33,7 @@ function Pricing({ catalog }: { catalog: PublicCatalog | null }) {
   return (
     <section id="price" aria-labelledby="price-title" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="k-index">K/02 · Стоимость</p>
-      <h2 id="price-title" className="mt-3 mb-10 max-w-[20ch] text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] font-semibold tracking-[-0.025em] text-balance">
+      <h2 id="price-title" className="k-tech mt-3 mb-10 max-w-[20ch] text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] text-balance">
         Платите за ответы, а не за подписку
       </h2>
       <dl className="grid border-y border-line sm:grid-cols-3">
@@ -83,7 +84,7 @@ export default async function Landing() {
     alt: "Чат в кабинете KURAI: вопрос, ответ модели с ценой под ним и список чатов слева. Текст ответа — иллюстрация.",
   });
   return (
-    <div className="flex flex-1 flex-col">
+    <div className={`flex flex-1 flex-col ${landingFonts}`}>
       <SiteHeader />
       <main id="k-main" className="overflow-x-clip">
         <section className="relative">
@@ -95,16 +96,10 @@ export default async function Landing() {
           </div>
           <SignalField />
           <HeroSwarm names={names} />
-          <div className="relative mx-auto flex w-full max-w-[60rem] flex-col items-center px-4 pt-[clamp(2.5rem,8vh,6rem)] text-center sm:px-6">
+          <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 pt-[clamp(2.5rem,8vh,6rem)] text-center sm:px-6">
             <p className="k-index mb-6">K/00 · {catalog ? `${plural(catalog.textModels, ["модель", "модели", "моделей"])} в каталоге` : "Нейросети в одном чате"}</p>
-            <h1 className="text-[clamp(2.9rem,8vw,6.5rem)] leading-[0.98] font-semibold tracking-[-0.04em] text-ink">
-              {/* К2 — заголовок собирается из кодов один раз */}
-              <Decode text="Сотни нейросетей" duration={520} />
-              <br />
-              {/* 45 — вторая строка набирает вес по мере прокрутки */}
-              <span className="k-weight-scroll text-ink3">в одном чате</span>
-            </h1>
-            <p className="mt-6 max-w-[36rem] text-[clamp(16px,1.5vw,19px)] leading-relaxed text-ink2">
+            <HeroTitle />
+            <p className="mt-8 max-w-[36rem] text-[clamp(16px,1.5vw,19px)] leading-relaxed text-ink2">
               Пишите как в мессенджере. KURAI подберёт модель под задачу, а цену ответа покажет до отправки.
             </p>
             <div className="mt-9 w-full max-w-[54rem] text-left">

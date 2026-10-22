@@ -95,18 +95,16 @@ export function TryComposer({ modes }: { modes: PublicMode[] | null }) {
         </div>
       </form>
       <div role="radiogroup" aria-label="Режим задачи" className="flex flex-wrap items-center gap-1">
-        {MODES.map((m) => {
+        {MODES.filter((m) => ready(m.id)).map((m) => {
           const on = m.id === mode;
-          const soon = !ready(m.id);
           return (
             <button
               key={m.id}
               type="button"
               role="radio"
               aria-checked={on}
-              aria-disabled={soon}
               onClick={() => {
-                if (soon || on) return;
+                if (on) return;
                 setMode(m.id);
                 flicker();
               }}
@@ -114,7 +112,6 @@ export function TryComposer({ modes }: { modes: PublicMode[] | null }) {
             >
               <ModeIcon mode={m.id} size={15} className={on ? undefined : "text-ink3"} />
               {m.label}
-              {soon && <span className="k-index">скоро</span>}
             </button>
           );
         })}

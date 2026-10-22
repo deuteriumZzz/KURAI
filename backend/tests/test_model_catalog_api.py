@@ -87,7 +87,7 @@ def test_quote_binds_the_selected_catalog_model_and_run_rejects_swapped_model(db
     assert swapped.json()["error"]["code"] == "quote_expired"
 
 
-def test_public_capabilities_do_not_claim_unconfigured_image_or_media_modes(db):
+def test_public_capabilities_offer_exactly_the_modes_the_catalog_has_models_for(db):
     CatalogModel.objects.create(
         id="acme/image-only",
         name="Image Only",
@@ -102,7 +102,7 @@ def test_public_capabilities_do_not_claim_unconfigured_image_or_media_modes(db):
     assert response.status_code == 200
     modes = {capability["id"]: capability for capability in response.json()["data"]["modes"]}
     assert modes["text"]["available"] is True
-    assert modes["image"] == {"id": "image", "available": False, "modelCount": 1}
+    assert modes["image"] == {"id": "image", "available": True, "modelCount": 1}
     assert modes["video"] == {"id": "video", "available": False, "modelCount": 0}
 
 

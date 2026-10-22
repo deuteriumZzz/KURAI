@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useCalm } from "@/lib/use-calm";
 
 /**
- * Первый экран: названия провайдеров из живого каталога слетаются в «Авто» — один раз после загрузки.
+ * Первый экран: названия провайдеров из живого каталога слетаются в «Авто» — один раз, когда собрался заголовок.
  * Когда долетело последнее, «Авто» загорается, а точки фона стягиваются к нему, как при отправке в кабинете.
  * В спокойном режиме и при «уменьшить движение» ничего не летит.
  */
@@ -61,7 +61,7 @@ export function HeroSwarm({ names }: { names: string[] }) {
             { opacity: 0, filter: "blur(8px)", transform: `translateY(10px) scale(${s})` },
             { opacity: o, filter: "blur(0px)", transform: `translateY(0) scale(${s})` },
           ],
-          { duration: 700, delay: 300 + Math.random() * 600, easing: "cubic-bezier(.2,.7,.2,1)", fill: "both" },
+          { duration: 600, delay: Math.random() * 400, easing: "cubic-bezier(.2,.7,.2,1)", fill: "both" },
         );
         return { el, x, y, w, h, s, o };
       });
@@ -95,13 +95,15 @@ export function HeroSwarm({ names }: { names: string[] }) {
               window.dispatchEvent(new CustomEvent("kurai:sent", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }));
             };
           });
-      }, 1900);
+      }, 1300);
     };
 
-    // ширина подписей и заголовка зависит от шрифтов — ждём их
-    void document.fonts.ready.then(() => live && run());
+    // ждём, пока заголовок соберётся: от его итоговой ширины зависят места подписей
+    const onReady = () => live && run();
+    window.addEventListener("kurai:hero-ready", onReady, { once: true });
     return () => {
       live = false;
+      window.removeEventListener("kurai:hero-ready", onReady);
       clearTimeout(timer);
       layer.replaceChildren();
     };

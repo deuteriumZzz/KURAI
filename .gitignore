@@ -2,3 +2,5 @@
 .playwright-mcp/
 # local secrets (OpenRouter key)
 .env
+# local test accounts
+*.local.txt

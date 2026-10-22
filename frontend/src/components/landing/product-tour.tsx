@@ -49,7 +49,7 @@ export function ProductTour() {
   return (
     <section id="how" aria-labelledby="how-title" className="mx-auto w-full max-w-[84rem] scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="k-index">K/01 · Как это работает</p>
-      <h2 id="how-title" className="mt-3 max-w-[22ch] text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] font-semibold tracking-[-0.025em] text-balance">
+      <h2 id="how-title" className="k-tech mt-3 max-w-[22ch] text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] text-balance">
         Всё видно до того, как вы нажмёте «Отправить»
       </h2>
       <div className="mt-10 grid gap-10 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] md:gap-14">
@@ -66,7 +66,7 @@ export function ProductTour() {
               className={`flex flex-col justify-center py-7 transition-opacity duration-500 md:min-h-[52vh] md:py-0 ${i === on ? "" : "md:opacity-35"}`}
             >
               <span className="k-display text-[15px] text-acc">{String(i + 1).padStart(2, "0")}</span>
-              <h3 className="mt-3 text-[clamp(1.4rem,2.4vw,1.9rem)] leading-tight font-semibold tracking-[-0.02em]">{s.title}</h3>
+              <h3 className="k-tech mt-3 text-[clamp(1.4rem,2.4vw,1.9rem)] leading-tight">{s.title}</h3>
               <p className="mt-3 max-w-[30rem] text-[15px] leading-relaxed text-ink2">{s.text}</p>
               {i < STEPS.length - 1 && (
                 <div className="k-window mt-6 md:hidden">
