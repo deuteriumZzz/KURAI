@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>KURAI — возможности для README</title>
+<!-- Источник docs/readme/features.png: открыть в браузере 1280×760 и снять снимок экрана. Цены — иллюстрация в формате интерфейса. -->
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;600&family=Martian+Mono:wght@400;500&family=Tektur:wdth,wght@75..100,400..900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0f0f0f; --g1: #151515; --g2: #1b1b1b; --line: #282828; --line2: #3a3a3a; --ink: #f2f2f2; --ink2: #b4b4b4; --ink3: #8f8f8f; --acc: #d8ec98; --acc-ink: #141414; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 760px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Geologica", sans-serif; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 40px; height: 760px; }
+  .tile { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--g1); isolation: isolate; }
+  .tile::before { content: ""; position: absolute; left: 10%; right: 10%; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--acc), transparent); }
+  .tile::after { content: ""; position: absolute; inset: auto -20% -60% -20%; height: 80%; background: radial-gradient(closest-side, rgb(216 236 152 / 0.07), transparent); z-index: -1; }
+  .n { font: 500 12px/1 "Martian Mono", monospace; letter-spacing: 0.14em; color: var(--acc); }
+  h2 { font-family: "Tektur", sans-serif; font-weight: 700; font-variation-settings: "wdth" 100; font-size: 30px; line-height: 1.05; letter-spacing: -0.02em; }
+  p { color: var(--ink2); font-size: 15px; line-height: 1.5; max-width: 30rem; }
+  .ui { margin-top: auto; }
+
+  /* 1 — выбор модели */
+  .row { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; font-size: 14px; color: var(--ink2); }
+  .row .r { width: 16px; height: 16px; border: 1.5px solid var(--line2); border-radius: 50%; }
+  .row.on { position: relative; color: var(--ink); background: rgb(216 236 152 / 0.07); border: 1px solid rgb(216 236 152 / 0.55); }
+  .row.on .r { border-color: var(--acc); box-shadow: inset 0 0 0 3px var(--g1), inset 0 0 0 8px var(--acc); }
+  .row small { display: block; margin-top: 2px; color: var(--ink3); font-size: 12px; }
+  .row .pr { font: 400 13px/1 "Martian Mono", monospace; color: var(--ink2); }
+
+  /* 2 — поле ввода с ценой */
+  .composer { padding: 16px 16px 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--g2); }
+  .composer .q { font-size: 15px; color: var(--ink); }
+  .composer .bar { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+  .auto { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border: 1px solid rgb(216 236 152 / 0.55); border-radius: 6px; font-size: 13px; box-shadow: 0 0 18px rgb(216 236 152 / 0.15); }
+  .price { margin-left: auto; font: 400 13px/1 "Martian Mono", monospace; color: var(--ink); }
+  .go { height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--acc); color: var(--acc-ink); font: 600 13px/1 "Geologica", sans-serif; clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
+  .flow { display: flex; gap: 8px; margin-top: 14px; font: 400 12px/1 "Martian Mono", monospace; color: var(--ink3); }
+  .flow b { color: var(--acc); font-weight: 400; }
+
+  /* 3 — режимы */
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mode { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; color: var(--ink2); }
+  .mode.on { color: var(--ink); background: rgb(216 236 152 / 0.07); border-color: rgb(216 236 152 / 0.4); }
+  .mode i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink3); }
+  .mode.on i { background: var(--acc); box-shadow: 0 0 10px var(--acc); }
+
+  /* 4 — подпись под ответом и журнал */
+  .meta { padding: 12px 0; border-bottom: 1px solid var(--line); font: 400 13px/1 "Martian Mono", monospace; color: var(--ink3); }
+  .meta u { text-decoration-color: var(--line2); text-underline-offset: 4px; }
+  .ledger { margin-top: 6px; }
+  .ledger div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink2); }
+  .ledger div:last-child { border-bottom: 0; }
+  .ledger b { font: 400 13px/1 "Martian Mono", monospace; color: var(--ink); }
+  .ledger b.plus { color: var(--acc); }
+</style>
+</head>
+<body>
+<div class="grid">
+  <section class="tile">
+    <span class="n">01</span>
+    <h2>«Авто» выбирает модель</h2>
+    <p>Один запрос — KURAI подбирает модель под задачу. Можно выбрать и самому: у каждой видна цена.</p>
+    <div class="ui">
+      <div class="row on"><i class="r"></i><span>Авто<small>Рекомендуется</small></span><span class="pr">≈ 2,6 кр</span></div>
+      <div class="row"><i class="r"></i><span>Claude Sonnet<small>Тексты и аналитика</small></span><span class="pr">≈ 4,0 кр</span></div>
+      <div class="row"><i class="r"></i><span>Gemini Flash<small>Быстрые ответы</small></span><span class="pr">≈ 0,4 кр</span></div>
+    </div>
+  </section>
+
+  <section class="tile">
+    <span class="n">02</span>
+    <h2>Цена до отправки</h2>
+    <p>Оценка рядом с кнопкой. На время ответа сумма резервируется, списывается фактическая.</p>
+    <div class="ui">
+      <div class="composer">
+        <div class="q">Сравни три тарифа хостинга для интернет-магазина</div>
+        <div class="bar">
+          <span class="auto"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1" stroke="#d8ec98" stroke-width="1.8" /></svg>Авто</span>
+          <span class="price">≈ 2,8 кр</span>
+          <button class="go" type="button">Отправить</button>
+        </div>
+      </div>
+      <div class="flow"><span>оценка</span><b>→</b><span>резерв</span><b>→</b><span>списание по факту</span></div>
+    </div>
+  </section>
+
+  <section class="tile">
+    <span class="n">03</span>
+    <h2>Шесть режимов в одном чате</h2>
+    <p>Текст, исследование с источниками, слайды, изображения, видео и озвучка. Модель видит весь разговор.</p>
+    <div class="ui modes">
+      <span class="mode on"><i></i>Текст</span>
+      <span class="mode"><i></i>Deep Research</span>
+      <span class="mode"><i></i>Слайды</span>
+      <span class="mode"><i></i>Изображение</span>
+      <span class="mode"><i></i>Видео</span>
+      <span class="mode"><i></i>Аудио</span>
+    </div>
+  </section>
+
+  <section class="tile">
+    <span class="n">04</span>
+    <h2>Видно, кто ответил и за сколько</h2>
+    <p>Под каждым ответом — модель и цена. Все начисления и списания собраны в журнале.</p>
+    <div class="ui">
+      <div class="meta">Claude Sonnet · 4 кр · <u>История списаний</u></div>
+      <div class="ledger">
+        <div><span>Ответ · Claude Sonnet</span><b>−4 кр</b></div>
+        <div><span>Ответ · Авто → Gemini Flash</span><b>−0,6 кр</b></div>
+        <div><span>Регистрация</span><b class="plus">+10 кр</b></div>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

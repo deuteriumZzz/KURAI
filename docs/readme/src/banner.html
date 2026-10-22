@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>KURAI — баннер README</title>
+<!-- Источник docs/readme/banner.png: открыть в браузере 1280×640 и снять снимок экрана. -->
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500&family=Martian+Mono:wght@400;500&family=Tektur:wdth,wght@75..100,400..900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0f0f0f; --g1: #191919; --ink: #f2f2f2; --ink2: #b4b4b4; --ink3: #8f8f8f; --acc: #d8ec98; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 640px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Geologica", sans-serif; }
+  .stage { position: relative; width: 1280px; height: 640px; overflow: hidden; isolation: isolate; }
+  .glow { position: absolute; left: 50%; top: -260px; width: 980px; height: 620px; transform: translateX(-50%); background: radial-gradient(closest-side, rgb(216 236 152 / 0.26), transparent); z-index: -2; }
+  .beam { position: absolute; left: 50%; top: -80px; height: 820px; transform-origin: 50% 0; filter: blur(40px); mix-blend-mode: screen; z-index: -2; }
+  .b1 { width: 150px; margin-left: -75px; transform: rotate(-30deg); background: linear-gradient(rgb(236 240 228 / 0.42), transparent 70%); }
+  .b2 { width: 110px; margin-left: -55px; transform: rotate(-9deg); background: linear-gradient(rgb(216 236 152 / 0.55), transparent 72%); }
+  .b3 { width: 190px; margin-left: -95px; transform: rotate(9deg); background: linear-gradient(rgb(216 236 152 / 0.42), transparent 70%); }
+  .b4 { width: 130px; margin-left: -65px; transform: rotate(30deg); background: linear-gradient(rgb(216 236 152 / 0.3), transparent 65%); }
+  .grid { position: absolute; inset: 0; background-image: radial-gradient(rgb(242 242 242 / 0.12) 1px, transparent 1.4px); background-size: 30px 30px; mask: radial-gradient(70% 80% at 50% 30%, #000, transparent); z-index: -1; }
+  .top { position: absolute; left: 64px; right: 64px; top: 48px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: flex; align-items: center; gap: 14px; font-weight: 500; font-size: 20px; letter-spacing: 0.36em; }
+  .index { font: 500 13px/1 "Martian Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink3); }
+  .title { position: absolute; left: 0; right: 0; top: 150px; text-align: center; }
+  .title h1 { font-family: "Tektur", sans-serif; font-weight: 700; font-variation-settings: "wdth" 100; font-size: 112px; line-height: 1; letter-spacing: -0.02em; }
+  .title p { margin-top: 26px; font: 500 24px/1 "Martian Mono", monospace; letter-spacing: 0.24em; padding-left: 0.24em; text-transform: uppercase; color: var(--acc); text-shadow: 0 0 22px rgb(216 236 152 / 0.4); }
+  .caret { display: inline-block; width: 0.55em; height: 1em; margin-left: 0.1em; vertical-align: -0.12em; background: var(--acc); }
+  .chip { position: absolute; transform: translateY(-50%); padding: 10px 16px; border: 1px solid rgb(255 255 255 / 0.08); border-radius: 999px; background: rgb(22 22 22 / 0.78); color: var(--ink2); font-size: 16px; font-weight: 500; line-height: 1; white-space: nowrap; }
+  .left { transform: translate(-100%, -50%); }
+  .auto { position: absolute; left: 640px; top: 540px; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px; padding: 14px 22px; border: 1px solid rgb(216 236 152 / 0.6); border-radius: 6px; background: var(--g1); font-size: 20px; font-weight: 500; box-shadow: 0 0 0 4px rgb(216 236 152 / 0.08), 0 0 40px rgb(216 236 152 / 0.3); }
+  svg.links { position: absolute; inset: 0; z-index: -1; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="glow"></div>
+  <i class="beam b1"></i><i class="beam b2"></i><i class="beam b3"></i><i class="beam b4"></i>
+  <div class="grid"></div>
+
+  <div class="top">
+    <div class="logo">
+      <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true">
+        <rect width="64" height="64" fill="#191919" />
+        <path d="M8 18V8h10M56 46v10H46" fill="none" stroke="#d8ec98" stroke-width="3" />
+        <path d="M22 14v36" stroke="#f2f2f2" stroke-width="6" />
+        <path d="M44 14 28 32l16 18" fill="none" stroke="#d8ec98" stroke-width="6" />
+      </svg>
+      KURAI
+    </div>
+    <div class="index">K/00 · рабочее пространство</div>
+  </div>
+
+  <div class="title">
+    <h1>Сотни нейросетей</h1>
+    <p>в одном чате<i class="caret"></i></p>
+  </div>
+
+  <!-- линии: от каждой модели к «Авто» -->
+  <svg class="links" viewBox="0 0 1280 640" aria-hidden="true">
+    <defs>
+      <linearGradient id="fl" x1="0" x2="1"><stop offset="0" stop-color="#d8ec98" stop-opacity="0.05" /><stop offset="1" stop-color="#d8ec98" stop-opacity="0.75" /></linearGradient>
+      <linearGradient id="fr" x1="1" x2="0"><stop offset="0" stop-color="#d8ec98" stop-opacity="0.05" /><stop offset="1" stop-color="#d8ec98" stop-opacity="0.75" /></linearGradient>
+    </defs>
+    <g fill="none" stroke-width="1.5">
+      <path d="M372 430 C 470 430, 470 540, 556 540" stroke="url(#fl)" />
+      <path d="M282 482 C 430 482, 430 540, 556 540" stroke="url(#fl)" />
+      <path d="M342 540 C 450 540, 470 540, 556 540" stroke="url(#fl)" />
+      <path d="M252 594 C 420 594, 440 540, 556 540" stroke="url(#fl)" />
+      <path d="M908 430 C 810 430, 810 540, 724 540" stroke="url(#fr)" />
+      <path d="M998 482 C 850 482, 850 540, 724 540" stroke="url(#fr)" />
+      <path d="M938 540 C 830 540, 810 540, 724 540" stroke="url(#fr)" />
+      <path d="M1028 594 C 860 594, 840 540, 724 540" stroke="url(#fr)" />
+    </g>
+  </svg>
+
+  <span class="chip left" style="left:366px;top:430px">OpenAI</span>
+  <span class="chip left" style="left:276px;top:482px">Anthropic</span>
+  <span class="chip left" style="left:336px;top:540px">Google</span>
+  <span class="chip left" style="left:246px;top:594px">DeepSeek</span>
+  <span class="chip" style="left:914px;top:430px">Mistral</span>
+  <span class="chip" style="left:1004px;top:482px">Qwen</span>
+  <span class="chip" style="left:944px;top:540px">xAI</span>
+  <span class="chip" style="left:1034px;top:594px">Meta</span>
+
+  <div class="auto">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1" stroke="#d8ec98" stroke-width="1.8" /></svg>
+    Авто
+  </div>
+</div>
+</body>
+</html>
