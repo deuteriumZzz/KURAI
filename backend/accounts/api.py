@@ -18,12 +18,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 
 from accounts.mail import mail_ready, read_verification_token, send_password_reset, send_verification
-from accounts.models import User
+from accounts.models import TelegramIdentity, User
+from accounts.telegram import EMAIL_DOMAIN, has_mailbox, verified_login
 from kurai.api import KuraiAPIView
 from ledger.models import CreditAccount, LedgerEntry
 from ledger.services import grant_credits
@@ -46,11 +48,13 @@ def auth_rate_limit_response(request, endpoint: str):
 
 
 def member_payload(user: User, include_csrf: bool = False, request=None) -> dict:
+    # у аккаунта из Telegram нет почты: служебный адрес наружу не отдаём и подтверждать нечего
+    mailbox = has_mailbox(user.email)
     payload = {
         "id": str(user.id),
-        "email": user.email,
-        "displayName": user.display_name or user.email.split("@", 1)[0],
-        "emailVerified": user.email_verified_at is not None,
+        "email": user.email if mailbox else "",
+        "displayName": user.display_name or (user.email.split("@", 1)[0] if mailbox else "Telegram"),
+        "emailVerified": user.email_verified_at is not None or not mailbox,
     }
     if include_csrf and request is not None:
         payload["csrfToken"] = get_token(request)
@@ -150,6 +154,44 @@ class LoginView(APIView):
         user = authenticate(request, email=serializer.validated_data["email"].lower(), password=serializer.validated_data["password"])
         if user is None:
             return Response({"error": {"code": "invalid_credentials", "message": "Email или пароль неверны."}}, status=status.HTTP_401_UNAUTHORIZED)
+        login(request, user)
+        return Response({"data": member_payload(user, include_csrf=True, request=request)})
+
+
+class TelegramLoginView(APIView):
+    """Sign in with the Telegram Login Widget: the bot token verifies the payload, the account is found or created."""
+
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(request=None, responses=MemberEnvelopeSerializer)
+    def post(self, request):
+        if not settings.TELEGRAM_BOT_TOKEN:
+            return Response({"error": {"code": "telegram_unavailable", "message": "Вход через Telegram не настроен."}}, status=status.HTTP_404_NOT_FOUND)
+        rate_limited = auth_rate_limit_response(request, "telegram")
+        if rate_limited:
+            return rate_limited
+        fields = verified_login(request.data, bot_token=settings.TELEGRAM_BOT_TOKEN, max_age=settings.TELEGRAM_AUTH_MAX_AGE_SECONDS)
+        if fields is None:
+            return Response(
+                {"error": {"code": "invalid_telegram_login", "message": "Telegram не подтвердил вход. Попробуйте ещё раз."}},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        telegram_id = int(fields["id"])
+        identity = TelegramIdentity.objects.select_related("user").filter(telegram_id=telegram_id).first()
+        if identity is None:
+            name = " ".join(str(fields.get(key, "")) for key in ("first_name", "last_name")).strip()[:80]
+            try:
+                with transaction.atomic():
+                    user = User.objects.create_user(email=f"tg{telegram_id}@{EMAIL_DOMAIN}", password=None, display_name=name)
+                    TelegramIdentity.objects.create(user=user, telegram_id=telegram_id, username=str(fields.get("username", ""))[:64])
+                    grant_credits(user, 100_000, correlation_id=f"signup:{user.id}")
+            except IntegrityError:
+                # два первых входа одновременно: аккаунт уже создан соседним запросом
+                user = TelegramIdentity.objects.select_related("user").get(telegram_id=telegram_id).user
+        else:
+            user = identity.user
+        if not user.is_active:
+            return Response({"error": {"code": "account_disabled", "message": "Аккаунт отключён."}}, status=status.HTTP_403_FORBIDDEN)
         login(request, user)
         return Response({"data": member_payload(user, include_csrf=True, request=request)})
 

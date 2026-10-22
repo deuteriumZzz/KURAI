@@ -48,3 +48,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return self.email
+
+
+class TelegramIdentity(models.Model):
+    """Telegram account a member signs in with; Telegram issues the id and never changes it."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="telegram")
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

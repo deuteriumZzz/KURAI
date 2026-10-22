@@ -16,6 +16,8 @@ type ApiEnvelope<T> = { data: T };
 type ApiFailure = { error?: { code?: string; message?: string } };
 
 export type KuraiMember = { id: string; email: string; displayName: string; emailVerified?: boolean };
+/** Что Telegram Login Widget отдаёт после подтверждения: поля и подпись `hash`, которую проверяет сервер. */
+export type TelegramWidgetUser = { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string; auth_date: number; hash: string };
 export type KuraiFile = { id: string; name: string; contentType: string; sizeBytes: number; sha256: string; createdAt: string };
 export type KuraiMedia = {
   id: string; kind: "image" | "video" | "audio"; url: string; contentType: string; sizeBytes: number; prompt: string;
@@ -257,6 +259,11 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
     },
     login: async ({ email, password }: { email: string; password: string }): Promise<KuraiMember> => {
       const member = await request<ApiMember>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+      csrfToken = member.csrfToken ?? csrfToken;
+      return { id: member.id, email: member.email, displayName: member.displayName };
+    },
+    telegramLogin: async (user: TelegramWidgetUser): Promise<KuraiMember> => {
+      const member = await request<ApiMember>("/api/v1/auth/telegram", { method: "POST", body: JSON.stringify(user) });
       csrfToken = member.csrfToken ?? csrfToken;
       return { id: member.id, email: member.email, displayName: member.displayName };
     },

@@ -3,7 +3,7 @@ from drf_spectacular.views import SpectacularAPIView
 from .api import EstimateView, HealthView, QuoteView, ReadinessView, ServiceStatusView
 from accounts.api import (
     AccountExportView, CsrfView, EmailVerifyResendView, EmailVerifyView, LoginView, LogoutView, MeView,
-    PasswordResetConfirmView, PasswordResetRequestView, SignUpView,
+    PasswordResetConfirmView, PasswordResetRequestView, SignUpView, TelegramLoginView,
 )
 from ledger.api import LedgerView
 from sharing.api import ChatShareLinkView, ShareLinkRevokeView, SharedChatView
@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/v1/auth/sign-up", SignUpView.as_view(), name="sign-up"),
     path("api/v1/auth/login", LoginView.as_view(), name="login"),
     path("api/v1/auth/logout", LogoutView.as_view(), name="logout"),
+    path("api/v1/auth/telegram", TelegramLoginView.as_view(), name="telegram-login"),
     path("api/v1/auth/password-reset", PasswordResetRequestView.as_view(), name="password-reset"),
     path("api/v1/auth/password-reset/confirm", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("api/v1/auth/verify-email", EmailVerifyView.as_view(), name="verify-email"),

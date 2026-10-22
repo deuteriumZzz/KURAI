@@ -182,6 +182,9 @@ KURAI_FRONTEND_URL = (os.getenv("KURAI_FRONTEND_URL") or (CORS_ALLOWED_ORIGINS[0
 PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT_SECONDS", str(2 * 3600)))
 KURAI_EMAIL_VERIFY_MAX_AGE_SECONDS = int(os.getenv("KURAI_EMAIL_VERIFY_MAX_AGE_SECONDS", str(3 * 86400)))
 AUTH_RATE_LIMIT_COUNT = int(os.getenv("AUTH_RATE_LIMIT_COUNT", "20"))
+# Telegram Login Widget: без токена бота вход через Telegram выключен и на сайте его нет.
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_AUTH_MAX_AGE_SECONDS = int(os.getenv("TELEGRAM_AUTH_MAX_AGE_SECONDS", "86400"))
 AUTH_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("AUTH_RATE_LIMIT_WINDOW_SECONDS", "60"))
 if DEBUG:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "kurai-dev"}}

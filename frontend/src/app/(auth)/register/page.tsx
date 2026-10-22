@@ -121,7 +121,6 @@ export default function RegisterPage() {
           {submitting ? "Создаём…" : "Создать аккаунт"}
         </Button>
       </form>
-      <div className="my-5 flex items-center gap-3 text-[12px] text-ink3 before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">или</div>
       <TelegramLogin />
       <p className="mt-6 text-[14px] text-ink2">
         Уже есть аккаунт?{" "}
