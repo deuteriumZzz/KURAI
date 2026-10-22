@@ -94,7 +94,7 @@ export function TryComposer({ modes }: { modes: PublicMode[] | null }) {
           </button>
         </div>
       </form>
-      <div role="radiogroup" aria-label="Режим задачи" className="flex flex-wrap items-center gap-1">
+      <div role="radiogroup" aria-label="Режим задачи" className="flex flex-wrap items-center justify-center gap-1">
         {MODES.filter((m) => ready(m.id)).map((m) => {
           const on = m.id === mode;
           return (
@@ -116,7 +116,7 @@ export function TryComposer({ modes }: { modes: PublicMode[] | null }) {
           );
         })}
       </div>
-      <p className="text-[13px] leading-6 text-ink3">
+      <p className="text-center text-[13px] leading-6 text-ink3">
         Отправка откроет регистрацию: черновик сохранится, на баланс придут 10 кредитов. Уже есть аккаунт?{" "}
         <Link href="/login" className="text-ink2 underline underline-offset-2 hover:text-ink">
           Войти

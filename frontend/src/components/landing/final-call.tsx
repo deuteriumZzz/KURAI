@@ -121,7 +121,7 @@ export function FinalCall({ names }: { names: string[] }) {
               </h2>
               <p className="mt-5 font-mono text-[12px] tracking-[0.2em] text-acc uppercase">10 кредитов на баланс при регистрации</p>
             </div>
-            <div className="relative mt-12 w-full max-w-[44rem]">
+            <div className="relative mt-12 w-full max-w-[54rem]">
               {/* линия, в которую сошлись строки каталога, — верхняя кромка поля */}
               <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-px z-10 block h-px">
                 <i ref={bus} className="k-bus" />

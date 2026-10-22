@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geologica, Martian_Mono, Sofia_Sans_Extra_Condensed } from "next/font/google";
+import { Geologica, Martian_Mono, Tektur } from "next/font/google";
 import "./globals.css";
 
 // Три роли шрифта. Geologica — текст и управление: хорошая кириллица и ось «острота» (SHRP),
-// которой можно рубить концы букв в тон скошенным углам. Sofia Sans Extra Condensed — заголовки
-// страниц и документов: узкий дисплей в духе HUD. Martian Mono в узкой ширине — только значения:
-// цены, коды, тайминги.
+// которой можно рубить концы букв в тон скошенным углам. Tektur — все заголовки сайта и кабинета:
+// техно-гротеск с осью ширины, тот же, что в заголовке лендинга. Martian Mono в узкой ширине —
+// только значения: цены, коды, тайминги.
 const sans = Geologica({ variable: "--font-geologica", subsets: ["latin", "cyrillic"], axes: ["SHRP"] });
-const cond = Sofia_Sans_Extra_Condensed({ variable: "--font-sofia-cond", subsets: ["latin", "cyrillic"], weight: "variable" });
+const display = Tektur({ variable: "--font-tektur", subsets: ["latin", "cyrillic"], axes: ["wdth"] });
 const mono = Martian_Mono({ variable: "--font-martian", subsets: ["latin", "cyrillic"], axes: ["wdth"] });
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" data-theme="dark" suppressHydrationWarning className={`${sans.variable} ${cond.variable} ${mono.variable} h-full`}>
+    <html lang="ru" data-theme="dark" suppressHydrationWarning className={`${sans.variable} ${display.variable} ${mono.variable} h-full`}>
       <head>
         {/* тема кабинета до первой отрисовки — без вспышки; при первом входе следует системе */}
         <script

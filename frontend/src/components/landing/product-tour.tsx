@@ -47,7 +47,7 @@ export function ProductTour() {
   }, []);
 
   return (
-    <section id="how" aria-labelledby="how-title" className="mx-auto w-full max-w-[84rem] scroll-mt-20 px-4 py-20 sm:px-6">
+    <section id="how" aria-labelledby="how-title" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="k-index">K/01 · Как это работает</p>
       <h2 id="how-title" className="k-tech mt-3 max-w-[22ch] text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05] text-balance">
         Всё видно до того, как вы нажмёте «Отправить»

@@ -8,12 +8,12 @@ const FAQ = [
 
 export function Faq() {
   return (
-    <section id="faq" aria-labelledby="faq-title" className="mx-auto w-full max-w-3xl scroll-mt-20 px-4 py-20 sm:px-6">
+    <section id="faq" aria-labelledby="faq-title" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
       <p className="k-index">K/03 · Вопросы</p>
       <h2 id="faq-title" className="k-tech mt-3 mb-8 text-[clamp(2rem,4.4vw,3.4rem)] leading-[1.05]">
         Частые вопросы
       </h2>
-      <div className="flex flex-col border-t border-line">
+      <div className="flex max-w-3xl flex-col border-t border-line">
         {FAQ.map(([q, a]) => (
           <details key={q} className="fx-faq group border-b border-line">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[15px] hover:text-ink [&::-webkit-details-marker]:hidden">

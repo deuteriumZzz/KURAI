@@ -47,8 +47,8 @@
 
   /* type roles: sans — чтение и управление, cond — редкие якоря, mono — значения */
   --font-sans: var(--font-geologica), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-sofia-cond), "Arial Narrow", "Roboto Condensed", ui-sans-serif, sans-serif;
-  --font-cond: var(--font-sofia-cond), "Arial Narrow", "Roboto Condensed", ui-sans-serif, sans-serif;
+  --font-display: var(--font-tektur), "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-cond: var(--font-tektur), "Arial Narrow", ui-sans-serif, sans-serif;
   --font-brand: var(--font-geologica), "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-martian), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
   /* Martian Mono — в узкой ширине: значения компактны и не спорят с текстом */
@@ -328,13 +328,14 @@ textarea {
 
 /* ─────────────── typography roles ─────────────── */
 
-/* Display condensed — редкие якоря: пустое состояние, заголовок режима */
+/* Display — редкие якоря: заголовок экрана, пустое состояние. Tektur, как заголовки лендинга, строчными */
 .k-display {
-  font-family: var(--font-cond);
-  font-weight: 640;
-  text-transform: uppercase;
-  letter-spacing: -0.012em;
-  line-height: 0.86;
+  font-family: var(--font-display);
+  font-weight: 650;
+  /* почти полная ширина, как заголовки лендинга, но чуть уже и легче: якоря крупнее и должны влезать в колонку */
+  font-variation-settings: "wdth" 90;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
 }
 /* Индексная система KURAI: K/01, ROUTE, SOURCE — всегда рядом с реальными данными */
 .k-index {
@@ -1328,7 +1329,7 @@ dialog.fx-dialog::backdrop {
 .k-cycle > i[data-face] { font-size-adjust: ex-height 0.5; line-height: 1; letter-spacing: -0.02em; font-variation-settings: normal; }
 .k-cycle > [data-face="serif"] { font-family: var(--font-playfair), Georgia, serif; font-style: italic; font-weight: 700; }
 .k-cycle > [data-face="mono"] { font-family: var(--font-mono); font-weight: 500; color: var(--color-acc); }
-.k-cycle > [data-face="cond"] { font-family: var(--font-cond); font-weight: 800; letter-spacing: 0; }
+.k-cycle > [data-face="cond"] { font-family: var(--font-sofia-cond), "Arial Narrow", sans-serif; font-weight: 800; letter-spacing: 0; }
 .k-cycle > [data-face="pixel"] { font-family: var(--font-pixel), var(--font-mono); letter-spacing: 0; color: var(--color-acc); }
 .k-cycle > [data-face="thin"] { font-family: var(--font-sans); font-weight: 300; }
 .k-cycle > [data-face="wide"] { font-family: var(--font-unbounded), var(--font-sans); font-weight: 800; }
