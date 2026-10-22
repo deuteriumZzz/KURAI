@@ -1,0 +1,12 @@
+# в образ — только код: без локальных секретов, базы, файлов участников и окружения
+.env
+.env.*
+!.env.example
+.venv/
+db.sqlite3
+user-media/
+build/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+tests/

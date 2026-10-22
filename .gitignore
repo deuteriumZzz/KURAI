@@ -1,6 +1,9 @@
 .DS_Store
 .playwright-mcp/
-# local secrets (OpenRouter key)
+# local secrets (OpenRouter key) and production settings
 .env
+.env.*
+!.env.example
+!.env.production.example
 # local test accounts
 *.local.txt

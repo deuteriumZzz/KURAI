@@ -83,7 +83,7 @@ HttpOnly and use `SameSite=Lax`.
 
 ## Production boundary
 
-The deployment topology is defined in `docker-compose.yml`: PostgreSQL is the
+The deployment topology is defined in the root `docker-compose.yml`: PostgreSQL is the
 source of truth, Redis transports Celery work and also backs rate limiting, and
 separate API/worker processes execute runs outside the request lifecycle.
 `GET /api/v1/health` is a lightweight liveness probe; `GET /api/v1/ready`
@@ -100,17 +100,15 @@ key is absent, the model catalog is empty, or the last catalog sync exceeds
 `KURAI_CATALOG_MAX_AGE_SECONDS`. It does not expose the key, provider host, or
 internal queue topology.
 
-```bash
-cp .env.production.example .env.production
-# Replace every example secret and host before launch.
-docker compose --env-file .env.production up --build
-```
-
-The first catalog synchronization can be run explicitly after setting the
-server-only `OPENROUTER_API_KEY`:
+The stack (nginx with Let's Encrypt, the Next.js site, API, worker, beat,
+PostgreSQL, Redis) is started from the repository root; the full steps, including
+the first certificate, are in the root README under «Выкладка».
 
 ```bash
-docker compose --env-file .env.production exec api python manage.py sync_openrouter_models
+cp .env.production.example .env
+# Replace every example secret and the domain before launch.
+docker compose up -d --build
+docker compose exec api python manage.py sync_openrouter_models
 ```
 
 The compose volume is suitable for a single-node MVP. Replace it with a private

@@ -8,7 +8,8 @@ WORKDIR /app
 COPY . ./
 RUN pip install --upgrade pip && pip install .
 
-RUN useradd --create-home --uid 10001 kurai && chown -R kurai:kurai /app
+# user-media заранее: том с файлами участников наследует владельца из образа
+RUN mkdir -p /app/user-media && useradd --create-home --uid 10001 kurai && chown -R kurai:kurai /app
 USER kurai
 
 EXPOSE 8000

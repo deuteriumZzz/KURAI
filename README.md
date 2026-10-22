@@ -122,7 +122,7 @@ npm run dev                   # http://localhost:3000
 
 ## Настройка
 
-Переменные лежат в `backend/.env` и `frontend/.env.local`. Полные списки — в `backend/.env.example`, `backend/.env.production.example` и `frontend/.env.example`.
+Локально переменные лежат в `backend/.env` и `frontend/.env.local`, в проде — в одном `.env` в корне. Полные списки — в `backend/.env.example`, `frontend/.env.example` и `.env.production.example`.
 
 **Сервер**
 
@@ -161,8 +161,9 @@ KURAI/
 │   ├── ledger/            кредиты: резерв, списание, журнал
 │   ├── model_catalog/     каталог моделей и цены
 │   ├── media/ files/      медиатека и вложения
-│   ├── sharing/           ссылки на чат только для чтения
-│   └── docker-compose.yml прод: API, воркер, beat, PostgreSQL, Redis
+│   └── sharing/           ссылки на чат только для чтения
+├── deploy/nginx/          nginx: HTTPS, /api/ — Django, остальное — Next.js
+├── docker-compose.yml     прод на одном сервере: nginx, сайт, API, воркер, beat, PostgreSQL, Redis, certbot
 ├── docs/                  продуктовые и UX-документы
 ├── DESIGN.md              дизайн-система: цвет, шрифты, движение
 └── PRODUCT.md             продукт и аудитория
@@ -186,16 +187,31 @@ cd frontend && npm test && npm run typecheck && npm run lint
 
 ## Выкладка
 
-Серверная часть описана в `backend/docker-compose.yml`: API, воркер Celery, Celery beat, PostgreSQL и Redis.
+Весь продукт поднимается на одном сервере через [docker-compose.yml](docker-compose.yml). nginx принимает HTTPS и делит трафик: `/api/` уходит в Django, остальное — в Next.js. Рядом работают воркер и beat Celery, PostgreSQL, Redis и certbot, который сам продлевает сертификат. Сайт и API живут на одном домене, поэтому CORS не нужен.
+
+Нужны сервер с Docker, домен с A-записью на этот сервер и открытые порты 80 и 443.
 
 ```bash
-cd backend
-cp .env.production.example .env.production   # замените все примеры секретов и адресов
-docker compose --env-file .env.production up --build -d
-docker compose --env-file .env.production exec api python manage.py sync_openrouter_models
+git clone https://github.com/deuteriumZzz/KURAI.git && cd KURAI
+cp .env.production.example .env        # домен, секреты, ключ OpenRouter, почта
 ```
 
-Сайт собирается командой `npm run build` и запускается `npm start` или на любой платформе для Next.js. Перед открытием для людей проверьте домены, HTTPS, почту и переменные из раздела [Настройка](#настройка).
+Первый сертификат Let's Encrypt (один раз, пока порт 80 свободен):
+
+```bash
+docker compose run --rm -p 80:80 --entrypoint certbot certbot certonly --standalone -d kurai.example.com -m you@example.com --agree-tos --no-eff-email
+```
+
+Запуск и первая загрузка каталога моделей:
+
+```bash
+docker compose up -d --build
+docker compose exec api python manage.py sync_openrouter_models
+```
+
+Обновление — `git pull && docker compose up -d --build`: миграции применяются при старте API. Адрес сайта и имя Telegram-бота попадают в сайт при сборке, после их смены образ сайта пересобирается той же командой.
+
+Перед открытием для людей проверьте почту, `/api/v1/status` и переменные из раздела [Настройка](#настройка).
 
 ## Дизайн
 
