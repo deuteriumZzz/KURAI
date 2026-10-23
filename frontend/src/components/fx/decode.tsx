@@ -6,19 +6,29 @@ import { isCalm, MOTION } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 
 /** Проигрывает расшифровку `text` за `duration` мс; при смене текста — заново. */
-export function useDecode(text: string, duration: number = MOTION.decode): string {
+export function useDecode(text: string, duration: number = MOTION.decode, once?: string): string {
   // кадр анимации привязан к исходному тексту; чужой кадр (или спокойный режим) — показываем чистый текст
   const [frame, setFrame] = useState({ src: text, out: text });
 
   useEffect(() => {
     // нулевая длительность — без анимации (иначе 0/0 даёт NaN и пустую строку)
     if (isCalm() || duration <= 0) return;
+    // once — вступление играет один раз за сессию браузера; помечаем по окончании, чтобы двойной монтаж в dev не съел показ
+    const key = once ? `kurai:decoded:${once}` : null;
+    try {
+      if (key && sessionStorage.getItem(key)) return;
+    } catch {}
     let raf = 0;
     const start = performance.now();
     const tick = (now: number) => {
       const k = Math.min(1, (now - start) / duration);
       setFrame({ src: text, out: scramble(text, text.length * k) });
       if (k < 1) raf = requestAnimationFrame(tick);
+      else if (key) {
+        try {
+          sessionStorage.setItem(key, "1");
+        } catch {}
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -32,11 +42,13 @@ type DecodeProps = {
   duration?: number;
   as?: ElementType;
   className?: string;
+  /** Идентификатор вступления: играет один раз за сессию браузера. */
+  once?: string;
 };
 
 /** Текст, который «расшифровывается». Скринридер получает только чистый текст. */
-export function Decode({ text, duration, as: Tag = "span", className }: DecodeProps) {
-  const shown = useDecode(text, duration);
+export function Decode({ text, duration, as: Tag = "span", className, once }: DecodeProps) {
+  const shown = useDecode(text, duration, once);
   return (
     <Tag className={className}>
       <span aria-hidden="true" className="select-none">{shown}</span>

@@ -113,6 +113,8 @@ export function Composer({
   const [params, setParams] = useState<Partial<Record<Mode, ModeParams>>>({});
   const [pending, setPending] = useState<{ msg: Outgoing; left: number; text: string } | null>(null);
   const [launching, setLaunching] = useState(false);
+  // поле главной переезжает в чат только при реальной отправке; клик по чату в рейке его не трогает
+  const [handoff, setHandoff] = useState(false);
   const [confirm, setConfirm] = useState<{ msg: Outgoing; cost: number; deadline: number; ttl: number } | null>(null);
   const [now, setNow] = useState(0);
   const [savedAt, setSavedAt] = useState(0);
@@ -445,6 +447,10 @@ export function Composer({
     // route handoff: одна волна по верхней грани поля — только после реальной отправки
     retrigger(boxRef.current, "k-sweep");
     playSignal("send");
+    if (variant === "home") {
+      setHandoff(true);
+      window.setTimeout(() => setHandoff(false), 3000);
+    }
     // 41 — точки поля на главной стягиваются к месту отправки
     const r = boxRef.current?.getBoundingClientRect();
     if (r) window.dispatchEvent(new CustomEvent("kurai:sent", { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2 } }));
@@ -728,7 +734,7 @@ export function Composer({
         </div>
       )}
       {/* 1 — одно и то же поле переезжает с главной в чат (пара в скелетоне чата) */}
-      <ViewTransition name="composer" share="k-morph" default="none">
+      <ViewTransition name={home && !handoff ? undefined : "composer"} share="k-morph" default="none">
       <div ref={boxRef} data-mode={mode} data-dragging={dragging || undefined} className={cn("k-composer @container", home ? "px-5 pt-5 pb-3" : "px-4 pt-3.5 pb-2.5")}>
         {/* 17 — поле раскрывается навстречу файлу, который несут над окном */}
         <AnimatePresence initial={false}>
@@ -816,7 +822,7 @@ export function Composer({
               popover="auto"
               onClick={(e) => (e.target as Element).closest("button, a") && e.currentTarget.hidePopover()}
               style={{ positionAnchor: `--${menuId}`, positionArea: home ? "block-end span-inline-end" : "block-start span-inline-end", positionTryFallbacks: "flip-block" } as React.CSSProperties}
-              className="inset-auto m-0 my-2 w-72 rounded-(--radius-md) border border-line2 bg-g1 p-1.5 text-ink shadow-(--shadow-float)"
+              className="k-pop k-stagger inset-auto m-0 my-2 w-72 rounded-(--radius-md) border border-line2 bg-g1 p-1.5 text-ink shadow-(--shadow-float)"
             >
               <span className="k-index block px-2.5 pt-1.5 pb-2">Инструменты</span>
               <MenuItem icon={<Globe size={16} strokeWidth={1.5} />} on={web} onClick={() => setWeb((w) => !w)}>
@@ -1018,7 +1024,7 @@ function MenuItem({ icon, on, hint, onClick, children }: { icon: React.ReactNode
       aria-checked={on}
       onClick={onClick}
       className={cn(
-        "flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-(--radius-sm) px-2.5 text-left text-[13.5px] hover:bg-s2 pointer-coarse:h-11",
+        "k-menu-item flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-(--radius-sm) px-2.5 text-left text-[13.5px] hover:bg-s2 pointer-coarse:h-11",
         on ? "text-ink" : "text-ink2 hover:text-ink",
       )}
     >

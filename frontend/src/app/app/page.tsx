@@ -31,7 +31,7 @@ export default async function AppHome(props: PageProps<"/app">) {
           <p className="k-index mb-5">K/00 · Новая задача</p>
           {/* К2 — заголовок собирается из кодов один раз за полсекунды */}
           <h1 className="k-display text-[clamp(3.1rem,7.2vw,6rem)] text-ink">
-            <Decode text="Что хотите сделать?" duration={520} />
+            <Decode text="Что хотите сделать?" duration={520} once="home-title" />
           </h1>
           <p className="mt-5 max-w-[34rem] text-[15.5px] leading-relaxed text-ink2">
             Опишите задачу своими словами. KURAI подберёт маршрут и покажет цену ещё до запуска.

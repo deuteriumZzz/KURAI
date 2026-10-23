@@ -127,7 +127,8 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
   const liveRunId = useRef<string | null>(null);
   // режим запуска с живым потоком: при текстовом потоке опрос снимка пропускается (иначе задвоится текст)
   const liveMode = useRef<Mode>("text");
-  const [docked, setDocked] = useState(true);
+  // контекст задачи закрыт по умолчанию: чат на всю ширину, панель открывается кнопкой в шапке
+  const [docked, setDocked] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -453,10 +454,14 @@ export function ChatView({ chat, initial, balanceMicro, live = false }: { chat: 
     try {
       saved = Number(sessionStorage.getItem(scrollKey(chat.id)));
     } catch {}
-    if (!el || !saved || saved >= el.scrollHeight - el.clientHeight - 120) return;
+    if (!el) return;
+    // до первой отрисовки встаём сразу на место: без «вида сверху» и докрутки вниз на глазах
+    if (!saved || saved >= el.scrollHeight - el.clientHeight - 120) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
     stickToBottom.current = false;
-    el.scrollTop = Math.max(0, saved - 96);
-    el.scrollTo({ top: saved, behavior: isCalm() ? "auto" : "smooth" });
+    el.scrollTop = saved;
   }, [chat.id]);
 
   // 91 — закладки этой задачи живут в браузере
