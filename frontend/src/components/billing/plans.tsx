@@ -7,6 +7,7 @@ import type { Plan } from "@/types/api";
 import { ANNUAL_DISCOUNT, PLANS, planPrice } from "@/lib/pricing";
 import { cn } from "@/lib/cn";
 import { Label } from "@/components/fx/primitives";
+import { Money } from "@/components/ui/money";
 
 /** Тарифы с переключателем «месяц / год (−15%)». current — текущий тариф пользователя в кабинете. */
 export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "register" | "switch" }) {
@@ -40,7 +41,7 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
               <p className="font-display text-3xl font-medium tabular-nums">
                 <span className="inline-block overflow-hidden align-bottom">
                   <motion.span key={`${p.id}-${annual}`} initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }} className="inline-block">
-                    {planPrice(p.priceRub, annual).toLocaleString("ru-RU")} ₽
+                    <Money micro={planPrice(p.priceMicro, annual)} />
                   </motion.span>
                 </span>
                 <span className="ml-1 font-sans text-[13px] text-ink3">/ мес</span>
@@ -69,7 +70,7 @@ export function Plans({ current, cta = "register" }: { current?: Plan; cta?: "re
           );
         })}
       </div>
-      <p className="text-[12.5px] text-ink3">Кредиты не сгорают и копятся при продлении · 1 кредит = 1 ₽ · отмена автопродления в один клик</p>
+      <p className="text-[12.5px] text-ink3">Кредиты не сгорают и копятся при продлении · 1 кредит = <Money micro={10_000} /> · отмена автопродления в один клик</p>
     </div>
   );
 }

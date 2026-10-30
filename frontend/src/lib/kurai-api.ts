@@ -33,9 +33,11 @@ export type KuraiCatalogModel = {
   outputModalities: string[];
   supportedModes: Mode[];
   priceHintMicro: number;
+  pricePerMillionMicro?: { input: number; output: number } | null;
   /** false — у медиамодели нет цены в снимке каталога; priceHintMicro тогда лишь минимальная заглушка. */
   priceKnown?: boolean;
 };
+import type { Rates } from "./currency";
 export type KuraiCapability = { id: Mode; available: boolean; modelCount: number };
 export type KuraiServiceStatus = { status: "ok" | "degraded"; modelsOnline: number; capabilities: KuraiCapability[]; reasons: string[] };
 export type KuraiLedgerEntry = {
@@ -190,6 +192,7 @@ export function createKuraiClient(baseUrl: string, fetcher: Fetcher = fetch) {
       }),
     models: (mode?: Mode): Promise<KuraiCatalogModel[]> => request<KuraiCatalogModel[]>(`/api/v1/models${mode ? `?mode=${encodeURIComponent(mode)}` : ""}`, { method: "GET" }),
     capabilities: (): Promise<{ modes: KuraiCapability[] }> => request<{ modes: KuraiCapability[] }>("/api/v1/capabilities", { method: "GET" }),
+    fx: (): Promise<Rates | null> => request<Rates | null>("/api/v1/fx", { method: "GET" }),
     serviceStatus: (): Promise<KuraiServiceStatus> => request<KuraiServiceStatus>("/api/v1/status", { method: "GET" }),
     uploadFile: async (file: File): Promise<KuraiFile> => {
       if (!csrfToken) await refreshCsrfToken();

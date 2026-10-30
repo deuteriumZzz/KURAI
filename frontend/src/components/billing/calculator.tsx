@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { bestPlan, estimateMicro, PLANS, type Usage } from "@/lib/pricing";
 import { formatCredits } from "@/lib/format";
 import { Label, SysLine } from "@/components/fx/primitives";
+import { Money } from "@/components/ui/money";
 
 const ROWS: { key: keyof Usage; label: string; max: number; step: number; unit: string }[] = [
   { key: "texts", label: "Текстовых запросов", max: 1000, step: 10, unit: "≈ 2 кр" },
@@ -50,8 +51,8 @@ export function Calculator() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label className="text-acc">Выгоднее всего</Label>
-          <p className="font-display text-3xl font-medium tabular-nums">{best.totalRub.toLocaleString("ru-RU")} ₽ / мес</p>
-          <SysLine tone="acc">{`${plan?.name ?? ""}${best.topUpRub > 0 ? ` + докупка ${best.topUpRub.toLocaleString("ru-RU")} кр` : ""}`}</SysLine>
+          <p className="font-display text-3xl font-medium tabular-nums"><Money micro={best.totalMicro} /> / мес</p>
+          <SysLine tone="acc">{`${plan?.name ?? ""}${best.topUpMicro > 0 ? ` + докупка ${(best.topUpMicro / 10_000).toLocaleString("ru-RU")} кр` : ""}`}</SysLine>
         </div>
         <p className="text-[12px] text-ink3">Оценка по средней цене запроса. Точная цена видна в поле ввода перед каждой отправкой.</p>
       </div>

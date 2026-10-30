@@ -4,6 +4,7 @@ import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
 import { formatCredits, plural } from "@/lib/format";
 import { publicModels } from "@/lib/public-catalog";
+import { PerMillion } from "@/components/ui/money";
 
 export const metadata: Metadata = {
   title: "Модели KURAI - текст, изображения, видео и голос",
@@ -34,7 +35,7 @@ export default async function PublicModelsPage() {
                 <th scope="col" className="px-3 py-2.5 font-normal">Для каких задач</th>
                 <th scope="col" className="w-24 px-3 py-2.5 font-normal">Контекст</th>
                 <th scope="col" className="w-44 px-3 py-2.5 font-normal">Режимы</th>
-                <th scope="col" className="w-24 py-2.5 pl-3 font-normal">Цена</th>
+                <th scope="col" className="w-48 py-2.5 pl-3 font-normal">Цена</th>
               </tr>
             </thead>
             <tbody>
@@ -52,7 +53,7 @@ export default async function PublicModelsPage() {
                   <td className="px-3 py-3.5 text-[13.5px] leading-snug text-ink2"><span className="line-clamp-2">{model.note}</span></td>
                   <td className="k-code px-3 py-3.5 text-[12.5px] text-ink2">{ctx(model.contextK)}</td>
                   <td className="px-3 py-3.5 text-[13px] text-ink2">{model.modes.map((m) => MODE_LABEL[m]).join(", ")}</td>
-                  <td className="k-code py-3.5 pl-3 text-[12.5px] whitespace-nowrap text-ink2">{model.priceKnown ? formatCredits(model.priceHintMicro, { approx: true }) : "—"}</td>
+                  <td className="k-code py-3.5 pl-3 text-[12.5px] whitespace-nowrap text-ink2">{model.priceKnown ? formatCredits(model.priceHintMicro, { approx: true }) : "—"}<PerMillion value={model.perMillion} className="mt-1.5 block text-[11.5px] leading-snug whitespace-nowrap text-ink3" /></td>
                 </tr>
               ))}
             </tbody>

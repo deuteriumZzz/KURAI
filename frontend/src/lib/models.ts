@@ -10,6 +10,8 @@ type CatalogRecord = {
   outputModalities?: string[];
   supportedModes: Mode[];
   priceHintMicro: Micro;
+  /** Цена за 1 млн токенов с наценкой; null — у модели нет фиксированной цены за токен. */
+  pricePerMillionMicro?: { input: Micro; output: Micro } | null;
 };
 
 export type ModelGroup = "auto" | "smart" | "fast" | "cheap" | "image" | "video" | "audio";
@@ -24,6 +26,7 @@ export type ModelInfo = {
   modes: Mode[];
   /** Оценка стоимости типового запроса (для медиа — за пакет: 4 картинки / 8 с видео). */
   priceHintMicro: Micro;
+  perMillion?: { input: Micro; output: Micro };
   contextK: number;
   /** 1–10: скорость, качество, выгода (чем выше — тем дешевле), контекст. */
   stats: { speed: number; quality: number; value: number; context: number };
@@ -129,6 +132,7 @@ export function fromCatalogModel(model: CatalogRecord): ModelInfo {
     group,
     modes: model.supportedModes,
     priceHintMicro: price,
+    ...(model.pricePerMillionMicro ? { perMillion: model.pricePerMillionMicro } : {}),
     contextK: Math.round(model.contextLength / 1000),
     stats: {
       speed: group === "fast" || group === "audio" ? 9 : 7,

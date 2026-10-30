@@ -4,9 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from kurai.api import KuraiAPIView, PublicReadThrottle
+from kurai.fx import usd_rates
 from model_catalog.models import CatalogModel
 from model_catalog.capabilities import capability_payloads
-from runs.services import estimate_cost_micro, estimate_parts_usd
+from runs.services import as_decimal, estimate_cost_micro, estimate_parts_usd, usd_to_micro
 
 
 class ModelOutputSerializer(serializers.Serializer):
@@ -19,6 +20,7 @@ class ModelOutputSerializer(serializers.Serializer):
     outputModalities = serializers.ListField(child=serializers.CharField())
     priceHintMicro = serializers.IntegerField()
     priceKnown = serializers.BooleanField()
+    pricePerMillionMicro = serializers.DictField(child=serializers.IntegerField(), allow_null=True)
     supportedModes = serializers.ListField(child=serializers.CharField())
 
 
@@ -36,8 +38,30 @@ class CapabilityView(APIView):
         return Response({"data": {"modes": capability_payloads()}})
 
 
+class FxView(KuraiAPIView):
+    """Курсы к доллару для показа цен в валюте региона; null — источник недоступен, фронтенд тогда показывает только кредиты."""
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PublicReadThrottle]
+
+    @extend_schema(responses=None)
+    def get(self, request):
+        return Response({"data": usd_rates()})
+
+
+def price_per_million_micro(model: CatalogModel) -> dict | None:
+    """Цена за 1 млн токенов с наценкой, вход и выход отдельно; у маршрутизаторов и бесплатных/переменных цен — null."""
+    if model.is_router or not model.supports_chat:
+        return None
+    prompt, completion = (as_decimal(price) for price in (model.prompt_price_usd_per_token, model.completion_price_usd_per_token))
+    if prompt < 0 or completion < 0:
+        return None
+    return {"input": usd_to_micro(prompt * 1_000_000), "output": usd_to_micro(completion * 1_000_000)}
+
+
 def model_payload(model: CatalogModel, mode: str = "text") -> dict:
     return {
+        "pricePerMillionMicro": price_per_million_micro(model),
         "id": model.id,
         "name": model.name,
         "provider": model.provider,

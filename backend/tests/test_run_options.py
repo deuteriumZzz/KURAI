@@ -80,7 +80,7 @@ def test_variable_priced_router_reserves_the_ceiling_not_the_minimum(db):
     CatalogModel.objects.filter(id="openrouter/auto").update(prompt_price_usd_per_token="-1", completion_price_usd_per_token="-1", is_router=False)
     quoted = quote(client, mode="text", model_id="openrouter/auto", text="план").json()["data"]
     # 1 prompt token × $0.000005 + 1024 completion tokens × $0.000025 → 25 605 micro, far above the 1 000 minimum
-    assert quoted["estimatedCostMicro"] == 25_605
+    assert quoted["estimatedCostMicro"] == 38_408
 
 
 def test_estimate_matches_the_quote_reserve_without_storing_a_quote(db):
@@ -171,7 +171,7 @@ def test_image_count_generates_and_stores_every_image(generate, db):
     assert "Формат кадра 4:5." in generate.call_args.kwargs["prompt"]
     assert [part["type"] for part in run.output_message.parts] == ["image", "image"]
     assert GeneratedAsset.objects.filter(run=run).count() == 2
-    assert run.attempts.get().billed_cost_micro == 20_000
+    assert run.attempts.get().billed_cost_micro == 30_000
 
 
 def test_chat_can_be_renamed_pinned_archived_and_restored(db):

@@ -9,7 +9,7 @@ from ledger.api import LedgerView
 from sharing.api import ChatShareLinkView, ShareLinkRevokeView, SharedChatView
 from files.api import FileCollectionView, FileDownloadView
 from model_catalog.api import ModelCollectionView
-from model_catalog.api import CapabilityView
+from model_catalog.api import CapabilityView, FxView
 from media.api import MediaCollectionView, MediaDownloadView
 from runs.api import CompareRunCollectionView, RunCancelView, RunCollectionView, RunDetailView, RunEventStreamView
 from workspace.api import ArtifactCollectionView, ArtifactDetailView, ChatCollectionView, ChatDetailView, MessageDocumentExportView, MessageSlideExportView, ProjectCollectionView, ProjectDetailView, RecipeCollectionView
@@ -32,6 +32,7 @@ urlpatterns = [
     path("api/v1/ledger", LedgerView.as_view(), name="ledger"),
     path("api/v1/models", ModelCollectionView.as_view(), name="models"),
     path("api/v1/capabilities", CapabilityView.as_view(), name="capabilities"),
+    path("api/v1/fx", FxView.as_view(), name="fx"),
     path("api/v1/chats/<uuid:chat_id>/share-links", ChatShareLinkView.as_view(), name="chat-share-links"),
     path("api/v1/share-links/<uuid:link_id>/revoke", ShareLinkRevokeView.as_view(), name="share-link-revoke"),
     path("api/v1/shares/<str:token>", SharedChatView.as_view(), name="shared-chat"),

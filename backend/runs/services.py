@@ -46,7 +46,7 @@ def video_seconds(model, options: dict) -> int:
 
 
 def usd_to_micro(amount_usd: Decimal) -> int:
-    return int((amount_usd * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
+    return int((amount_usd * settings.KURAI_MARKUP * Decimal(settings.KURAI_CREDITS_PER_USD)).to_integral_value(rounding=ROUND_CEILING))
 
 
 def estimate_cost_micro(*, model, text: str, mode: str = "text", options: dict | None = None) -> int:

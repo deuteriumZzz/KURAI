@@ -106,4 +106,4 @@ def test_research_quote_reserves_the_bounded_search_budget(db):
     text_quote = estimate_cost_micro(model=model, text="проверить свежие факты", mode="text")
     research_quote = estimate_cost_micro(model=model, text="проверить свежие факты", mode="research")
 
-    assert research_quote - text_quote == 14_000
+    assert research_quote - text_quote == 21_000

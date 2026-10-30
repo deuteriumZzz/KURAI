@@ -68,7 +68,7 @@ def prompt_with_attachment_context(run_id: str, prompt: str) -> str:
 def micro_from_usd(cost_usd: Decimal | None, fallback: int) -> int:
     if cost_usd is None:
         return fallback
-    return max(0, int((cost_usd * settings.KURAI_CREDITS_PER_USD).to_integral_value(rounding=ROUND_CEILING)))
+    return max(0, int((cost_usd * settings.KURAI_MARKUP * settings.KURAI_CREDITS_PER_USD).to_integral_value(rounding=ROUND_CEILING)))
 
 
 def finalize_cancellation(run_id: str, attempt_id=None) -> bool:

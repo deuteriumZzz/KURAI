@@ -38,6 +38,18 @@ def grant_credits(user, amount_micro: int, correlation_id: str) -> LedgerEntry:
     )
 
 
+def grant_signup_bonus(user) -> LedgerEntry | None:
+    """Приветственный бонус; None — суточный бюджет подарков исчерпан (аккаунт остаётся, платить можно)."""
+    from datetime import timedelta
+
+    from django.conf import settings
+
+    today = LedgerEntry.objects.filter(kind=LedgerEntry.Kind.GRANT, correlation_id__startswith="signup:", created_at__gte=timezone.now() - timedelta(days=1))
+    if settings.KURAI_SIGNUP_BONUS_MICRO <= 0 or today.count() >= settings.KURAI_SIGNUP_BONUS_DAILY_LIMIT:
+        return None
+    return grant_credits(user, settings.KURAI_SIGNUP_BONUS_MICRO, correlation_id=f"signup:{user.id}")
+
+
 def reserve_credits(*, user, run, estimated_micro: int):
     from runs.models import CreditHold
 

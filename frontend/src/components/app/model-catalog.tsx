@@ -12,6 +12,7 @@ import { formatCredits } from "@/lib/format";
 import { fromCatalogModel, GROUP_LABEL, MODELS, type ModelInfo } from "@/lib/models";
 import { kuraiApi } from "@/lib/kurai-api";
 import { readPrefs, toggleFavorite, writePrefs } from "@/lib/prefs";
+import { PerMillion } from "@/components/ui/money";
 
 export type CatalogFilter = "all" | "text" | "image" | "video" | "audio";
 
@@ -152,7 +153,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
                 <th scope="col" className="py-2.5 pr-3 pl-3 font-normal">Модель</th>
                 <th scope="col" className="px-3 py-2.5 font-normal">Для каких задач</th>
                 <th scope="col" className="w-24 px-3 py-2.5 font-normal">Контекст</th>
-                <th scope="col" className="w-24 px-3 py-2.5 font-normal">Цена</th>
+                <th scope="col" className="w-48 px-3 py-2.5 font-normal">Цена</th>
                 <th scope="col" className="w-[17rem] py-2.5 pr-3 pl-3 text-right font-normal"><span className="fx-sr">Действия</span></th>
               </tr>
             </thead>
@@ -180,7 +181,7 @@ export function ModelCatalog({ filter }: { filter: CatalogFilter }) {
                       </th>
                       <td className="px-3 py-3.5 text-[13.5px] leading-snug [overflow-wrap:anywhere] text-ink2">{model.note}</td>
                       <td className="px-3 py-3.5 font-mono text-[12.5px] text-ink2">{model.contextK > 0 ? (model.contextK >= 1000 ? `${model.contextK / 1000}M` : `${model.contextK}K`) : "—"}</td>
-                      <td className="px-3 py-3.5 font-mono text-[12.5px] text-ink2">{formatCredits(model.priceHintMicro, { approx: true })}</td>
+                      <td className="px-3 py-3.5 font-mono text-[12.5px] text-ink2">{formatCredits(model.priceHintMicro, { approx: true })}<PerMillion value={model.perMillion} className="mt-1.5 block text-[11.5px] leading-snug whitespace-nowrap text-ink3" /></td>
                       <td className="py-3.5 pr-3 pl-3">
                         <span className="flex items-center justify-end gap-1">
                           <button

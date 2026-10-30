@@ -45,10 +45,10 @@ def test_catalog_and_quote_expose_an_available_image_model(db):
 
     assert catalog.status_code == 200
     assert catalog.json()["data"][0]["supportedModes"] == ["image"]
-    assert catalog.json()["data"][0]["priceHintMicro"] == 20_000
+    assert catalog.json()["data"][0]["priceHintMicro"] == 30_000
     assert quote.status_code == 200
     assert quote.json()["data"]["resolvedModel"] == "acme/image-pro"
-    assert quote.json()["data"]["estimatedCostMicro"] == 20_000
+    assert quote.json()["data"]["estimatedCostMicro"] == 30_000
 
 
 @override_settings(OPENROUTER_API_KEY="test-key")
@@ -86,7 +86,7 @@ def test_image_run_persists_a_private_generated_asset_and_settles_actual_cost(ge
     assert run.output_message.text == "Изображение готово."
     assert run.attempts.get().resolved_model == "acme/image-pro-v2"
     assert run.hold.consumed_at is not None
-    assert available_balance_micro(member.credit_account) == 40_000
+    assert available_balance_micro(member.credit_account) == 35_000
     assert [event.type for event in run.events.all()] == ["queued", "routed", "media", "done"]
 
     generated_id = part["assetId"]

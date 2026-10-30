@@ -7,6 +7,7 @@ import { Hatch, Label, SysLine } from "@/components/fx/primitives";
 import { playSignal } from "@/lib/sound";
 import { DEFAULT_PREFS, readPrefs, writePrefs, type Prefs } from "@/lib/prefs";
 import { cn } from "@/lib/cn";
+import { CURRENCY_CHOICES } from "@/lib/currency";
 import { revealFrom } from "@/lib/motion";
 import type { User } from "@/types/api";
 import { Initials } from "@/components/brand/avatar";
@@ -137,6 +138,24 @@ export function SettingsForm({ user }: { user: User }) {
             >
               <span aria-hidden="true" className="size-3 rounded-full" style={{ background: c }} />
               {l}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Валюта цен">
+        <p className="mb-3 text-[13px] text-ink3">Кредиты везде одни и те же; валюта только показывает, сколько они стоят. По умолчанию — по региону браузера, курс обновляется сам.</p>
+        <div role="radiogroup" aria-label="Валюта цен" className="flex flex-wrap gap-2">
+          {(["auto", ...CURRENCY_CHOICES] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={prefs.currency === v}
+              onClick={() => set({ currency: v })}
+              className={cn("cursor-pointer rounded-(--radius-sm) bg-s1 px-3 py-2 text-[13px] transition-colors duration-(--dur-fast) hover:bg-s2", prefs.currency === v && "bg-s2 shadow-[inset_0_0_0_1px_var(--color-acc-line)]")}
+            >
+              {v === "auto" ? "По региону" : v}
             </button>
           ))}
         </div>

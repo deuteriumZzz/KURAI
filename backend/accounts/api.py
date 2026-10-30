@@ -28,7 +28,7 @@ from accounts.models import TelegramIdentity, User
 from accounts.telegram import EMAIL_DOMAIN, has_mailbox, verified_login
 from kurai.api import KuraiAPIView
 from ledger.models import CreditAccount, LedgerEntry
-from ledger.services import grant_credits
+from ledger.services import grant_signup_bonus
 from workspace.models import Chat, Message, Project
 
 
@@ -130,7 +130,7 @@ class SignUpView(APIView):
         if User.objects.filter(email__iexact=data["email"]).exists():
             return Response({"error": {"code": "email_already_used", "message": "Этот email уже зарегистрирован."}}, status=status.HTTP_409_CONFLICT)
         user = User.objects.create_user(**data)
-        grant_credits(user, 100_000, correlation_id=f"signup:{user.id}")
+        grant_signup_bonus(user)
         # письмо подтверждения — по возможности; сбой почты не мешает регистрации
         send_verification(user)
         login(request, user)
@@ -184,7 +184,7 @@ class TelegramLoginView(APIView):
                 with transaction.atomic():
                     user = User.objects.create_user(email=f"tg{telegram_id}@{EMAIL_DOMAIN}", password=None, display_name=name)
                     TelegramIdentity.objects.create(user=user, telegram_id=telegram_id, username=str(fields.get("username", ""))[:64])
-                    grant_credits(user, 100_000, correlation_id=f"signup:{user.id}")
+                    grant_signup_bonus(user)
             except IntegrityError:
                 # два первых входа одновременно: аккаунт уже создан соседним запросом
                 user = TelegramIdentity.objects.select_related("user").get(telegram_id=telegram_id).user

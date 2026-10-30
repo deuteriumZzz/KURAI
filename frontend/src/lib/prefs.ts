@@ -32,10 +32,12 @@ export type Prefs = {
   /** 83 — точные размер текста (px) и ширина колонки (rem) с ползунков; 0 — по пресетам выше. */
   readSizePx: number;
   readWidthRem: number;
+  /** Валюта показа цен: «auto» — по региону браузера, иначе код ISO. */
+  currency: string;
 };
 
 const KEY = "kurai:prefs";
-export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [], theme: "system", sound: false, accent: "lime", density: "comfortable", spendLimit: 0, readSizePx: 0, readWidthRem: 0 };
+export const DEFAULT_PREFS: Prefs = { calm: false, hints: true, web: true, model: "auto", onboarded: false, readSize: "m", readWidth: "narrow", favorites: [], recent: [], notifyBrowser: false, steps: [], checklistHidden: false, softContrast: false, quiet: false, undoSend: false, templates: [], theme: "system", sound: false, accent: "lime", density: "comfortable", spendLimit: 0, readSizePx: 0, readWidthRem: 0, currency: "auto" };
 
 export function readPrefs(): Prefs {
   try {

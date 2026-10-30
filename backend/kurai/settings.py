@@ -1,4 +1,5 @@
 import os
+import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlparse
@@ -7,7 +8,8 @@ from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Локальные секреты (ключ OpenRouter) — в backend/.env, он не попадает в git; настоящее окружение важнее файла.
-if (BASE_DIR / ".env").is_file():
+# Под pytest .env не читается: иначе тесты зависят от ключей и адресов с этой машины (ponytail: признак — pytest в sys.modules).
+if "pytest" not in sys.modules and (BASE_DIR / ".env").is_file():
     for _line in (BASE_DIR / ".env").read_text(encoding="utf-8").splitlines():
         _key, _sep, _value = _line.strip().partition("=")
         if _sep and _key and not _key.startswith("#"):
@@ -108,6 +110,19 @@ OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/ap
 OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "")
 OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME", "KURAI")
 KURAI_CREDITS_PER_USD = int(os.getenv("KURAI_CREDITS_PER_USD", "1000000"))
+# наценка к расходу провайдера: пользователь платит USD × множитель; один коэффициент и в резерве, и в итоговом списании
+# курсы валют только для показа цен в валюте региона (источник и срок жизни кэша настраиваются)
+KURAI_FX_URL = os.getenv("KURAI_FX_URL", "https://open.er-api.com/v6/latest/USD")
+KURAI_FX_TTL_SECONDS = int(os.getenv("KURAI_FX_TTL_SECONDS", "21600"))
+# запас на конвертацию платёжки (местная цена чуть выше чистого курса) и порог: курс в показе меняется, только если сдвинулся сильнее
+KURAI_FX_BUFFER = float(os.getenv("KURAI_FX_BUFFER", "0.025"))
+KURAI_FX_THRESHOLD = float(os.getenv("KURAI_FX_THRESHOLD", "0.015"))
+KURAI_MARKUP = Decimal(os.getenv("KURAI_MARKUP", "1.5"))
+# приветственный бонус: размер и потолок выдач за сутки — после потолка аккаунт создаётся без подарка (защита от накрутки регистраций)
+KURAI_SIGNUP_BONUS_MICRO = int(os.getenv("KURAI_SIGNUP_BONUS_MICRO", "100000"))
+KURAI_SIGNUP_BONUS_DAILY_LIMIT = int(os.getenv("KURAI_SIGNUP_BONUS_DAILY_LIMIT", "200"))
+if KURAI_MARKUP < 1:
+    raise RuntimeError("KURAI_MARKUP must be at least 1")
 KURAI_MIN_RUN_COST_MICRO = int(os.getenv("KURAI_MIN_RUN_COST_MICRO", "1000"))
 KURAI_MAX_COMPLETION_TOKENS = int(os.getenv("KURAI_MAX_COMPLETION_TOKENS", "1024"))
 KURAI_RESEARCH_SEARCH_ENGINE = os.getenv("KURAI_RESEARCH_SEARCH_ENGINE", "exa")

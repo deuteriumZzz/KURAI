@@ -5,6 +5,7 @@ import { SiteFooter, SiteHeader } from "@/components/landing/site-chrome";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
 import { formatCredits } from "@/lib/format";
 import { publicModels } from "@/lib/public-catalog";
+import { PerMillion } from "@/components/ui/money";
 
 type Props = PageProps<"/models/[...slug]">;
 
@@ -41,6 +42,7 @@ export default async function ModelPage({ params }: Props) {
             <div className="border-line py-4 sm:border-l sm:px-4"><dt className="text-[12.5px] text-ink3">Контекст</dt><dd className="k-code mt-1 text-[16px] text-ink">{model.contextK === 0 ? "не применяется" : `${model.contextK >= 1000 ? `${model.contextK / 1000}M` : `${model.contextK}K`} токенов`}</dd></div>
             <div className="border-line py-4 sm:border-l sm:pl-4"><dt className="text-[12.5px] text-ink3">Подходит для</dt><dd className="mt-1 text-[14px] text-ink">{category}</dd></div>
           </dl>
+          {model.perMillion && <p className="text-[14px] text-ink2"><PerMillion value={model.perMillion} /></p>}
           <p className="text-[13px] text-ink3">Точная цена показывается перед каждым запуском и фиксируется в квитанции ответа.</p>
           <Link href={`/app?mode=${model.modes[0]}&model=${encodeURIComponent(model.id)}`} className="fx-chamfer fx-sheen inline-flex h-11 w-max items-center rounded-(--radius-sm) bg-acc px-4 text-[13.5px] font-semibold text-acc-ink [--ch:var(--chamfer-sm)]">Попробовать в KURAI</Link>
         </article>
