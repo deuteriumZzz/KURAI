@@ -107,13 +107,13 @@ export function markSendOrigin(el: Element | null): void {
 }
 
 /** FLIP: элемент стартует из прямоугольника отправки и встаёт на своё место. Срабатывает один раз на отправку. */
-export function flyInFromSend(el: Element | null): void {
+export function flyInFromSend(el: Element | null, side: "left" | "right" = "left"): void {
   const origin = origins.get("send");
   if (!el || !origin || Date.now() - origin.at > 1500 || isCalm() || !("animate" in el)) return;
   origins.delete("send");
   const b = el.getBoundingClientRect();
-  // реплика — строка документа от левого края: совмещаем левые края, по вертикали — центр поля
-  const dx = origin.rect.left - b.left;
+  // совмещаем край со стороны, к которой прижата реплика (пузырь — справа), по вертикали — центр поля
+  const dx = side === "right" ? origin.rect.right - b.right : origin.rect.left - b.left;
   const dy = origin.rect.top + origin.rect.height / 2 - (b.top + b.height / 2);
   (el as HTMLElement).animate(
     [

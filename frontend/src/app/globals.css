@@ -638,8 +638,7 @@ textarea {
     transform: translateY(-2px);
   }
   .k-answer:hover .k-answer-actions,
-  .k-answer:focus-within .k-answer-actions,
-  .k-answer[data-last="true"] .k-answer-actions {
+  .k-answer:focus-within .k-answer-actions {
     opacity: 1;
     transform: none;
   }

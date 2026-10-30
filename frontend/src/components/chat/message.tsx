@@ -9,11 +9,9 @@ import type { RunState } from "@/lib/stream";
 import { DISPLAY_TZ, formatBytes, formatCredits, plural } from "@/lib/format";
 import { modeById } from "@/lib/modes";
 import { GROUP_LABEL, modelByName, routeLabel } from "@/lib/models";
-import { memberStore } from "@/lib/app-state";
-import { useStore } from "@/lib/store";
 import { StreamText } from "@/components/fx/decode";
 import { SysLine } from "@/components/fx/primitives";
-import { Initials } from "@/components/brand/avatar";
+import { ThinkingMark } from "@/components/fx/thinking";
 import { ModelGlyph, glyphKind } from "@/components/brand/model-glyph";
 import { AudioCard, ImageGrid, JobCard, VideoCard, type ImageAction } from "./media";
 import { AgentChoice, AgentSummary, EvidenceLog, FileScan, RunReceipt, WorkPlan } from "./agent";
@@ -22,7 +20,6 @@ import { Workspace } from "./workspace";
 import { cn } from "@/lib/cn";
 import { flyInFromSend, isCalm, retrigger, SPRING } from "@/lib/motion";
 import { wordDiff } from "@/lib/diff";
-import { Bar } from "@/components/fx/skeleton";
 import { DrawnCheck } from "@/components/ui/action-button";
 import { kuraiApi } from "@/lib/kurai-api";
 
@@ -133,6 +130,26 @@ function VersionSwitch({ v }: { v: Versions }) {
   );
 }
 
+/** Копировать текст сообщения; кнопка на миг превращается в галочку. */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  }
+  return (
+    <button type="button" onClick={copy} aria-label={copied ? "Скопировано" : "Копировать"} data-tip={copied ? "Скопировано" : "Копировать"} className="k-act">
+      {/* 24 — «Копировать» превращается в галочку */}
+      <motion.span key={String(copied)} initial={copied ? { scale: 0.4, rotate: -30 } : false} animate={{ scale: 1, rotate: 0 }} transition={SPRING.bouncy} className="grid place-items-center">
+        {copied ? <Check size={14} strokeWidth={1.5} className="text-acc" /> : <Copy size={14} strokeWidth={1.5} />}
+      </motion.span>
+    </button>
+  );
+}
+
 /** Рассуждения модели («Думать дольше»): открыты, пока идёт размышление, потом сворачиваются. */
 function Thinking({ text, live, from, to }: { text: string; live: boolean; from?: number; to?: number }) {
   const [open, setOpen] = useState<boolean | null>(null);
@@ -143,7 +160,7 @@ function Thinking({ text, live, from, to }: { text: string; live: boolean; from?
   return (
     <div className="border-l border-line2 pl-3">
       <button type="button" onClick={() => setOpen(!isOpen)} aria-expanded={isOpen} className="inline-flex cursor-pointer items-center gap-1.5 text-[12.5px] text-ink3 hover:text-ink">
-        <Brain size={13} strokeWidth={1.5} className={live ? "fx-caret" : undefined} />
+        {live ? <ThinkingMark size={13} /> : <Brain size={13} strokeWidth={1.5} />}
         {live ? "Модель рассуждает" : ms > 0 ? `Думал ${secs(ms)} с` : "Ход рассуждения"}
         {live && ms > 0 && <span className="font-mono tabular-nums">· {secs(ms)} с</span>} {isOpen ? "▾" : "▸"}
       </button>
@@ -171,38 +188,25 @@ type UserProps = {
   versions: Versions;
 };
 
-/** Реплика человека: сдержанная, без «пузыря» — имя, время, текст. Правка создаёт новую ветку. */
+/** Реплика человека — пузырь справа (ответы модели стоят слева). Правка создаёт новую ветку. */
 export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versions, delivery, onRetry }: UserProps) {
-  const member = useStore(memberStore);
   const text = textOf(m);
   const [draft, setDraft] = useState(text);
   const files = m.parts.filter((p): p is Extract<MessagePart, { type: "file" }> => p.type === "file");
   const root = useRef<HTMLDivElement>(null);
   // 18 — только что отправленная реплика вылетает из поля ввода (старые сообщения не двигаются)
-  useEffect(() => flyInFromSend(root.current), []);
+  useEffect(() => flyInFromSend(root.current, "right"), []);
 
   return (
-    <div ref={root} className="group grid gap-x-4 sm:grid-cols-[36px_minmax(0,1fr)]">
-      <Initials name={member.name} className="size-9 max-sm:hidden" />
-      <div className="min-w-0">
-        <div className="flex h-9 items-center gap-2.5">
-          <span className="text-[14px] font-medium text-ink">{member.name}</span>
-          <span className="text-[12px] text-ink3">{time(m.createdAt)}</span>
-          {m.mode !== "text" && <span className="k-index">{modeById(m.mode).label}</span>}
-          <VersionSwitch v={versions} />
-          {text && !editing && (
-            <button type="button" onClick={onEdit} className="k-answer-actions k-tool ml-auto h-8 text-[12.5px] text-ink3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100">
-              <Pencil size={13} strokeWidth={1.5} /> Изменить
-            </button>
-          )}
-        </div>
+    <div className="group flex flex-col items-end gap-1">
+      <div ref={root} className={cn("flex min-w-0 flex-col items-end", editing ? "w-full" : "max-w-[min(85%,36rem)]")}>
         {editing ? (
           <form
             onSubmit={(e) => {
               e.preventDefault();
               if (draft.trim()) onSubmitEdit(draft.trim());
             }}
-            className="mt-1 flex flex-col gap-2"
+            className="flex w-full flex-col gap-2"
           >
             <label htmlFor={`edit-${m.id}`} className="fx-sr">Изменить сообщение</label>
             {/* 69 — поле той же формы и того же шрифта: текст не прыгает при переходе к правке */}
@@ -219,7 +223,7 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
                   if (draft.trim()) onSubmitEdit(draft.trim());
                 }
               }}
-              className="-mx-3 -my-2 w-[calc(100%+1.5rem)] resize-none rounded-(--radius-md) border border-line2 bg-g1 px-3 py-2 text-[length:var(--read-size,15.5px)] leading-[1.65] text-ink field-sizing-content outline-none focus:border-ink3"
+              className="w-full resize-none rounded-(--radius-md) border border-line2 bg-g1 px-3 py-2 text-[length:var(--read-size,15.5px)] leading-[1.65] text-ink field-sizing-content outline-none focus:border-ink3"
             />
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING.snappy} className="mt-2 flex items-center justify-end gap-2">
               <span className="mr-auto text-[12px] text-ink3">Исходная реплика сохранится в прошлой ветке</span>
@@ -230,7 +234,7 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
         ) : (
           <>
             {files.length > 0 && (
-              <ul className="mt-1 mb-2 flex flex-wrap gap-1.5">
+              <ul className="mb-1.5 flex flex-wrap justify-end gap-1.5">
                 {files.map((f) => (
                   <li key={f.name} className="rounded-(--radius-sm) border border-line bg-g1 px-2 py-1 font-mono text-[11.5px] text-ink2">
                     {f.name} · {formatBytes(f.sizeBytes)}
@@ -238,7 +242,7 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
                 ))}
               </ul>
             )}
-            {text && <p className={cn("text-[length:var(--read-size,15.5px)] leading-[1.65] whitespace-pre-wrap", delivery === "failed" ? "text-ink2" : "text-ink")}>{text}</p>}
+            {text && <p className={cn("rounded-[14px] rounded-br-[4px] bg-s2 px-4 py-2.5 text-[length:var(--read-size,15.5px)] leading-[1.65] break-words whitespace-pre-wrap", delivery === "failed" ? "text-ink2" : "text-ink")}>{text}</p>}
             {delivery === "sending" && <p className="k-meta mt-1 animate-pulse">отправляется…</p>}
             {delivery === "failed" && (
               <p role="alert" className="mt-1.5 flex items-center gap-2 text-[12.5px] text-err">
@@ -253,6 +257,22 @@ export function UserMessage({ m, editing, onEdit, onCancel, onSubmitEdit, versio
           </>
         )}
       </div>
+      {!editing && (
+        <div className="flex h-8 items-center gap-2">
+          {/* действия — только по наведению на реплику; на сенсорных экранах видны всегда */}
+          {text && (
+            <span className="k-answer-actions flex items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
+              <CopyButton text={text} />
+              <button type="button" onClick={onEdit} aria-label="Изменить" data-tip="Изменить" className="k-act">
+                <Pencil size={14} strokeWidth={1.5} />
+              </button>
+            </span>
+          )}
+          <VersionSwitch v={versions} />
+          {m.mode !== "text" && <span className="k-index">{modeById(m.mode).label}</span>}
+          <span className="text-[12px] text-ink3">{time(m.createdAt)}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -261,7 +281,7 @@ type Props = {
   m: Message;
   run?: RunState;
   versions: Versions;
-  /** Последний ответ ветки: действия видны без наведения. */
+  /** Последний ответ ветки: под ним показываются продолжения. */
   last?: boolean;
   onRegenerate: () => void;
   /** Остановить идущий запуск (агент, исследование). */
@@ -283,7 +303,6 @@ type Props = {
 
 /** Ответ — раздел документа: знак маршрута, текст, квитанция запуска и слой действий. */
 export function AssistantMessage({ m, run, versions, last = false, onRegenerate, onStop, onAnswer, onOpenArtifact, onFollowup, onImageAction, onExportSlides, onSaveArtifact, onSaveRecipe, pinned = false, onPin, compareBefore, promptChars = 0 }: Props) {
-  const [copied, setCopied] = useState(false);
   const swipeX = useRef<number | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [reading, setReading] = useState(false);
@@ -330,8 +349,11 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
   const info = m.model ? modelByName(m.model) : undefined;
   const settled = !streaming && run?.status !== "error";
   const printable = (m.mode === "research" || (run?.sources?.length ?? 0) > 0) && text.length > 0;
-  const waiting = streaming && text === "" && !run?.ask && !run?.thinking && m.parts.every((p) => p.type === "text");
-  const now = useNow(waiting);
+  // пока идёт запуск без вопроса, плана и медиа-задачи — живой индикатор; пока открыт блок рассуждений, секундомер показывает он
+  const busy = streaming && !run?.ask && !run?.tasks && m.parts.every((p) => p.type === "text") && !(run?.thinking && !text);
+  const now = useNow(busy);
+  // токены считаем по символам (≈4 на токен), как в «почему этот маршрут»: настоящий счётчик приходит только в квитанции
+  const tokens = Math.ceil((text.length + (run?.thinking?.length ?? 0)) / 4);
   const diff = useMemo(() => (showDiff && versions.prevText !== undefined ? wordDiff(versions.prevText, text) : null), [showDiff, versions.prevText, text]);
   const toc = useMemo(() => (settled && text.length > 1500 ? headingsOf(text) : []), [settled, text]);
   // 107 — длинный ответ из истории открыт тремя строками сути; полный текст раскрывается плавно
@@ -358,20 +380,11 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
   const speakers = [...new Set(versions.models ?? [])];
   const speaker = speakers.length > 1 && m.model ? SPEAKER[speakers.indexOf(m.model) % SPEAKER.length] : null;
 
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {}
-  }
-
   return (
     <article
       ref={root}
       className="k-answer grid gap-x-4 sm:grid-cols-[36px_minmax(0,1fr)]"
       aria-busy={streaming}
-      data-last={last || undefined}
       onTouchStart={(e) => {
         const t = e.touches[0];
         if (t) swipeX.current = t.clientX;
@@ -504,13 +517,13 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
             <ImageGrid images={images} id={m.id} caption={`${m.model ?? ""}`} onAction={onImageAction} fresh={!!run} />
           ))}
         {run?.status === "done" && run.tasks && <AgentSummary run={run} costMicro={m.costMicro} onOpenArtifact={onOpenArtifact} onSavePacket={m.mode === "research" ? onSaveArtifact : undefined} />}
-        {/* 22 — до первого слова: строки-заглушки с общим бликом и честный секундомер */}
-        {waiting && (
-          <div aria-hidden="true" className="flex flex-col gap-2.5 pt-1">
-            <Bar className="h-3 w-[92%] rounded-full" />
-            <Bar className="h-3 w-[78%] rounded-full" />
-            <Bar className="h-3 w-[55%] rounded-full" />
-            {run?.startedAt && now > run.startedAt + 1000 && <span className="k-meta">ждём первое слово · {secs(now - run.startedAt)} с</span>}
+        {/* 22 — пока модель молчит или пишет: четыре точки по кругу, честный секундомер и токены */}
+        {busy && (
+          <div aria-hidden="true" className="k-meta flex items-center gap-2 pt-1">
+            <ThinkingMark size={15} />
+            <span className="text-ink2">{text ? "Пишу" : "Думаю"}</span>
+            {run?.startedAt && now > run.startedAt && <span>· {secs(now - run.startedAt)} с</span>}
+            {tokens > 0 && <span>· ≈{tokens.toLocaleString("ru-RU")} ток.</span>}
           </div>
         )}
 
@@ -555,14 +568,7 @@ export function AssistantMessage({ m, run, versions, last = false, onRegenerate,
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line pt-2">
             <RunReceipt run={run} costMicro={m.costMicro} model={m.model} code={m.id} />
             <div className="k-answer-actions -mr-1.5 flex flex-wrap items-center">
-              {text && (
-                <button type="button" onClick={copy} aria-label={copied ? "Скопировано" : "Копировать"} data-tip={copied ? "Скопировано" : "Копировать"} className="k-act">
-                  {/* 24 — «Копировать» превращается в галочку */}
-                  <motion.span key={String(copied)} initial={copied ? { scale: 0.4, rotate: -30 } : false} animate={{ scale: 1, rotate: 0 }} transition={SPRING.bouncy} className="grid place-items-center">
-                    {copied ? <Check size={14} strokeWidth={1.5} className="text-acc" /> : <Copy size={14} strokeWidth={1.5} />}
-                  </motion.span>
-                </button>
-              )}
+              {text && <CopyButton text={text} />}
               <button
                 type="button"
                 onClick={(e) => {

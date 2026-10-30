@@ -28,12 +28,8 @@ export function PageSkeleton({ kind }: { kind: "grid" | "chat" | "list" }) {
               <Bar className="h-9 w-[70%] rounded-(--radius-sm)" />
               <Bar className="mt-4 h-3 w-48 rounded-full" />
             </div>
-            <div className="grid gap-x-4 sm:grid-cols-[36px_minmax(0,1fr)]">
-              <Bar className="size-9 rounded-full max-sm:hidden" />
-              <div className="flex flex-col gap-2.5 pt-2.5">
-                <Bar className="h-3 w-32 rounded-full" />
-                <Bar className="h-3 w-[64%] rounded-full" />
-              </div>
+            <div className="flex justify-end">
+              <Bar className="h-11 w-[55%] rounded-[14px] rounded-br-[4px]" />
             </div>
             <div className="mt-11 grid gap-x-4 sm:grid-cols-[36px_minmax(0,1fr)]">
               <Bar className="size-9 rounded-full max-sm:hidden" />
